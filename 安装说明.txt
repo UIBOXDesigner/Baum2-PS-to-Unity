@@ -1,0 +1,45 @@
+============================================================
+  Baum2 PS 插件 — 安装说明
+  版本: v0.7.0  (2026-05-28)
+============================================================
+
+【一键安装（推荐）】
+  双击运行 install.bat，脚本将自动检测 Photoshop 安装路径并复制所需文件。
+
+【手动安装】
+  将以下两个文件复制到 Photoshop 脚本目录：
+
+    PhotoshopScript\Baum.js
+    PhotoshopScript\BaumMapping.json
+
+  Windows 目标路径（版本号替换为你的实际版本）：
+    C:\Program Files\Adobe\Adobe Photoshop 202X\Presets\Scripts\
+
+  macOS 目标路径：
+    /Applications/Adobe Photoshop 202X/Presets/Scripts/
+
+【使用方式】
+  安装完成后重启 Photoshop：
+    文件 → 脚本 → Baum.js
+
+  或在不安装的情况下直接运行：
+    文件 → 脚本 → 浏览 → 选择 PhotoshopScript\Baum.js
+
+【导出文件】
+  脚本会生成：
+    {PSD名称}.layout.txt — UI 层级和属性数据
+    {PSD名称}/            — 所有图片资源 PNG
+
+【Unity 导入】
+  1. 将导出的 .layout.txt 和对应文件夹复制到 Unity Assets
+  2. 导入 Baum2.unitypackage（Assets → Import Package）
+  3. 右键 .layout.txt → Baum2 → Generate UI
+
+【命名规范】
+  详见 UI_PS_to_Unity_Workflow.md
+
+【问题反馈】
+  如遇问题请检查：
+  - PS 版本是否 >= CC 2018
+  - 图层命名是否符合 ui_ 前缀规范
+  - 是否以管理员身份运行 install.bat

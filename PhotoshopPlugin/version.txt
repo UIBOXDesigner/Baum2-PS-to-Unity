@@ -1,0 +1,18 @@
+Baum2 - PS to Unity UI Plugin
+Version: 2.0.0
+Build Date: 2026-05-28
+Photoshop Script Version: v0.7.0
+Unity Package Version: v2.0
+
+Changelog:
+- v2.0.0 (2026-05-28)
+  * Migrated from m_ prefix to ui_ prefix naming system
+  * Added support for 30+ UI control types
+  * Added support for 15+ state suffixes
+  * Complete PS to Unity workflow documentation
+  * Added PhotoshopPlugin installer package
+
+- v1.0.0 (2024-01-01)
+  * Initial release
+  * Basic PSD to Unity UI export
+  * Support for Button, Text, Image controls

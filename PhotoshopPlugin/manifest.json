@@ -1,0 +1,63 @@
+{
+  "name": "Baum2 - PS to Unity UI",
+  "id": "com.baum2.ps2unity",
+  "version": "2.0.0",
+  "description": "Photoshop PSD to Unity UI converter - Complete workflow from design to prefab. Exports PSD layers as Unity UI prefabs with full naming convention support.",
+  "author": "UIBOXDesigner",
+  "homepage": "https://github.com/UIBOXDesigner/Baum2-PS-to-Unity",
+  "repository": "https://github.com/UIBOXDesigner/Baum2-PS-to-Unity.git",
+  "license": "MIT",
+  "main": "Baum.js",
+  "scripts": {
+    "install": "Baum.js",
+    "uninstall": "uninstall.js"
+  },
+  "photoshop": {
+    "minVersion": "2020",
+    "maxVersion": "2025",
+    "supportedFormats": [".psd", ".psb"],
+    "menu": [
+      {
+        "name": "Baum2 - Export UI",
+        "script": "Baum.js",
+        "shortcut": "Ctrl+Alt+B",
+        "location": "File > Export > Baum2 Export"
+      },
+      {
+        "name": "Baum2 - Quick Export",
+        "script": "BaumQuick.js",
+        "shortcut": "Ctrl+Shift+B",
+        "location": "File > Export"
+      }
+    ],
+    "panels": [
+      {
+        "name": "Baum2 Panel",
+        "script": "BaumPanel.jsx",
+        "icon": "icon.png"
+      }
+    ]
+  },
+  "dependencies": {
+    "photoshop": ">=21.0.0"
+  },
+  "keywords": [
+    "photoshop",
+    "unity",
+    "ui",
+    "psd",
+    "exporter",
+    "game development",
+    "ui design"
+  ],
+  "files": [
+    "Baum.js",
+    "Baum.coffee",
+    "BaumMapping.json",
+    "icon.png",
+    "README.md"
+  ],
+  "engines": {
+    "photoshop": ">=21.0.0"
+  }
+}
