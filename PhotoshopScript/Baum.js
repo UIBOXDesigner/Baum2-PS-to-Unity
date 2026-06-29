@@ -7,9 +7,9 @@
   // 适配 UI资源命名规范.md 的完整工作流
 
   // 命名规则：
-  // - 控件前缀：ui_btn_, ui_txt_, ui_img_, ui_icon_, ui_input_, ui_slider_, ui_tog_, ui_drop_, ui_scroll_, ui_tab_, ui_badge_, ui_progress_, ui_check_, ui_radio_
+  // - 控件前缀：ui_btn_, ui_txt_, ui_img_, ui_icon_, ui_input_, ui_slider_, ui_tog_, ui_drop_, ui_scroll_, ui_tab_, ui_badge_, ui_progress_, ui_check_, ui_radio_, ui_cell_, ui_slot_, ui_reddot_, ui_state_, ui_effect_, ui_anim_, ui_avatar_
   // - 面板容器：ui_panel_, ui_bg_, ui_mask_, ui_divider_, ui_frame_, ui_card_, ui_popup_, ui_toast_, ui_loading_, ui_item_, ui_header_, ui_footer_, ui_arrow_, ui_close_, ui_handle_, ui_thumb_
-  // - 状态后缀：_normal, _hover, _pressed, _disabled, _selected, _highlighted, _inactive, _empty, _filled, _locked, _completed, _claimed, _new
+  // - 状态后缀：_normal, _hover, _pressed, _disabled, _selected, _highlighted, _inactive, _empty, _filled, _locked, _completed, _claimed, _new, _claimable, _unread, _insufficient, _equipped, _loading
   // - 布局组件：ui_glg_, ui_vlg_, ui_hlg_, ui_cg_
 
   // 使用示例：
@@ -20,12 +20,9 @@
   var Baum, PsdToImage, PsdToJson, Util, baum, setup;
 
   Baum = (function() {
-    class Baum {
-      constructor() {
-        this.runOneFile = this.runOneFile.bind(this);
+        function Baum() {
       }
-
-      run() {
+    Baum.prototype.run = function(){
         var filePath, filePaths, j, len;
         this.saveFolder = null;
         if (app.documents.length === 0) {
@@ -39,9 +36,8 @@
           this.runOneFile(false);
         }
         return alert('complete!');
-      }
-
-      runOneFile(after_close) {
+      };
+    Baum.prototype.runOneFile = function(after_close){
         var copiedDoc;
         if (this.saveFolder === null) {
           this.saveFolder = Folder.selectDialog("选择保存至文件夹");
@@ -71,9 +67,8 @@
         if (after_close) {
           return app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
         }
-      }
-
-      selectDocumentArea(document) {
+      };
+    Baum.prototype.selectDocumentArea = function(document){
         var selReg, x1, x2, y1, y2;
         x1 = 0;
         y1 = 0;
@@ -81,9 +76,8 @@
         y2 = document.height.value;
         selReg = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
         return document.selection.select(selReg);
-      }
-
-      clipping(document, root) {
+      };
+    Baum.prototype.clipping = function(document, root){
         var h, w, x1, x2, y1, y2;
         document.resizeImage(document.width, document.height, 72, ResampleMethod.BICUBICAUTOMATIC);
         if (document.selection.bounds[0].value === 0 && document.selection.bounds[1].value === 0 && document.selection.bounds[2].value === document.width.value && document.selection.bounds[3].value === document.height.value) {
@@ -100,9 +94,8 @@
         w = x2 - x1;
         h = y2 - y1;
         return activeDocument.resizeCanvas(w, h, AnchorPosition.BOTTOMRIGHT);
-      }
-
-      clearAll(document, root) {
+      };
+    Baum.prototype.clearAll = function(document, root){
         var j, layer, len, ref1, results;
         ref1 = root.layers;
         results = [];
@@ -122,9 +115,8 @@
           }
         }
         return results;
-      }
-
-      resizePsd(doc) {
+      };
+    Baum.prototype.resizePsd = function(doc){
         var height, tmp, width;
         width = doc.width;
         height = doc.height;
@@ -140,9 +132,8 @@
         width = width / tmp;
         height = height / tmp;
         return doc.resizeImage(width, height, doc.resolution, ResampleMethod.BICUBICAUTOMATIC);
-      }
-
-      removeUnvisibleLayers(root) {
+      };
+    Baum.prototype.removeUnvisibleLayers = function(root){
         var i, j, k, layer, len, ref1, ref2, removeLayers, results;
         removeLayers = [];
         ref1 = root.layers;
@@ -166,9 +157,8 @@
           }
           return results;
         }
-      }
-
-      removeCommentoutLayers(document, root) {
+      };
+    Baum.prototype.removeCommentoutLayers = function(document, root){
         var i, j, k, layer, len, ref1, ref2, removeLayers, results;
         removeLayers = [];
         ref1 = root.layers;
@@ -192,15 +182,13 @@
           }
           return results;
         }
-      }
-
-      cropLayers(root) {
+      };
+    Baum.prototype.cropLayers = function(root){
         var bounds;
         bounds = [0, 0, root.width, root.height];
         return root.crop(bounds);
-      }
-
-      rasterizeAll(root) {
+      };
+    Baum.prototype.rasterizeAll = function(root){
         var j, layer, len, ref1, results, t;
         ref1 = root.layers;
         for (j = 0, len = ref1.length; j < len; j++) {
@@ -232,9 +220,8 @@
           }
         }
         return results;
-      }
-
-      rasterize(layer) {
+      };
+    Baum.prototype.rasterize = function(layer){
         var tmp;
         tmp = app.activeDocument.activeLayer;
         app.activeDocument.activeLayer = layer;
@@ -247,9 +234,8 @@
         // 遮罩层
         Util.rasterizeLayerMask(layer);
         return app.activeDocument.activeLayer = tmp;
-      }
-
-      ungroupArtboard(document) {
+      };
+    Baum.prototype.ungroupArtboard = function(document){
         var j, layer, len, ref1, results;
         ref1 = document.layers;
         results = [];
@@ -262,9 +248,8 @@
           }
         }
         return results;
-      }
-
-      ungroup(root) {
+      };
+    Baum.prototype.ungroup = function(root){
         var i, j, layer, layers, ref1;
         layers = (function() {
           var j, len, ref1, results;
@@ -280,9 +265,8 @@
           layers[i].moveBefore(root);
         }
         return root.remove();
-      }
-
-      unlockAll(root) {
+      };
+    Baum.prototype.unlockAll = function(root){
         var j, layer, len, ref1, results;
         ref1 = root.layers;
         results = [];
@@ -299,9 +283,8 @@
           }
         }
         return results;
-      }
-
-      unvisibleAll(root) {
+      };
+    Baum.prototype.unvisibleAll = function(root){
         var j, layer, len, ref1, results;
         ref1 = root.layers;
         results = [];
@@ -314,9 +297,8 @@
           }
         }
         return results;
-      }
-
-      layerBlendAll(document, root) {
+      };
+    Baum.prototype.layerBlendAll = function(document, root){
         var i, j, layer, newLayer, ref1, results;
         if (root.layers.length === 0) {
           return;
@@ -355,22 +337,18 @@
           }
         }
         return results;
-      }
-
-      psdToJson(targetDocument) {
+      };
+    Baum.prototype.psdToJson = function(targetDocument){
         var json, toJson;
         toJson = new PsdToJson();
         json = toJson.run(targetDocument, this.documentName);
         return Util.saveText(this.saveFolder + "/" + this.documentName + ".layout.txt", json);
-      }
-
-      psdToImage(targetDocument) {
+      };
+    Baum.prototype.psdToImage = function(targetDocument){
         var json, toImage;
         toImage = new PsdToImage();
         return json = toImage.run(targetDocument, this.saveFolder, this.documentName);
-      }
-
-    };
+      };;
 
     Baum.version = '0.6.1';
 
@@ -380,8 +358,8 @@
 
   }).call(this);
 
-  PsdToJson = class PsdToJson {
-    run(document, documentName) {
+  function PsdToJson() {}
+  PsdToJson.prototype.run = function(document, documentName){
       var bounds, canvasBase, canvasLayer, canvasSize, imageSize, json, layers;
       layers = this.allLayers(document, document);
       imageSize = [document.width.value, document.height.value];
@@ -418,9 +396,8 @@
         }
       });
       return json;
-    }
-
-    findLayer(root, name) {
+    };
+  PsdToJson.prototype.findLayer = function(root, name){
       var j, layer, len, ref1;
       ref1 = root.layers;
       for (j = 0, len = ref1.length; j < len; j++) {
@@ -430,9 +407,8 @@
         }
       }
       return null;
-    }
-
-    allLayers(document, root) {
+    };
+  PsdToJson.prototype.allLayers = function(document, root){
       var hash, j, layer, layers, len, name, opt, ref1;
       layers = [];
       ref1 = root.layers;
@@ -455,9 +431,8 @@
         }
       }
       return layers;
-    }
-
-    parseOption(text) {
+    };
+  PsdToJson.prototype.parseOption = function(text){
       var elements, j, len, opt, optText, ref1;
       if (!text) {
         return {};
@@ -473,9 +448,8 @@
         opt[elements[0].toLowerCase()] = elements[1].toLowerCase();
       }
       return opt;
-    }
-
-    layerToHash(document, name, opt, layer) {
+    };
+  PsdToJson.prototype.layerToHash = function(document, name, opt, layer){
       var align, bounds, e, hash, hh, originalText, pos, scale, text, textCenterOffset, textColor, textSize, textType, vh, vx, vy, ww;
       document.activeLayer = layer;
       hash = {};
@@ -579,15 +553,13 @@
         hash['stretchxy'] = opt['stretchxy'];
       }
       return hash;
-    }
-
-    angleFromMatrix(yy, xy) {
+    };
+  PsdToJson.prototype.angleFromMatrix = function(yy, xy){
       var toDegs;
       toDegs = 180 / Math.PI;
       return Math.atan2(yy, xy) * toDegs - 90;
-    }
-
-    getActiveLayerTransform() {
+    };
+  PsdToJson.prototype.getActiveLayerTransform = function(){
       var desc, ref, xx, xy, yx, yy;
       ref = new ActionReference();
       ref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
@@ -611,9 +583,8 @@
         yy: 0,
         yx: 0
       };
-    }
-
-    getTextSize() {
+    };
+  PsdToJson.prototype.getTextSize = function(){
       var desc, mFactor, ref, textSize;
       ref = new ActionReference();
       ref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
@@ -624,9 +595,8 @@
         textSize = (textSize * mFactor).toFixed(2);
       }
       return textSize;
-    }
-
-    groupToHash(document, name, opt, layer) {
+    };
+  PsdToJson.prototype.groupToHash = function(document, name, opt, layer){
       var hash, j, len, ref1, suffix;
       hash = {};
       if (name.startsWith('ui_btn_')) {
@@ -637,7 +607,7 @@
         hash = {
           type: 'Text'
         };
-      } else if (name.startsWith('ui_img_') || name.startsWith('ui_icon_') || name.startsWith('ui_bg_') || name.startsWith('ui_frame_') || name.startsWith('ui_arrow_') || name.startsWith('ui_handle_') || name.startsWith('ui_thumb_') || name.startsWith('ui_badge_') || name.startsWith('ui_divider_')) {
+      } else if (name.startsWith('ui_img_') || name.startsWith('ui_icon_') || name.startsWith('ui_bg_') || name.startsWith('ui_frame_') || name.startsWith('ui_arrow_') || name.startsWith('ui_handle_') || name.startsWith('ui_thumb_') || name.startsWith('ui_badge_') || name.startsWith('ui_divider_') || name.startsWith('ui_cell_') || name.startsWith('ui_slot_') || name.startsWith('ui_reddot_') || name.startsWith('ui_state_') || name.startsWith('ui_effect_') || name.startsWith('ui_anim_') || name.startsWith('ui_avatar_')) {
         hash = {
           type: 'Image'
         };
@@ -712,7 +682,7 @@
       if (opt['stretchxy']) {
         hash['stretchxy'] = opt['stretchxy'];
       }
-      ref1 = ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new'];
+      ref1 = ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new', '_claimable', '_unread', '_insufficient', '_equipped', '_loading'];
       
       // 状态后缀识别
       for (j = 0, len = ref1.length; j < len; j++) {
@@ -724,15 +694,13 @@
       }
       hash['elements'] = this.allLayers(document, layer);
       return hash;
-    }
-
-  };
+    };;
 
   PsdToImage = (function() {
     var baseFolder, fileNames;
 
-    class PsdToImage {
-      run(document, saveFolder, documentName) {
+        function PsdToImage() {}
+    PsdToImage.prototype.run = function(document, saveFolder, documentName){
         var i, j, k, len, ref1, removeFiles, results, snapShotId, target, targets;
         this.baseFolder = Folder(saveFolder + "/" + documentName);
         if (this.baseFolder.exists) {
@@ -755,9 +723,8 @@
           results.push(Util.revertToSnapshot(document, snapShotId));
         }
         return results;
-      }
-
-      allLayers(root) {
+      };
+    PsdToImage.prototype.allLayers = function(root){
         var j, layer, len, list, ref1;
         ref1 = root.layers;
         for (j = 0, len = ref1.length; j < len; j++) {
@@ -784,9 +751,8 @@
           return results;
         }).call(this);
         return Array.prototype.concat.apply([], list); // list.flatten()
-      }
-
-      outputLayer(doc, layer) {
+      };
+    PsdToImage.prototype.outputLayer = function(doc, layer){
         var fileName, opt, options, saveFile;
         if (!layer.isBackgroundLayer) {
           layer.translate(-layer.bounds[0], -layer.bounds[1]);
@@ -803,16 +769,14 @@
           fileName += "-noslice";
         }
         fileNames.push(fileName);
-        saveFile = new File(`${this.baseFolder.fsName}/${fileName}.png`);
+        saveFile = new File(this.baseFolder.fsName + "/" + fileName + ".png");
         options = new ExportOptionsSaveForWeb();
         options.format = SaveDocumentType.PNG;
         options.PNG8 = false;
         options.optimized = true;
         options.interlaced = false;
         return doc.exportDocument(saveFile, ExportType.SAVEFORWEB, options);
-      }
-
-    };
+      };;
 
     baseFolder = null;
 
@@ -822,28 +786,26 @@
 
   }).call(this);
 
-  Util = class Util {
-    static saveText(filePath, text) {
+  function Util() {}
+  Util.saveText = function(filePath, text){
       var file;
       file = File(filePath);
       file.encoding = "UTF8";
       file.open("w", "TEXT");
       file.write(text);
       return file.close();
-    }
-
-    static layerToImageName(layer) {
+    };
+  Util.layerToImageName = function(layer){
       return encodeURI(Util.layerToImageNameLoop(layer)).replace(/%/g, '');
-    }
-
-    static layerToImageNameLoop(layer) {
+    };
+  Util.layerToImageNameLoop = function(layer){
       var baseName, j, len, ref1, suffix;
       if (layer instanceof Document) {
         return "";
       }
       // 获取基础名称（去掉 @ 参数）
       baseName = layer.name.split("@")[0];
-      ref1 = ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new'];
+      ref1 = ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new', '_claimable', '_unread', '_insufficient', '_equipped', '_loading'];
       
       // 移除状态后缀
       for (j = 0, len = ref1.length; j < len; j++) {
@@ -861,9 +823,8 @@
       
       // 清理字符
       return baseName.replace('_', '').replace(' ', '-').toLowerCase();
-    }
-
-    static getLastSnapshotID(doc) {
+    };
+  Util.getLastSnapshotID = function(doc){
       var hsLength, hsObj, i, j, ref1;
       hsObj = doc.historyStates;
       hsLength = hsObj.length;
@@ -872,9 +833,8 @@
           return i;
         }
       }
-    }
-
-    static takeSnapshot(doc) {
+    };
+  Util.takeSnapshot = function(doc){
       var desc153, ref119, ref120;
       desc153 = new ActionDescriptor();
       ref119 = new ActionReference();
@@ -885,13 +845,11 @@
       desc153.putReference(charIDToTypeID("From"), ref120);
       executeAction(charIDToTypeID("Mk  "), desc153, DialogModes.NO);
       return Util.getLastSnapshotID(doc);
-    }
-
-    static revertToSnapshot(doc, snapshotID) {
+    };
+  Util.revertToSnapshot = function(doc, snapshotID){
       return doc.activeHistoryState = doc.historyStates[snapshotID];
-    }
-
-    static hasStroke(doc, layer) {
+    };
+  Util.hasStroke = function(doc, layer){
       var desc1, desc2, hasFX, hasStroke, ref, res;
       doc.activeLayer = layer;
       res = false;
@@ -909,27 +867,24 @@
         }
       }
       return res;
-    }
-
-    static getStrokeSize(doc, layer) {
+    };
+  Util.getStrokeSize = function(doc, layer){
       var desc, ref;
       doc.activeLayer = layer;
       ref = new ActionReference();
       ref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
       desc = executeActionGet(ref).getObjectValue(stringIDToTypeID('layerEffects')).getObjectValue(stringIDToTypeID('frameFX'));
       return desc.getUnitDoubleValue(stringIDToTypeID('size'));
-    }
-
-    static getStrokeColor(doc, layer) {
+    };
+  Util.getStrokeColor = function(doc, layer){
       var desc, ref;
       doc.activeLayer = layer;
       ref = new ActionReference();
       ref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
       desc = executeActionGet(ref).getObjectValue(stringIDToTypeID('layerEffects')).getObjectValue(stringIDToTypeID('frameFX'));
       return Util.getColorFromDescriptor(desc.getObjectValue(stringIDToTypeID("color")), typeIDToCharID(desc.getClass(stringIDToTypeID("color"))));
-    }
-
-    static getColorFromDescriptor(colorDesc, keyClass) {
+    };
+  Util.getColorFromDescriptor = function(colorDesc, keyClass){
       var colorObject;
       colorObject = new SolidColor();
       if (keyClass === "Grsc") {
@@ -952,18 +907,16 @@
         colorObject.lab.b = colorDesc.getDouble(charIDToTypeID('B   '));
       }
       return colorObject;
-    }
-
-    static deselectLayers() {
+    };
+  Util.deselectLayers = function(){
       var desc01, ref01;
       desc01 = new ActionDescriptor();
       ref01 = new ActionReference();
       ref01.putEnumerated(charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'));
       desc01.putReference(charIDToTypeID('null'), ref01);
       return executeAction(stringIDToTypeID('selectNoLayers'), desc01, DialogModes.NO);
-    }
-
-    static selectTransparency() {
+    };
+  Util.selectTransparency = function(){
       var actionDesc, actionSelect, actionTransparent, idChnl;
       idChnl = charIDToTypeID("Chnl");
       actionSelect = new ActionReference();
@@ -974,9 +927,8 @@
       actionDesc.putReference(charIDToTypeID("null"), actionSelect);
       actionDesc.putReference(charIDToTypeID("T   "), actionTransparent);
       return executeAction(charIDToTypeID("setd"), actionDesc, DialogModes.NO);
-    }
-
-    static getTextExtents(text_item) {
+    };
+  Util.getTextExtents = function(text_item){
       var bounds, desc, height, ref, transform, width, x_scale, y_scale;
       app.activeDocument.activeLayer = text_item.parent;
       ref = new ActionReference();
@@ -998,9 +950,8 @@
         width: Math.round(width * x_scale),
         height: Math.round(height * y_scale)
       };
-    }
-
-    static getTextYScale(text_item) {
+    };
+  Util.getTextYScale = function(text_item){
       var bounds, desc, height, ref, transform, width, x_scale, y_scale;
       app.activeDocument.activeLayer = text_item.parent;
       ref = new ActionReference();
@@ -1017,9 +968,8 @@
         y_scale = transform.getUnitDoubleValue(stringIDToTypeID('yy'));
       }
       return y_scale;
-    }
-
-    static rasterizeLayerStyle(layer) {
+    };
+  Util.rasterizeLayerStyle = function(layer){
       var desc5, idLyr, idOrdn, idTrgt, idWhat, idlayerStyle, idnull, idrasterizeItem, idrasterizeLayer, ref4;
       app.activeDocument.activeLayer = layer;
       idrasterizeLayer = stringIDToTypeID("rasterizeLayer");
@@ -1036,9 +986,8 @@
       idlayerStyle = stringIDToTypeID("layerStyle");
       desc5.putEnumerated(idWhat, idrasterizeItem, idlayerStyle);
       return executeAction(idrasterizeLayer, desc5, DialogModes.NO);
-    }
-
-    static rasterizeLayerMask(layer) {
+    };
+  Util.rasterizeLayerMask = function(layer){
       app.activeDocument.activeLayer = layer;
       if (Util.hasVectorMask()) {
         Util.rasterizeLayer();
@@ -1051,9 +1000,8 @@
         Util.selectLayerMask();
         return Util.applyLayerMask();
       }
-    }
-
-    static hasVectorMask() {
+    };
+  Util.hasVectorMask = function(){
       var desc, e, hasVectorMask, keyKind, keyVectorMaskEnabled, kindValue, ref;
       hasVectorMask = false;
       try {
@@ -1073,9 +1021,8 @@
         hasVectorMask = false;
       }
       return hasVectorMask;
-    }
-
-    static hasLayerMask() {
+    };
+  Util.hasLayerMask = function(){
       var desc, e, hasLayerMask, keyUserMaskEnabled, ref;
       hasLayerMask = false;
       try {
@@ -1092,9 +1039,8 @@
         hasLayerMask = false;
       }
       return hasLayerMask;
-    }
-
-    static rasterizeLayer() {
+    };
+  Util.rasterizeLayer = function(){
       var desc245, id1242, id1243, id1244, id1245, id1246, ref184;
       try {
         id1242 = stringIDToTypeID("rasterizeLayer");
@@ -1110,9 +1056,8 @@
       } catch (error) {
 
       }
-    }
-
-    static selectVectorMask() {
+    };
+  Util.selectVectorMask = function(){
       var desc15, e, id55, id56, id57, id58, id59, id60, id61, id62, ref13;
       try {
         id55 = charIDToTypeID("slct");
@@ -1132,9 +1077,8 @@
       } catch (error) {
         e = error;
       }
-    }
-
-    static selectLayerMask() {
+    };
+  Util.selectLayerMask = function(){
       var desc153, e, id759, id760, id761, id762, id763, id764, ref92;
       try {
         id759 = charIDToTypeID("slct");
@@ -1152,9 +1096,8 @@
       } catch (error) {
         e = error;
       }
-    }
-
-    static rasterizeVectorMask() {
+    };
+  Util.rasterizeVectorMask = function(){
       var desc44, e, id488, id489, id490, id491, id492, id493, id494, id495, ref29;
       try {
         id488 = stringIDToTypeID("rasterizeLayer");
@@ -1174,9 +1117,8 @@
       } catch (error) {
         e = error;
       }
-    }
-
-    static applyLayerMask() {
+    };
+  Util.applyLayerMask = function(){
       var desc154, e, id765, id766, id767, id768, id769, id770, ref93;
       try {
         id765 = charIDToTypeID("Dlt ");
@@ -1194,9 +1136,8 @@
       } catch (error) {
         e = error;
       }
-    }
-
-    static mergeGroup(layer) {
+    };
+  Util.mergeGroup = function(layer){
       var desc15, e, idMrgtwo;
       app.activeDocument.activeLayer = layer;
       try {
@@ -1206,9 +1147,8 @@
       } catch (error) {
         e = error;
       }
-    }
-
-    static parseOption(text) {
+    };
+  Util.parseOption = function(text){
       var elements, j, len, opt, optText, ref1;
       if (!text) {
         return {};
@@ -1224,9 +1164,7 @@
         opt[elements[0].toLowerCase()] = elements[1].toLowerCase();
       }
       return opt;
-    }
-
-  };
+    };;
 
   String.prototype.startsWith = function(str) {
     return this.slice(0, str.length) === str;

@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GUI 命名规范交互式参考库，涵盖通用控件组件与游戏系统的命名规则、前缀、后缀词典与校验器。" />
+  <title>GUI 命名规范交互版 v2.8</title>
+  <style>
+    :root{
+      --bg:#f4efe6;
+      --paper:#fff9ef;
+      --paper2:#f7ead8;
+      --ink:#2c2117;
+      --muted:#7b6651;
+      --line:#dfcdb8;
+      --brand:#8d4b28;
+      --brand2:#b9763b;
+      --dark:#2b2119;
+      --green:#557a4b;
+      --red:#a94a3b;
+      --blue:#4c6f8a;
+      --gold:#d09a3d;
+      --code:#2b2119;
+      --codeBg:#f1e5d4;
+      --shadow:0 14px 36px rgba(44,33,23,.12);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(185,118,59,.16), transparent 30%),
+        radial-gradient(circle at 92% 8%, rgba(85,122,75,.10), transparent 26%),
+        linear-gradient(180deg,#f7f0e6 0%,#eadcc9 100%);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif;
+      line-height:1.65;
+    }
+    a{color:inherit;text-decoration:none;}
+    .app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh;}
+    aside{
+      position:sticky;top:0;height:100vh;overflow:auto;
+      border-right:1px solid var(--line);
+      background:rgba(255,249,239,.90);backdrop-filter:blur(10px);
+      padding:18px 16px 28px;
+    }
+    .brand{
+      border:2px solid rgba(141,75,40,.18);
+      background:linear-gradient(145deg,#fff9ef,#f1ddc4);
+      border-radius:22px;padding:16px 14px;margin-bottom:14px;box-shadow:var(--shadow);
+    }
+    .brand h1{margin:0;font-size:22px;line-height:1.2;letter-spacing:.04em;color:var(--brand);}
+    .brand p{margin:8px 0 0;color:var(--muted);font-size:12px;}
+    .version{display:inline-flex;margin-top:10px;padding:3px 9px;border-radius:999px;background:#2b2119;color:#fff;font-size:11px;}
+    .nav-title{margin:18px 0 8px;font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+    .nav-button{
+      width:100%;border:1px solid transparent;background:transparent;color:var(--ink);
+      border-radius:12px;padding:9px 10px;text-align:left;cursor:pointer;font-weight:700;
+      display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;
+    }
+    .nav-button:hover{background:#f4e4cf;border-color:#ead1b5;}
+    .nav-button:focus-visible{outline:2px solid var(--brand2);outline-offset:2px;}
+    .nav-button.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 8px 18px rgba(141,75,40,.18);}
+    .nav-button .small{font-size:11px;opacity:.78;font-weight:700;white-space:nowrap;}
+    .search{width:100%;border:1px solid var(--line);background:#fff9ef;border-radius:13px;padding:10px 12px;color:var(--ink);outline:none;margin:2px 0 8px;}
+    .search:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(141,75,40,.12);}
+    .search:focus-visible{outline:2px solid var(--brand2);outline-offset:1px;}
+    main{padding:24px;min-width:0;scroll-padding-top:18px;}
+    #detail{transition:opacity .15s ease;}
+    #detail.loading{opacity:.4;}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;
+    }
+    .mode-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+    .mode-btn{
+      border:1px solid var(--line);background:rgba(255,249,239,.82);border-radius:999px;padding:10px 14px;cursor:pointer;
+      font-weight:800;color:var(--ink);
+    }
+    .mode-btn.active{background:#2b2119;color:#fff;border-color:#2b2119;}
+    .mode-btn:focus-visible,.component-card:focus-visible{outline:2px solid var(--brand2);outline-offset:2px;}
+    .hint{color:var(--muted);font-size:13px;}
+    .hero{
+      background:linear-gradient(135deg,#fff9ef 0%,#f2dec4 100%);
+      border:1px solid var(--line);border-radius:26px;padding:24px;box-shadow:var(--shadow);margin-bottom:18px;
+    }
+    .hero h2{margin:0;font-size:30px;line-height:1.15;color:var(--brand);}
+    .hero p{margin:10px 0 0;color:var(--muted);max-width:980px;}
+    .meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e1c6a6;background:#fff7ea;border-radius:999px;padding:5px 10px;color:#6b4f38;font-size:12px;font-weight:800;}
+    .content-grid{display:grid;grid-template-columns:minmax(0,1.15fr) 390px;gap:18px;align-items:start;}
+    .card{background:rgba(255,249,239,.92);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:0 10px 28px rgba(44,33,23,.08);margin-bottom:18px;}
+    .card h3{margin:0 0 12px;font-size:19px;color:var(--brand);}
+    .card h4{margin:16px 0 8px;font-size:15px;color:#5d3b26;}
+    .card p{margin:8px 0;color:var(--muted);}
+    .rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .rule-box{border:1px solid #ead1b5;background:#fff8ed;border-radius:14px;padding:12px;}
+    .rule-box .label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:4px;}
+    code,.code{
+      font-family:Consolas,"SFMono-Regular","Liberation Mono",Menlo,monospace;
+      background:var(--codeBg);color:var(--code);border-radius:7px;padding:2px 6px;font-size:.92em;
+    }
+    pre{margin:0;white-space:pre-wrap;word-break:break-word;background:#2b2119;color:#f7e8d2;border-radius:14px;padding:14px;overflow:auto;font-size:13px;line-height:1.55;}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff8ed;}
+    table{width:100%;border-collapse:collapse;min-width:680px;}
+    th,td{padding:10px 12px;border-bottom:1px solid #ead6bd;text-align:left;vertical-align:top;}
+    th{background:#ead3b6;color:#4a3323;font-size:12px;letter-spacing:.04em;}
+    tr:last-child td{border-bottom:none;}
+    td{font-size:13px;}
+    .phone-card{position:sticky;top:18px;background:rgba(255,249,239,.92);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+    .phone-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .phone-title h3{margin:0;color:var(--brand);font-size:18px;}
+    .phone{
+      width:100%;max-width:342px;margin:0 auto;border:10px solid #2b2119;border-radius:34px;background:#2b2119;box-shadow:0 18px 38px rgba(44,33,23,.20);overflow:hidden;
+    }
+    .phone-screen{aspect-ratio:9/20;background:linear-gradient(180deg,#f9ead8,#ecd0aa);padding:10px;display:flex;flex-direction:column;gap:8px;}
+    .notch{width:38%;height:15px;background:#2b2119;border-radius:0 0 12px 12px;margin:-10px auto 2px;}
+    .ui-region{border:1px solid rgba(141,75,40,.28);background:rgba(255,249,239,.82);border-radius:12px;padding:8px;min-height:38px;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.45);}
+    .ui-region strong{display:block;font-size:11px;color:#5b3824;line-height:1.15;margin:0;}
+    .ui-region span{display:block;font-size:10px;color:#7b6651;line-height:1.25;font-family:Consolas,"SFMono-Regular",Menlo,monospace;word-break:break-word;}
+    .ui-flex{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+    .ui-mini{height:42px;border:1px solid #dfcdb8;background:#fff8ed;border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;color:#6f553c;padding:4px;}
+    .ui-list{flex:1;display:flex;flex-direction:column;gap:6px;min-height:120px;}
+    .ui-list-item{border:1px solid #dfcdb8;background:#fff8ed;border-radius:9px;padding:6px;font-size:10px;color:#6f553c;min-height:32px;}
+    .ui-bottom{margin-top:auto;}
+    .ui-region.window-head{background:rgba(255,249,239,.92);border-style:solid;}
+    .ui-region.tabs{background:rgba(244,228,207,.88);}
+    .ui-region.content{background:rgba(255,248,237,.90);border-style:dashed;}
+    .ui-region.detail{background:rgba(245,234,218,.92);}
+    .ui-region.action{background:rgba(255,244,229,.96);border-style:solid;}
+    .ui-region.popup-area{background:rgba(255,249,239,.96);border-style:solid;box-shadow:0 8px 18px rgba(44,33,23,.10);}
+    .ui-region.inputbar{background:rgba(255,249,239,.98);border-style:solid;}
+    .ui-section-xs{min-height:34px;}
+    .ui-section-sm{min-height:46px;}
+    .ui-section-md{min-height:66px;}
+    .ui-section-lg{min-height:96px;}
+    .ui-section-xl{min-height:128px;}
+    .ui-section-fill{flex:1;min-height:110px;}
+    .ui-section-chat{flex:1.35;min-height:170px;}
+    .ui-inline{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+    .ui-token{border:1px solid #dfcdb8;background:#fff8ed;border-radius:999px;padding:3px 6px;font-size:9px;line-height:1.15;color:#6f553c;font-family:Consolas,"SFMono-Regular",Menlo,monospace;}
+    .ui-cell-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:6px;}
+    .ui-cell{height:28px;border:1px solid #dfcdb8;background:#fff8ed;border-radius:7px;font-size:8px;color:#6f553c;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px;}
+    .region-head{display:flex;flex-direction:column;gap:3px;}
+    .region-head code{display:block;background:rgba(43,33,25,.08);border:1px solid rgba(141,75,40,.16);border-radius:7px;padding:3px 5px;font-size:9px;line-height:1.18;color:#5f4935;word-break:break-word;}
+    .v13-stack{display:flex;flex-direction:column;gap:5px;margin-top:7px;}
+    .v13-row{border:1px solid #dfcdb8;background:#fff8ed;border-radius:9px;padding:5px 6px;font-size:9px;color:#6f553c;line-height:1.2;min-height:26px;display:flex;align-items:center;}
+    .v13-token-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+    .v13-token{border:1px solid #d7b990;background:#fff4e5;border-radius:999px;padding:3px 6px;font-size:8.5px;line-height:1.12;color:#714c2f;font-family:Consolas,"SFMono-Regular",Menlo,monospace;}
+    .v13-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px;}
+    .v13-cell{height:28px;border:1px solid #d7b990;background:#fff4e5;border-radius:7px;font-size:7.5px;color:#714c2f;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px;line-height:1.05;overflow:hidden;}
+    .prototype-note{font-size:11px;color:#6f553c;margin:8px 0 0;text-align:center;}
+    .naming-panel{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:#fff8ed;overflow:hidden;}
+    .naming-panel h4{margin:0;padding:9px 11px;background:#ead3b6;color:#4a3323;font-size:13px;}
+    .naming-row{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:9px 11px;border-top:1px solid #ead6bd;align-items:start;}
+    .naming-row strong{font-size:12px;color:#5d3b26;line-height:1.25;}
+    .naming-row code{display:inline-block;margin:0 4px 4px 0;font-size:11px;}
+    .ui-action-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+    .ui-action-btn{border:1px solid #cfa878;background:#fff2dc;border-radius:8px;font-size:9px;color:#6f4428;text-align:center;padding:4px 3px;font-family:Consolas,"SFMono-Regular",Menlo,monospace;}
+
+    .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+    .chip{border:1px solid #e1c6a6;background:#fff7ea;border-radius:999px;padding:5px 9px;font-size:12px;color:#6b4f38;font-weight:800;}
+    .component-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .component-card{border:1px solid #e4c9aa;background:#fff8ed;border-radius:15px;padding:12px;cursor:pointer;transition:.16s ease;min-height:104px;}
+    .component-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(44,33,23,.10);border-color:var(--brand2);}
+    .component-card strong{display:block;color:#5d3b26;margin-bottom:6px;}
+    .component-card code{display:inline-block;margin-top:6px;}
+    .notice{border-left:4px solid var(--brand);background:#fff4e5;border-radius:12px;padding:12px 14px;color:#6a4e37;}
+    .bad{border-left-color:var(--red);background:#fff0ee;}
+    .good{border-left-color:var(--green);background:#eef6e9;}
+    .two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .footer{margin-top:24px;color:var(--muted);font-size:12px;text-align:center;}
+    .empty{padding:20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px;background:#fff8ed;}
+    @media (max-width:1180px){.content-grid{grid-template-columns:1fr}.phone-card{position:static}.phone{max-width:320px}.component-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media (max-width:860px){.app{grid-template-columns:1fr;}aside{position:static;height:auto}.topbar{align-items:flex-start;flex-direction:column}.rule-grid,.two-col{grid-template-columns:1fr}.component-gallery{grid-template-columns:1fr}main{padding:16px}.hero h2{font-size:24px}}
+    @media print{aside,.topbar,.search{display:none}.app{display:block}main{padding:0}.phone-card{position:static}.card,.hero,.phone-card{box-shadow:none;break-inside:avoid}.content-grid{grid-template-columns:1fr}}
+
+    .showcase-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px;}
+    .showcase-head h3{margin:0;font-size:28px;line-height:1.2;color:#5b341d;}
+    .showcase-head p{margin:8px 0 0;color:#7b6651;font-size:13px;line-height:1.7;}
+    .showcase-badge{flex:0 0 auto;border:1px solid #dec2a0;background:#f7e8d4;color:#7a5131;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:800;box-shadow:0 2px 6px rgba(44,33,23,.06);}
+    .showcase-subnote{font-size:11px;color:#8a725a;text-align:center;margin-top:10px;}
+    .phone-showcase{max-width:312px;padding:8px;border-radius:34px;background:linear-gradient(180deg,#36261b,#241a14);box-shadow:0 18px 36px rgba(44,33,23,.18);}
+    .phone-screen-rich{position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(180deg,#f8ecd9 0%, #ead5b5 100%);padding:0;display:flex;flex-direction:column;gap:0;min-height:clamp(480px,80vh,645px);}
+    .mock-topbar{position:relative;background:linear-gradient(180deg,#b16d39,#93542c);padding:12px 12px 10px;border-bottom:2px solid rgba(141,75,40,.22);}
+    .mock-topbar .mock-title{text-align:center;color:#fff7ec;font-size:20px;font-weight:900;letter-spacing:.05em;line-height:1.1;}
+    .mock-topbar .mock-icons{position:absolute;left:10px;right:10px;top:12px;display:flex;justify-content:space-between;align-items:center;}
+    .mock-icon{width:24px;height:24px;border-radius:999px;background:#fff4e7;border:1px solid #dec2a0;color:#8d4b28;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;box-shadow:0 2px 4px rgba(44,33,23,.08);}
+    .mock-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden;}
+    .mock-card{position:relative;background:#f6ead7;border:1px solid #dcb98f;border-radius:14px;padding:9px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+    .mock-card.flat{background:#f4dfc0;}
+    .mock-node-badge{position:absolute;top:6px;right:7px;border:1px solid #dcb98f;background:#fff5e8;border-radius:999px;padding:2px 6px;font-size:8px;line-height:1.15;color:#875836;font-family:Consolas,"SFMono-Regular",Menlo,monospace;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .mock-card-title{font-size:11px;font-weight:900;color:#6b4227;margin-bottom:6px;padding-right:72px;line-height:1.2;}
+    .mock-section-title{font-size:11px;font-weight:900;color:#6b4227;margin-bottom:6px;padding-right:72px;line-height:1.2;}
+    .strict-table td{font-size:12px;}
+    .strict-table code{display:inline-block;margin:0 4px 4px 0;font-size:11px;}
+    .strict-badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 7px;font-size:11px;font-weight:900;}
+    .strict-badge.required{background:#eef6e9;color:#557a4b;border:1px solid #c8dfbd;}
+    .strict-badge.optional{background:#fff4e5;color:#8d4b28;border:1px solid #e1c6a6;}
+    .strict-badge.forbidden{background:#fff0ee;color:#a94a3b;border:1px solid #efc3bc;}
+    .mock-inline{display:flex;gap:6px;align-items:center;}
+    .mock-inline.between{justify-content:space-between;}
+    .mock-pill{flex:1;height:28px;border:1px solid #d8b58e;background:#fff8ed;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#6c472d;padding:0 8px;}
+    .mock-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #dbbb95;border-radius:11px;overflow:hidden;background:#efe0c7;}
+    .mock-tabs.four{grid-template-columns:repeat(4,1fr);} 
+    .mock-tab{height:30px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#835534;border-right:1px solid #dbc09b;background:#efdfc4;}
+    .mock-tab:last-child{border-right:none;}
+    .mock-tab.active{background:#9c5b30;color:#fff6ea;font-weight:900;}
+    .mock-list{display:flex;flex-direction:column;gap:8px;}
+    .mock-item{background:#fff8ef;border:1px solid #dec3a2;border-radius:12px;padding:8px;display:flex;gap:8px;align-items:center;position:relative;}
+    .mock-icon-box{width:28px;height:28px;border-radius:9px;background:linear-gradient(180deg,#efc582,#d6a15c);border:1px solid #c78b42;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#6a3f16;flex:0 0 auto;}
+    .mock-lines{flex:1;display:flex;flex-direction:column;gap:6px;}
+    .mock-line{height:7px;border-radius:999px;background:#d9b894;}
+    .mock-line.short{width:58%;}
+    .mock-line.mid{width:80%;}
+    .mock-progress{height:9px;border-radius:999px;background:#e7d6bf;border:1px solid #d7b48c;overflow:hidden;}
+    .mock-progress > span{display:block;height:100%;background:linear-gradient(90deg,#5b8748,#7dad60);}
+    .mock-btn{height:30px;min-width:54px;border-radius:10px;background:linear-gradient(180deg,#ba723c,#9b592f);color:#fff8ed;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 12px;box-shadow:0 2px 6px rgba(157,92,48,.18);}
+    .mock-btn.alt{background:linear-gradient(180deg,#cab49a,#b0997e);color:#fffef8;}
+    .mock-btn.light{background:linear-gradient(180deg,#fff7eb,#f0dcc1);color:#855631;border:1px solid #d5b590;box-shadow:none;}
+    .mock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+    .mock-grid.two{grid-template-columns:repeat(2,1fr);} 
+    .mock-cell{height:58px;border:1px solid #d8b58e;background:#fff7ea;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px;position:relative;overflow:hidden;}
+    .mock-cell .mini-icon{width:18px;height:18px;border-radius:6px;background:#e8c690;border:1px solid #ca9756;}
+    .mock-cell strong{font-size:10px;color:#6f472c;line-height:1;}
+    .mock-count{position:absolute;bottom:2px;right:3px;background:#2b2119;color:#fff;border-radius:999px;padding:1px 5px;font-size:8px;line-height:1.1;}
+    .mock-detail{display:flex;flex-direction:column;gap:6px;}
+    .mock-text-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#6f4b31;}
+    .mock-text-row strong{color:#56351f;}
+    .mock-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+    .mock-actions.two{grid-template-columns:repeat(2,1fr);} 
+    .mock-bottomnav{height:48px;margin-top:auto;background:#564131;color:#fff5eb;border-top:1px solid rgba(255,255,255,.15);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;}
+    .mock-bottomnav span{text-align:center;font-size:10px;opacity:.9;}
+    .mock-bottomnav span.active{font-weight:900;color:#fff;}
+    .mock-map{position:relative;height:230px;border:1px solid #d3af85;background:#dfbf98;border-radius:14px;overflow:hidden;}
+    .mock-map-node{position:absolute;width:42px;height:42px;border-radius:999px;border:2px solid #a55d31;background:#fff7ea;color:#7e4d2b;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+    .mock-map-node.gray{background:#cfc1af;border-color:#a69482;color:#fff;}
+    .mock-map-node.boss{background:#c85e4f;border-color:#8c2d28;color:#fff;}
+    .mock-search{display:flex;gap:6px;align-items:center;}
+    .mock-input{flex:1;height:30px;border-radius:999px;background:#fffdf8;border:1px solid #d8ba93;color:#9a866f;display:flex;align-items:center;padding:0 10px;font-size:10px;}
+    .mock-msglist{display:flex;flex-direction:column;gap:8px;height:250px;overflow:hidden;}
+    .mock-msg{display:flex;gap:6px;align-items:flex-start;}
+    .mock-avatar{width:28px;height:28px;border-radius:999px;background:linear-gradient(180deg,#e6c28b,#d19855);border:1px solid #b88042;flex:0 0 auto;}
+    .mock-bubble{max-width:74%;border-radius:12px;padding:7px 9px;font-size:10px;line-height:1.4;background:#fffaf1;border:1px solid #dcc5a6;color:#6b4d37;}
+    .mock-msg.self{justify-content:flex-end;}
+    .mock-msg.self .mock-bubble{background:#f3e0c6;}
+    .mock-inputbar{margin-top:auto;display:flex;gap:6px;align-items:center;background:#fff6ea;border-top:1px solid #e0c7a7;padding:8px 10px;}
+    .mock-channel-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+    .mock-channel{height:28px;border-radius:10px;background:#efdfc6;border:1px solid #ddbd97;display:flex;align-items:center;justify-content:center;font-size:10px;color:#7f5332;}
+    .mock-channel.active{background:#9b5a30;color:#fff;}
+    .mock-friend-item{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;border:1px solid #dec4a6;background:#fff8ef;border-radius:12px;padding:8px;}
+    .mock-status{font-size:9px;color:#5f8a4c;font-weight:900;}
+    .mock-cardpanel{display:flex;gap:8px;align-items:flex-start;}
+    .mock-playercard{border:1px solid #dec4a6;background:#fff8ef;border-radius:12px;padding:8px;display:flex;gap:8px;align-items:flex-start;}
+    .mock-figure{height:112px;border-radius:12px;border:1px solid #d9b891;background:linear-gradient(180deg,#f7ebd9,#ebd0ac);position:relative;display:flex;align-items:center;justify-content:center;}
+    .mock-silhouette{width:46px;height:74px;border-radius:24px 24px 16px 16px;background:#c69a64;opacity:.7;}
+    .mock-equip-slot{position:absolute;width:34px;height:34px;border-radius:10px;border:1px solid #c89455;background:#fff5e7;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7f5231;}
+    .slot-wpn{left:12px;top:12px}.slot-arm{right:12px;top:12px}.slot-acc{right:12px;bottom:12px}
+    .mock-slot-row{display:grid;grid-template-columns:1fr 20px 1fr;gap:8px;align-items:center;}
+    .mock-slot{height:72px;border:1px solid #cf9a58;background:#fff7eb;border-radius:14px;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;}
+    .mock-arrow{font-size:18px;color:#9c6236;font-weight:900;text-align:center;}
+    .mock-costbar{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid #dfc3a4;background:#fff8ef;border-radius:12px;padding:8px 10px;}
+    .mock-pbar{height:10px;border-radius:999px;background:#ead7bf;border:1px solid #d7b48c;overflow:hidden;}
+    .mock-pbar>span{display:block;height:100%;background:linear-gradient(90deg,#b97a38,#e3b05b);}
+    .mock-popup-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(86,60,38,.22);}
+    .mock-popup{width:86%;border-radius:18px;background:#fff7eb;border:1px solid #d8b58d;box-shadow:0 10px 24px rgba(44,33,23,.16);padding:10px;position:relative;display:flex;flex-direction:column;gap:8px;}
+    .mock-resource-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+    .mock-resource-chip{height:28px;border-radius:999px;border:1px solid #dcbf9b;background:#fffaf1;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6a472f;font-weight:900;}
+    .mock-small-tag{display:inline-block;background:#2b2119;color:#fff;border-radius:999px;padding:1px 5px;font-size:8px;line-height:1.2;}
+
+
+    .mock-reward-title{font-size:20px;font-weight:900;color:#fff5e8;text-align:center;text-shadow:0 2px 0 rgba(77,45,23,.25);}
+    .mock-reward-glow{height:78px;border-radius:18px;background:radial-gradient(circle at 50% 50%, rgba(255,214,118,.75), rgba(255,214,118,.18) 48%, transparent 72%);display:flex;align-items:center;justify-content:center;margin:4px 0;position:relative;}
+    .mock-reward-chest{width:62px;height:48px;border-radius:12px;background:linear-gradient(180deg,#e8b350,#a4632e);border:2px solid #7d4724;box-shadow:0 8px 18px rgba(126,73,31,.24);}
+    .mock-reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    .mock-reward-cell{height:68px;border:1px solid #d8b58e;background:#fff8ed;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;}
+    .mock-reward-cell .mini-icon{width:22px;height:22px;border-radius:7px;background:linear-gradient(180deg,#efc582,#d6a15c);border:1px solid #c78b42;}
+    .mock-reward-cell strong{font-size:10px;color:#6f472c;line-height:1;}
+    .mock-quality-frame{position:absolute;inset:4px;border:2px solid rgba(208,154,61,.55);border-radius:10px;pointer-events:none;}
+
+
+    .validator-panel{display:grid;grid-template-columns:1fr;gap:12px;}
+    .validator-input{width:100%;min-height:180px;border:1px solid var(--line);border-radius:14px;background:#fffaf2;color:#2c2117;padding:12px 14px;font-family:Consolas,"SFMono-Regular",Menlo,monospace;font-size:13px;line-height:1.55;resize:vertical;outline:none;}
+    .validator-input:focus{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(185,118,59,.14);}
+    .validator-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+    .validator-result{border:1px solid var(--line);border-radius:14px;background:#fff8ed;overflow:hidden;}
+    .validator-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+    .validator-stat{border:1px solid #e1c6a6;background:#fff7ea;border-radius:14px;padding:10px 12px;}
+    .validator-stat strong{display:block;font-size:20px;color:#5b351f;line-height:1.1;}
+    .validator-stat span{font-size:11px;color:#7b6651;}
+    .status-ok{color:#557a4b;font-weight:900;}
+    .status-warn{color:#b9763b;font-weight:900;}
+    .status-bad{color:#a94a3b;font-weight:900;}
+    .quick-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .quick-card{border:1px solid var(--line);background:#fff8ed;border-radius:16px;padding:12px;}
+    .quick-card h4{margin:0 0 8px;font-size:14px;color:#5b351f;}
+    .quick-card .tag-list{display:flex;flex-wrap:wrap;gap:6px;}
+    .quick-card code{font-size:11px;margin:0;}
+    .flow-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:step;}
+    .flow-step{position:relative;border:1px solid #e1c6a6;background:#fff7ea;border-radius:15px;padding:14px 12px 12px 38px;min-height:92px;}
+    .flow-step:before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:14px;width:18px;height:18px;border-radius:999px;background:#8d4b28;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;}
+    .flow-step strong{display:block;color:#5b351f;margin-bottom:4px;}
+    .flow-step span{font-size:12px;color:#7b6651;line-height:1.5;}
+    @media (max-width:1180px){.validator-summary,.flow-steps{grid-template-columns:repeat(2,minmax(0,1fr));}.quick-table{grid-template-columns:1fr;}}
+    @media (max-width:680px){.validator-summary,.flow-steps{grid-template-columns:1fr;}}
+
+  </style>
+</head>
+<body>
+<noscript><div style="background:#fff3cd;color:#856404;padding:16px;text-align:center;font-size:16px;">本页面依赖 JavaScript 渲染交互内容，请启用 JavaScript 后刷新页面。</div></noscript>
+<div class="app">
+  <aside role="navigation" aria-label="规范导航">
+    <div class="brand">
+      <h1>GUI 命名规范库</h1>
+      <p>按通用控件组件与游戏系统划分，点击左侧条目查看对应命名规则。</p>
+      <span class="version">HTML5 交互版 v2.9</span>
+    </div>
+    <input id="search" class="search" placeholder="搜索：任务 / 背包 / Btn / Toast..." aria-label="搜索规范条目" />
+    <div class="nav-title">规范总览</div>
+    <button class="nav-button active" data-type="overview" data-id="overview"><span>总览与总原则</span><span class="small">Overview</span></button>
+    <button class="nav-button" data-type="overview" data-id="base"><span>基础命名结构</span><span class="small">Base</span></button>
+    <button class="nav-button" data-type="overview" data-id="validator"><span>命名校验器</span><span class="small">Validator</span></button>
+    <button class="nav-button" data-type="overview" data-id="states"><span>状态后缀词典</span><span class="small">States</span></button>
+    <button class="nav-button" data-type="overview" data-id="folders"><span>目录与文件规范</span><span class="small">Folders</span></button>
+    <button class="nav-button" data-type="overview" data-id="crossrules"><span>跨系统调用规则</span><span class="small">Cross</span></button>
+    <button class="nav-button" data-type="overview" data-id="baum2"><span>PS导出适配 / Baum2</span><span class="small">Baum2</span></button>
+    <button class="nav-button" data-type="overview" data-id="badcases"><span>错误示例库</span><span class="small">Bad Cases</span></button>
+    <div class="nav-title">通用控件组件</div>
+    <div id="commonNav"></div>
+    <div class="nav-title">游戏系统</div>
+    <div id="systemNav"></div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <div class="mode-tabs">
+        <button class="mode-btn active" data-jump="overview">总览</button>
+        <button class="mode-btn" data-jump="common">通用控件组件</button>
+        <button class="mode-btn" data-jump="systems">游戏系统</button>
+        <button class="mode-btn" data-jump="baum2">PS导出适配</button>
+        <button class="mode-btn" data-jump="validator">命名校验</button>
+      </div>
+      <div class="hint">建议流程：先查通用组件，再查具体系统实例命名。</div>
+    </div>
+    <section id="detail"></section>
+    <div class="footer">GUI Naming Standard · v2.9 · 适用于 H5 / Unity / 手游竖屏界面研发交付</div>
+  </main>
+</div>
+<script>
+const COMMON = [
+  {
+    id:'titlebar', title:'标题栏组件', alias:'TitleBar', tag:'顶部导航',
+    desc:'用于所有窗口顶部区域，统一承载标题、关闭、返回、帮助、页签入口等控件。系统实例只改模块名，不改基础结构。',
+    formula:'UI_Common_TitleBar_[Name] / Panel_TitleBar / Txt_Title / Btn_Close / Btn_Back',
+    nodes:[['Panel_TitleBar','Panel','标题栏容器，固定在 SafeArea 顶部'],['Img_TitleBg','Image','标题底板或彩带背景'],['Txt_Title','Text','窗口标题文本'],['Btn_Back','Button','返回按钮，可选'],['Btn_Close','Button','关闭按钮，可选'],['Btn_Help','Button','帮助说明按钮，可选']],
+    examples:{prefab:['UI_Common_TitleBar_Default','UI_Common_TitleBar_WithBack','UI_Common_TitleBar_WithHelp'],sprite:['spr_common_titlebar_bg','icon_common_close','icon_common_back'],key:['ui.common.title.default','ui.common.btn.close','ui.common.btn.back'],event:['OnClickCommonClose()','OnClickCommonBack()','OnClickCommonHelp()']},
+    mock:['Panel_SafeArea','Panel_TitleBar','Txt_Title + Btn_Close + Btn_Back','Panel_Content'],
+    checklist:['标题栏组件必须位于 SafeArea 内。','关闭按钮统一命名为 Btn_Close，不使用 Btn_Exit / Btn_X。','系统标题文本使用 ui.[system].title，不直接写死。']
+  },
+  {
+    id:'button', title:'按钮组件', alias:'Button', tag:'操作入口',
+    desc:'用于确认、取消、领取、前往、购买、发送、合成、装备等交互动作。按钮命名必须体现动作语义。',
+    formula:'Btn_[Action] / UI_Common_Btn_[Style] / Txt_BtnLabel / Icon_Btn',
+    nodes:[['Btn_[Action]','Button','动作按钮根节点，如 Btn_Claim'],['Img_BtnBg','Image','按钮背景，可按 Normal/Disabled 切换'],['Txt_BtnLabel','Text','按钮文本'],['Icon_Btn','Image','按钮图标，可选'],['Effect_Click','Effect','点击反馈，可选']],
+    examples:{prefab:['UI_Common_Btn_Primary','UI_Common_Btn_Secondary','UI_Common_Btn_Danger'],sprite:['spr_common_btn_primary','spr_common_btn_disabled','icon_common_arrow'],key:['ui.common.btn.confirm','ui.common.btn.cancel','ui.common.btn.go'],event:['OnClickConfirm()','OnClickCancel()','OnClickGo()']},
+    mock:['Panel_BottomAction','Btn_Confirm','Txt_BtnLabel','Effect_Click'],
+    checklist:['按钮节点禁止命名 Btn_1 / Button / OKButton。','系统按钮必须使用业务动作，如 Btn_ClaimTask、Btn_ForgeStart。','禁用态只改状态后缀，不新建语义不清的按钮名。']
+  },
+  {
+    id:'tab', title:'页签组件', alias:'TabGroup', tag:'分类切换',
+    desc:'用于任务类型、背包分类、聊天频道、好友分类、装备部位等列表切换。页签组与页签项分层命名。',
+    formula:'Group_Tab_[Name] / Tab_[Category] / Txt_TabName / RedDot_Tab',
+    nodes:[['Group_Tab_[Name]','Group','页签组容器'],['Tab_[Category]','Button','单个页签项'],['Img_TabBg','Image','页签背景'],['Txt_TabName','Text','页签名称'],['RedDot_Tab','RedDot','页签红点，可选']],
+    examples:{prefab:['UI_Common_TabGroup_Top','UI_Common_TabGroup_Side','UI_Common_TabItem'],sprite:['spr_common_tab_on','spr_common_tab_off','spr_common_tab_side'],key:['ui.common.tab.all','ui.common.tab.daily','ui.common.tab.material'],event:['OnTabChanged(tabId)','OnClickTabDaily()','OnClickTabAll()']},
+    mock:['Group_Tab','Tab_All / Tab_Daily / Tab_Achievement','RedDot_Tab','Panel_Content'],
+    checklist:['页签组必须使用 Group_Tab_*。','页签项必须用业务分类命名，不使用 Tab_1/Tab_2。','红点挂在页签项下，统一 RedDot_Tab。']
+  },
+  {
+    id:'listitem', title:'列表项组件', alias:'ListItem', tag:'列表/滚动',
+    desc:'用于任务条目、好友条目、聊天消息、关卡条目、锻造配方等可重复对象。列表容器与条目 Prefab 必须分离。',
+    formula:'Scroll_[Name]List / Content_[Name]List / Item_[Name]',
+    nodes:[['Scroll_[Name]List','ScrollView','滚动列表根节点'],['Viewport_[Name]','Viewport','滚动遮罩区域'],['Content_[Name]List','Content','列表内容容器'],['Item_[Name]','Item','单个列表项实例'],['Btn_ItemClick','Button','条目点击热区，可选']],
+    examples:{prefab:['UI_Common_Item_ListBase','UI_Task_ItemQuest','UI_Social_ItemFriend'],sprite:['spr_common_list_item_bg','spr_common_list_selected'],key:['ui.common.list.empty','ui.common.list.loading'],event:['OnClickListItem(itemId)','OnListItemSelected(itemId)','RefreshList()']},
+    mock:['Scroll_MainList','Viewport_MainList','Content_MainList','Item_Row_001 / Item_Row_002'],
+    checklist:['列表容器和列表项不得同名。','动态生成项使用 Item_[业务名]，不要使用 prefab 名作为场景节点。','滚动容器统一 Scroll_ 前缀。']
+  },
+  {
+    id:'slot', title:'格子/槽位组件', alias:'SlotCell', tag:'道具/装备/卡牌',
+    desc:'用于背包格子、装备槽、材料槽、奖励格、卡牌槽。格子必须区分 Cell、Slot、Item 三类语义。',
+    formula:'Cell_[ItemType] / Slot_[EquipPart] / Icon_Item / Txt_Count / Frame_Quality',
+    nodes:[['Cell_[ItemType]','Cell','可重复展示格，如 Cell_ItemMaterial'],['Slot_[EquipPart]','Slot','固定槽位，如 Slot_Weapon'],['Frame_Quality','Image','品质框'],['Icon_Item','Image','物品图标'],['Txt_Count','Text','数量文本'],['Img_Selected','Image','选中态'],['RedDot_Cell','RedDot','可操作红点']],
+    examples:{prefab:['UI_Common_Cell_Item','UI_Common_Slot_Equip','UI_Common_Cell_Reward'],sprite:['spr_common_quality_common','spr_common_quality_rare','spr_common_slot_empty'],key:['ui.common.count.owned','ui.common.slot.empty'],event:['OnClickItemCell(itemId)','OnClickEquipSlot(part)','OnCellSelected(id)']},
+    mock:['Cell_ItemMaterial','Frame_Quality','Icon_Item','Txt_Count x128','RedDot_Cell'],
+    checklist:['Cell 表示列表格，Slot 表示固定槽位，Item 表示业务数据条目。','品质框统一 Frame_Quality。','数量文本统一 Txt_Count，不使用 Txt_Num。']
+  },
+  {
+    id:'reddot', title:'红点/角标组件', alias:'RedDot', tag:'状态提示',
+    desc:'用于可领取、可升级、未读、可合成、可锻造等提示。红点命名必须挂在具体宿主下。',
+    formula:'RedDot_[Host] / Badge_[Type] / Txt_BadgeNum',
+    nodes:[['RedDot_[Host]','RedDot','红点根节点，如 RedDot_TaskClaim'],['Badge_[Type]','Badge','数字角标或状态角标'],['Txt_BadgeNum','Text','角标数字'],['Img_BadgeBg','Image','角标背景']],
+    examples:{prefab:['UI_Common_RedDot','UI_Common_Badge_Num','UI_Common_Badge_New'],sprite:['spr_common_reddot','spr_common_badge_num','spr_common_badge_new'],key:['ui.common.badge.new','ui.common.badge.unread'],event:['RefreshRedDot(hostId)','SetBadgeNum(hostId,num)','ClearRedDot(hostId)']},
+    mock:['Btn_SystemEntry','RedDot_SystemEntry','Badge_Unread','Txt_BadgeNum'],
+    checklist:['红点禁止独立漂浮在窗口根节点下。','未读数用 Badge_Unread，不用 RedDot_Num。','红点逻辑变量应与宿主业务一致。']
+  },
+  {
+    id:'progress', title:'进度条组件', alias:'ProgressBar', tag:'进度/经验',
+    desc:'用于任务进度、关卡进度、经验、锻造进度、材料收集进度等。进度条文本、填充、背景必须分层。',
+    formula:'Bar_[Name]Progress / Img_BarBg / Img_BarFill / Txt_Progress',
+    nodes:[['Bar_[Name]Progress','ProgressBar','进度条根节点'],['Img_BarBg','Image','进度条背景'],['Img_BarFill','Image','进度条填充'],['Txt_Progress','Text','进度文本'],['Effect_Full','Effect','满进度提示，可选']],
+    examples:{prefab:['UI_Common_Bar_Progress','UI_Common_Bar_Exp','UI_Common_Bar_Timer'],sprite:['spr_common_bar_bg','spr_common_bar_fill_green','spr_common_bar_fill_gold'],key:['ui.common.progress.format','ui.common.progress.full'],event:['SetProgress(value,max)','OnProgressFull()','RefreshProgressText()']},
+    mock:['Bar_TaskProgress','Img_BarBg','Img_BarFill 70%','Txt_Progress 7/10'],
+    checklist:['进度条根节点使用 Bar_*Progress。','填充图片统一 Img_BarFill。','文本格式走本地化 Key，不在代码拼死。']
+  },
+  {
+    id:'input', title:'输入框组件', alias:'InputField', tag:'聊天/搜索/命名',
+    desc:'用于聊天输入、搜索、玩家改名、群聊命名等输入场景。输入根节点和发送/清除按钮必须分开。',
+    formula:'Input_[Name] / Txt_Placeholder / Txt_Input / Btn_Clear / Btn_Send',
+    nodes:[['Input_[Name]','InputField','输入框根节点'],['Img_InputBg','Image','输入背景'],['Txt_Placeholder','Text','占位文本'],['Txt_Input','Text','输入内容'],['Btn_Clear','Button','清空按钮，可选'],['Btn_Send','Button','发送按钮，可选']],
+    examples:{prefab:['UI_Common_Input_Normal','UI_Common_Input_Search','UI_Common_Input_Chat'],sprite:['spr_common_input_bg','icon_common_search','icon_common_clear'],key:['ui.common.input.placeholder','ui.chat.input.placeholder','ui.social.search.placeholder'],event:['OnInputChanged(text)','OnClickInputClear()','OnClickSend()']},
+    mock:['Input_ChatMessage','Txt_Placeholder','Txt_Input','Btn_Send'],
+    checklist:['输入框统一 Input_ 前缀。','聊天发送按钮不挂在输入框内部逻辑里，节点可同层。','搜索输入使用 Input_Search，不使用 Txt_Search。']
+  },
+  {
+    id:'popup', title:'弹窗组件', alias:'Popup', tag:'确认/提示',
+    desc:'用于确认、二次确认、奖励展示、道具详情、系统提示等。弹窗必须有遮罩、内容面板和关闭路径。',
+    formula:'Popup_[Name] / Mask_Blocker / Panel_Popup / Btn_Confirm / Btn_Cancel',
+    nodes:[['Popup_[Name]','Popup','弹窗根节点'],['Mask_Blocker','Mask','遮罩层'],['Panel_Popup','Panel','弹窗主体'],['Txt_Title','Text','弹窗标题'],['Txt_Desc','Text','说明文本'],['Btn_Confirm','Button','确认按钮'],['Btn_Cancel','Button','取消按钮'],['Btn_Close','Button','关闭按钮']],
+    examples:{prefab:['UI_Common_Popup_Confirm','UI_Common_Popup_Reward','UI_Common_Popup_Tips'],sprite:['spr_common_popup_bg','spr_common_mask_dark','icon_common_close'],key:['ui.common.popup.confirm.title','ui.common.popup.cancel','ui.common.popup.ok'],event:['OpenPopup(popupId)','OnClickPopupConfirm()','OnClickPopupCancel()']},
+    mock:['Mask_Blocker','Panel_Popup','Txt_Title','Txt_Desc','Btn_Confirm / Btn_Cancel'],
+    checklist:['弹窗根节点使用 Popup_*，不要使用 Window_*。','遮罩统一 Mask_Blocker。','关闭、取消、确认三种行为必须语义分明。']
+  },
+  {
+    id:'toast', title:'Toast/飘字组件', alias:'Toast', tag:'轻提示',
+    desc:'用于获得奖励、材料不足、功能未解锁、发送成功等轻量反馈。Toast 不属于业务窗口。',
+    formula:'Toast_[Type] / Txt_Toast / Icon_Toast',
+    nodes:[['Toast_[Type]','Toast','Toast 根节点'],['Panel_ToastBg','Panel','Toast 背景'],['Icon_Toast','Image','提示图标，可选'],['Txt_Toast','Text','提示文本'],['Anim_ToastInOut','Animation','入场出场动画']],
+    examples:{prefab:['UI_Common_Toast_Normal','UI_Common_Toast_Error','UI_Common_Toast_Reward'],sprite:['spr_common_toast_bg','icon_common_success','icon_common_error'],key:['ui.common.toast.not_enough','ui.common.toast.success','ui.common.toast.locked'],event:['ShowToast(key)','ShowErrorToast(key)','ShowRewardToast(itemId,count)']},
+    mock:['Toast_Normal','Icon_Toast','Txt_Toast','Anim_ToastInOut'],
+    checklist:['Toast 不进入系统窗口层级。','错误提示统一 Toast_Error。','文本必须走本地化 Key。']
+  },
+  {
+    id:'empty', title:'空状态组件', alias:'EmptyState', tag:'无数据',
+    desc:'用于暂无任务、背包为空、好友为空、材料不足、无聊天消息等状态。空状态要放在内容区内。',
+    formula:'State_Empty_[Name] / Icon_Empty / Txt_EmptyDesc / Btn_EmptyAction',
+    nodes:[['State_Empty_[Name]','State','空状态根节点'],['Icon_Empty','Image','空状态图标'],['Txt_EmptyDesc','Text','说明文本'],['Btn_EmptyAction','Button','引导按钮，可选']],
+    examples:{prefab:['UI_Common_State_Empty','UI_Common_State_Locked','UI_Common_State_Loading'],sprite:['icon_common_empty','icon_common_locked','icon_common_loading'],key:['ui.common.empty.default','ui.bag.empty','ui.social.friend.empty'],event:['ShowEmptyState(type)','HideEmptyState()','OnClickEmptyAction()']},
+    mock:['Panel_Content','State_Empty_Bag','Icon_Empty','Txt_EmptyDesc'],
+    checklist:['空状态不得替代列表容器。','空状态命名必须带业务场景。','可跳转按钮使用 Btn_EmptyAction。']
+  },
+  {
+    id:'resource', title:'资源消耗组组件', alias:'CostGroup', tag:'货币/材料',
+    desc:'用于金币、钻石、材料、体力、锻造消耗、合成消耗等展示。资源图标、数量、缺口状态必须分层。',
+    formula:'Group_Cost_[Name] / Item_Cost / Icon_Currency / Txt_CostCount',
+    nodes:[['Group_Cost_[Name]','Group','消耗组容器'],['Item_Cost','Item','单个消耗项'],['Icon_Currency','Image','货币或材料图标'],['Txt_CostCount','Text','消耗数量'],['Txt_NotEnough','Text','不足提示，可选']],
+    examples:{prefab:['UI_Common_Group_Cost','UI_Common_Item_Cost','UI_Common_ResourceBar'],sprite:['icon_currency_gold','icon_currency_diamond','spr_common_cost_bg'],key:['ui.common.cost.enough','ui.common.cost.not_enough','ui.common.cost.owned'],event:['RefreshCostGroup(costList)','OnCostNotEnough(itemId)','OpenResourceTip(itemId)']},
+    mock:['Group_Cost_Forge','Item_Cost_Gold','Icon_Currency','Txt_CostCount 120/200'],
+    checklist:['消耗组统一 Group_Cost_*。','货币图标不要使用 Icon_Item。','不足态不能只靠颜色，需有状态命名或文本。']
+  },
+  {
+    id:'avatar', title:'头像组件', alias:'Avatar', tag:'玩家/好友',
+    desc:'用于玩家信息、好友列表、聊天头像、社交名片等。头像框、头像、等级、在线态分开命名。',
+    formula:'Avatar_[Role] / Frame_Avatar / Icon_Avatar / Txt_Level / State_Online',
+    nodes:[['Avatar_[Role]','Avatar','头像组件根节点'],['Frame_Avatar','Image','头像框'],['Icon_Avatar','Image','头像图'],['Txt_Level','Text','等级文本'],['State_Online','State','在线状态'],['Badge_Vip','Badge','VIP角标，可选']],
+    examples:{prefab:['UI_Common_Avatar_Player','UI_Common_Avatar_Friend','UI_Common_Avatar_Chat'],sprite:['spr_common_avatar_frame','icon_avatar_default','spr_common_online'],key:['ui.common.avatar.level','ui.social.online','ui.social.offline'],event:['OnClickAvatar(playerId)','RefreshAvatar(data)','SetOnlineState(isOnline)']},
+    mock:['Avatar_Friend','Frame_Avatar','Icon_Avatar','Txt_Level Lv.12','State_Online'],
+    checklist:['头像组件根节点使用 Avatar_*。','头像框不得命名为 Bg。','在线状态统一 State_Online。']
+  }
+];
+
+const SYSTEMS = [
+  {
+    id:'task', title:'任务系统', alias:'Task', tag:'任务/奖励/进度',
+    desc:'承载每日任务、主线任务、成就任务、任务详情、奖励领取与跳转执行。命名核心是区分任务类型、任务条目、奖励格与操作按钮。',
+    formula:'Window_TaskMain / Panel_Task[Type] / Item_TaskQuest / Cell_TaskReward / Btn_Task[Action]',
+    nodes:[['Window_TaskMain','Window','任务主窗口'],['Group_Tab_TaskType','TabGroup','任务类型页签组'],['Tab_TaskDaily','Tab','每日任务页签'],['Scroll_TaskList','ScrollView','任务列表'],['Content_TaskList','Content','任务列表内容容器'],['Item_TaskQuest','Item','任务条目'],['Bar_TaskProgress','ProgressBar','任务进度条'],['Cell_TaskReward','Cell','任务奖励格'],['Btn_TaskGo','Button','前往执行按钮'],['Btn_TaskClaim','Button','领取奖励按钮'],['State_Empty_Task','EmptyState','暂无任务空状态']],
+    examples:{prefab:['UI_TaskMain_View','UI_Task_ItemQuest','UI_Task_CellReward','UI_Task_PopupReward'],sprite:['spr_task_panel_bg','icon_task_daily','icon_task_main','spr_task_progress_fill'],key:['ui.task.title','ui.task.tab.daily','ui.task.btn.go','ui.task.btn.claim','ui.task.empty'],event:['OnClickTaskTab(taskType)','OnClickTaskGo(taskId)','OnClickTaskClaim(taskId)','RefreshTaskProgress(taskId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_TaskMain','Group_Tab_TaskType','Scroll_TaskList + Item_TaskQuest','Panel_BottomAction: Btn_TaskClaim'],
+    checklist:['任务类型页签必须使用 TaskType 后缀。','任务奖励格使用 Cell_TaskReward，不使用 Item_Reward。','跳转执行按钮统一 Btn_TaskGo。','可领取红点挂在 Btn_TaskClaim 或 Tab_TaskDaily 下。']
+  },
+  {
+    id:'bag', title:'背包系统', alias:'Bag', tag:'背包/分类/道具详情',
+    desc:'承载道具、装备、材料、碎片等物品列表与详情操作。命名核心是区分背包分类、物品格、详情面板、使用/出售/跳转按钮。',
+    formula:'Window_BagMain / Group_Tab_BagType / Grid_BagItem / Cell_BagItem / Panel_ItemDetail',
+    nodes:[['Window_BagMain','Window','背包主窗口'],['Group_Tab_BagType','TabGroup','背包分类页签'],['Tab_BagAll','Tab','全部分类'],['Tab_BagMaterial','Tab','材料分类'],['Scroll_BagGrid','ScrollView','背包格子滚动区'],['Grid_BagItem','Grid','背包物品网格'],['Cell_BagItem','Cell','背包物品格'],['Panel_ItemDetail','Panel','道具详情面板'],['Btn_ItemUse','Button','使用按钮'],['Btn_ItemSell','Button','出售按钮'],['State_Empty_Bag','EmptyState','背包为空状态']],
+    examples:{prefab:['UI_BagMain_View','UI_Bag_CellItem','UI_Bag_PanelItemDetail','UI_Bag_PopupSell'],sprite:['spr_bag_panel_bg','icon_bag_all','icon_bag_material','spr_bag_cell_selected'],key:['ui.bag.title','ui.bag.tab.all','ui.bag.btn.use','ui.bag.btn.sell','ui.bag.empty'],event:['OnClickBagTab(bagType)','OnClickBagItem(itemUid)','OnClickItemUse(itemUid)','OnClickItemSell(itemUid)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_BagMain','Group_Tab_BagType','Grid_BagItem + Cell_BagItem','Panel_ItemDetail + Btn_ItemUse'],
+    checklist:['背包物品格统一 Cell_BagItem。','固定装备槽不要放在背包系统中命名为 Slot_Bag。','详情面板使用 Panel_ItemDetail，可被道具材料系统复用。','背包分类页签使用 BagType。']
+  },
+  {
+    id:'level', title:'关卡系统', alias:'Level', tag:'章节/关卡/战斗入口',
+    desc:'承载章节列表、关卡选择、关卡详情、掉落预览、Boss入口、扫荡/出征。命名核心是区分章节、关卡、波次、Boss与掉落。',
+    formula:'Window_LevelSelect / Item_Chapter / Item_LevelStage / Panel_LevelDetail / Btn_LevelStart',
+    nodes:[['Window_LevelSelect','Window','关卡选择窗口'],['Scroll_ChapterList','ScrollView','章节列表'],['Item_Chapter','Item','章节条目'],['Scroll_LevelList','ScrollView','关卡列表'],['Item_LevelStage','Item','关卡条目'],['Panel_LevelDetail','Panel','关卡详情面板'],['Group_DropPreview','Group','掉落预览组'],['Cell_LevelDrop','Cell','关卡掉落格'],['Btn_LevelStart','Button','开始关卡按钮'],['Btn_BossEnter','Button','Boss入口按钮']],
+    examples:{prefab:['UI_LevelSelect_View','UI_Level_ItemChapter','UI_Level_ItemStage','UI_Level_CellDrop'],sprite:['spr_level_map_bg','icon_level_boss','icon_level_locked','spr_level_stage_passed'],key:['ui.level.title','ui.level.btn.start','ui.level.btn.boss','ui.level.drop.title','ui.level.locked'],event:['OnClickChapter(chapterId)','OnClickLevelStage(levelId)','OnClickLevelStart(levelId)','OnClickBossEnter(chapterId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_LevelSelect','Scroll_ChapterList','Scroll_LevelList + Item_LevelStage','Panel_LevelDetail + Btn_LevelStart'],
+    checklist:['关卡条目使用 Item_LevelStage，不使用 Item_Level。','Boss入口单独命名 Btn_BossEnter。','掉落预览使用 Group_DropPreview + Cell_LevelDrop。','章节与关卡 ID 不混用。']
+  },
+  {
+    id:'chat', title:'聊天系统', alias:'Chat', tag:'频道/私聊/输入',
+    desc:'承载世界频道、联盟频道、系统广播、私聊、群聊、消息输入与发送。命名核心是区分频道、消息项、输入区、未读角标。',
+    formula:'Window_ChatMain / Group_Tab_ChatChannel / Item_ChatMessage / Input_ChatMessage / Btn_ChatSend',
+    nodes:[['Window_ChatMain','Window','聊天主窗口'],['Group_Tab_ChatChannel','TabGroup','频道页签组'],['Tab_ChatWorld','Tab','世界频道'],['Tab_ChatPrivate','Tab','私聊频道'],['Scroll_ChatMessage','ScrollView','消息滚动区'],['Content_ChatMessage','Content','消息内容容器'],['Item_ChatMessage','Item','聊天消息条目'],['Avatar_ChatSender','Avatar','发送者头像'],['Input_ChatMessage','Input','聊天输入框'],['Btn_ChatSend','Button','发送按钮'],['Badge_ChatUnread','Badge','未读角标']],
+    examples:{prefab:['UI_ChatMain_View','UI_Chat_ItemMessageSelf','UI_Chat_ItemMessageOther','UI_Chat_InputBar'],sprite:['spr_chat_bubble_self','spr_chat_bubble_other','icon_chat_world','icon_chat_private'],key:['ui.chat.title','ui.chat.channel.world','ui.chat.input.placeholder','ui.chat.btn.send','ui.chat.mute'],event:['OnClickChatChannel(channelId)','OnClickChatSend()','OnReceiveChatMessage(msgId)','OnClickChatPlayer(playerId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_ChatMain','Group_Tab_ChatChannel','Scroll_ChatMessage + Item_ChatMessage','Input_ChatMessage + Btn_ChatSend'],
+    checklist:['频道统一使用 ChatChannel。','消息项使用 Item_ChatMessage，不使用 Txt_Message 作为根节点。','输入框使用 Input_ChatMessage。','未读数使用 Badge_ChatUnread。']
+  },
+  {
+    id:'social', title:'社交系统', alias:'Social', tag:'好友/申请/名片',
+    desc:'承载好友列表、好友申请、搜索玩家、玩家名片、私聊入口、删除好友等。命名核心是区分好友条目、申请条目、玩家名片与社交动作。',
+    formula:'Window_SocialMain / Group_Tab_SocialType / Item_Friend / Panel_PlayerCard / Btn_PrivateChat',
+    nodes:[['Window_SocialMain','Window','社交主窗口'],['Group_Tab_SocialType','TabGroup','社交分类页签'],['Tab_SocialFriend','Tab','好友页签'],['Tab_SocialApply','Tab','申请页签'],['Input_PlayerSearch','Input','玩家搜索输入框'],['Scroll_FriendList','ScrollView','好友列表'],['Item_Friend','Item','好友条目'],['Item_FriendApply','Item','好友申请条目'],['Avatar_Friend','Avatar','好友头像'],['Panel_PlayerCard','Panel','玩家名片'],['Btn_AddFriend','Button','添加好友按钮'],['Btn_PrivateChat','Button','私聊按钮']],
+    examples:{prefab:['UI_SocialMain_View','UI_Social_ItemFriend','UI_Social_ItemFriendApply','UI_Social_PanelPlayerCard'],sprite:['icon_social_friend','icon_social_apply','spr_social_card_bg','icon_social_chat'],key:['ui.social.title','ui.social.tab.friend','ui.social.btn.add','ui.social.btn.private_chat','ui.social.friend.empty'],event:['OnClickFriend(playerId)','OnClickAddFriend(playerId)','OnClickPrivateChat(playerId)','OnClickAcceptApply(applyId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_SocialMain','Group_Tab_SocialType + Input_PlayerSearch','Scroll_FriendList + Item_Friend','Panel_PlayerCard + Btn_PrivateChat'],
+    checklist:['好友条目使用 Item_Friend。','好友申请使用 Item_FriendApply，不与好友条目共名。','私聊入口统一 Btn_PrivateChat。','玩家搜索输入框使用 Input_PlayerSearch。']
+  },
+  {
+    id:'forge', title:'锻造系统', alias:'Forge', tag:'打造/强化/材料消耗',
+    desc:'承载装备打造、强化、升阶、配方、材料消耗和成功反馈。命名核心是区分配方、材料槽、消耗组、锻造结果。',
+    formula:'Window_ForgeMain / Scroll_ForgeRecipe / Item_ForgeRecipe / Slot_ForgeMaterial / Group_Cost_Forge / Btn_ForgeStart',
+    nodes:[['Window_ForgeMain','Window','锻造主窗口'],['Group_Tab_ForgeType','TabGroup','锻造类型页签'],['Scroll_ForgeRecipe','ScrollView','锻造配方列表'],['Item_ForgeRecipe','Item','锻造配方条目'],['Panel_ForgePreview','Panel','锻造预览面板'],['Slot_ForgeTarget','Slot','目标装备槽'],['Slot_ForgeMaterial','Slot','材料槽'],['Group_Cost_Forge','CostGroup','锻造消耗组'],['Btn_ForgeStart','Button','开始锻造按钮'],['Popup_ForgeResult','Popup','锻造结果弹窗']],
+    examples:{prefab:['UI_ForgeMain_View','UI_Forge_ItemRecipe','UI_Forge_SlotMaterial','UI_Forge_PopupResult'],sprite:['spr_forge_panel_bg','icon_forge_weapon','icon_forge_armor','spr_forge_slot_material'],key:['ui.forge.title','ui.forge.btn.start','ui.forge.material.not_enough','ui.forge.result.success','ui.forge.recipe.empty'],event:['OnClickForgeRecipe(recipeId)','OnClickForgeStart(recipeId)','OnForgeResult(resultId)','RefreshForgeCost(recipeId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_ForgeMain','Scroll_ForgeRecipe + Item_ForgeRecipe','Panel_ForgePreview + Slot_ForgeMaterial','Group_Cost_Forge + Btn_ForgeStart'],
+    checklist:['锻造材料使用 Slot_ForgeMaterial。','消耗组统一 Group_Cost_Forge。','锻造结果使用 Popup_ForgeResult。','配方条目使用 Item_ForgeRecipe。']
+  },
+  {
+    id:'cardmerge', title:'卡牌合成系统', alias:'CardMerge', tag:'卡牌/碎片/升星',
+    desc:'承载卡牌选择、同卡合成、碎片合成、升星预览与合成结果。命名核心是区分来源卡、目标卡、材料卡、合成按钮。',
+    formula:'Window_CardMergeMain / Slot_CardSource / Slot_CardTarget / Cell_CardMaterial / Btn_CardMerge',
+    nodes:[['Window_CardMergeMain','Window','卡牌合成主窗口'],['Group_Tab_CardMergeType','TabGroup','合成类型页签'],['Panel_CardMergePreview','Panel','合成预览区'],['Slot_CardSource','Slot','来源卡槽'],['Slot_CardTarget','Slot','目标卡槽'],['Grid_CardMaterial','Grid','材料卡网格'],['Cell_CardMaterial','Cell','材料卡格'],['Bar_CardMergeProgress','ProgressBar','碎片合成进度'],['Btn_CardMerge','Button','合成按钮'],['Popup_CardMergeResult','Popup','合成结果弹窗']],
+    examples:{prefab:['UI_CardMergeMain_View','UI_CardMerge_CellMaterial','UI_CardMerge_SlotCard','UI_CardMerge_PopupResult'],sprite:['spr_cardmerge_panel_bg','spr_card_frame_rare','icon_cardmerge_arrow','spr_cardmerge_slot_empty'],key:['ui.cardmerge.title','ui.cardmerge.btn.merge','ui.cardmerge.material.not_enough','ui.cardmerge.result.title','ui.cardmerge.empty'],event:['OnClickCardSource(cardUid)','OnSelectCardMaterial(cardUid)','OnClickCardMerge()','OnCardMergeResult(resultId)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_CardMergeMain','Slot_CardSource → Slot_CardTarget','Grid_CardMaterial + Cell_CardMaterial','Btn_CardMerge'],
+    checklist:['卡牌槽位使用 Slot_CardSource / Slot_CardTarget。','材料卡格使用 Cell_CardMaterial。','合成按钮统一 Btn_CardMerge。','结果弹窗使用 Popup_CardMergeResult。']
+  },
+  {
+    id:'equip', title:'装备系统', alias:'Equip', tag:'装备/部位/属性',
+    desc:'承载角色装备、装备槽位、装备详情、穿戴/卸下/替换、属性对比。命名核心是区分装备槽、背包装备格、详情属性与操作按钮。',
+    formula:'Window_EquipMain / Slot_Equip[Part] / Cell_EquipItem / Panel_EquipDetail / Btn_EquipWear',
+    nodes:[['Window_EquipMain','Window','装备主窗口'],['Panel_CharacterPreview','Panel','角色预览区'],['Group_EquipSlot','Group','装备槽位组'],['Slot_EquipWeapon','Slot','武器槽'],['Slot_EquipArmor','Slot','防具槽'],['Slot_EquipAccessory','Slot','饰品槽'],['Scroll_EquipList','ScrollView','可装备列表'],['Cell_EquipItem','Cell','装备物品格'],['Panel_EquipDetail','Panel','装备详情面板'],['Row_EquipAttr','Row','属性行'],['Btn_EquipWear','Button','穿戴按钮'],['Btn_EquipRemove','Button','卸下按钮']],
+    examples:{prefab:['UI_EquipMain_View','UI_Equip_SlotPart','UI_Equip_CellItem','UI_Equip_RowAttr'],sprite:['spr_equip_panel_bg','icon_equip_weapon','icon_equip_armor','spr_equip_slot_empty'],key:['ui.equip.title','ui.equip.btn.wear','ui.equip.btn.remove','ui.equip.attr.attack','ui.equip.empty'],event:['OnClickEquipSlot(part)','OnClickEquipItem(equipUid)','OnClickEquipWear(equipUid)','OnClickEquipRemove(part)']},
+    mock:['Panel_SafeArea','Panel_TitleBar: Window_EquipMain','Panel_CharacterPreview + Group_EquipSlot','Scroll_EquipList + Cell_EquipItem','Panel_EquipDetail + Btn_EquipWear'],
+    checklist:['固定装备部位必须使用 Slot_Equip[Part]。','装备列表格使用 Cell_EquipItem。','属性行统一 Row_EquipAttr。','穿戴和卸下按钮语义分开。']
+  },
+  {
+    id:'itemmaterial', title:'道具材料系统', alias:'ItemMaterial', tag:'道具/材料/来源',
+    desc:'承载道具详情、材料详情、来源跳转、合成材料、掉落来源与获取路径。命名核心是区分道具、材料、来源条目与跳转动作。',
+    formula:'Popup_ItemDetail / Cell_Material / Item_Source / Btn_GotoSource / Txt_OwnCount',
+    nodes:[['Popup_ItemDetail','Popup','道具详情弹窗'],['Panel_ItemInfo','Panel','道具信息区'],['Frame_ItemQuality','Image','道具品质框'],['Icon_Item','Image','道具图标'],['Txt_ItemName','Text','道具名称'],['Txt_ItemDesc','Text','道具描述'],['Txt_OwnCount','Text','拥有数量'],['Group_MaterialNeed','Group','所需材料组'],['Cell_Material','Cell','材料格'],['Scroll_SourceList','ScrollView','来源列表'],['Item_Source','Item','来源条目'],['Btn_GotoSource','Button','前往来源按钮']],
+    examples:{prefab:['UI_Item_PopupDetail','UI_Item_CellMaterial','UI_Item_ItemSource','UI_Item_GroupMaterialNeed'],sprite:['spr_item_detail_bg','spr_item_quality_rare','icon_item_source_level','icon_item_source_shop'],key:['ui.item.detail.title','ui.item.owned.count','ui.item.source.title','ui.item.btn.goto','ui.material.not_enough'],event:['OpenItemDetail(itemId)','OnClickMaterial(materialId)','OnClickGotoSource(sourceId)','RefreshOwnedCount(itemId)']},
+    mock:['Mask_Blocker','Popup_ItemDetail','Panel_ItemInfo + Icon_Item','Group_MaterialNeed + Cell_Material','Scroll_SourceList + Btn_GotoSource'],
+    checklist:['道具详情统一 Popup_ItemDetail。','材料格使用 Cell_Material。','来源条目使用 Item_Source。','前往来源按钮统一 Btn_GotoSource。']
+  },
+
+  {
+    id:'rewardpopup', title:'获得奖励弹窗系统', alias:'RewardPopup', tag:'奖励/结算/领取反馈',
+    desc:'承载任务奖励、关卡结算奖励、活动奖励、邮件奖励、宝箱奖励等获得反馈。命名核心是区分弹窗根节点、奖励标题、奖励列表、奖励格、品质框、数量文本、确认/再次领取/分享按钮。',
+    formula:'Popup_RewardGet / Panel_RewardContent / Grid_RewardItem / Cell_RewardItem / Btn_RewardConfirm',
+    nodes:[['Popup_RewardGet','Popup','获得奖励弹窗根节点'],['Mask_Blocker','Mask','弹窗遮罩层'],['Panel_RewardContent','Panel','奖励弹窗主体容器'],['Img_RewardTitleBg','Image','奖励标题底板'],['Txt_RewardTitle','Text','奖励标题文本，如 获得奖励'],['Effect_RewardGlow','Effect','奖励光效或宝箱光效'],['Grid_RewardItem','Grid','奖励道具网格'],['Cell_RewardItem','Cell','单个奖励格'],['Frame_RewardQuality','Image','奖励品质框'],['Icon_RewardItem','Image','奖励图标'],['Txt_RewardCount','Text','奖励数量'],['Txt_RewardName','Text','奖励名称，可选'],['Btn_RewardConfirm','Button','确认按钮'],['Btn_RewardAgain','Button','再次领取/再来一次按钮，可选'],['Btn_RewardShare','Button','分享按钮，可选']],
+    examples:{prefab:['UI_Reward_PopupGet','UI_Reward_CellItem','UI_Reward_PanelSummary','UI_Reward_EffectGlow'],sprite:['spr_reward_popup_bg','spr_reward_title_bg','spr_reward_quality_rare','icon_reward_chest'],key:['ui.reward.title.get','ui.reward.btn.confirm','ui.reward.btn.again','ui.reward.empty','ui.reward.source.task'],event:['OpenRewardPopup(rewardGroupId)','OnClickRewardConfirm()','OnClickRewardAgain()','PlayRewardGetEffect(rewardItems)']},
+    mock:['Mask_Blocker','Popup_RewardGet','Panel_RewardContent','Grid_RewardItem + Cell_RewardItem','Btn_RewardConfirm'],
+    checklist:['奖励弹窗根节点统一使用 Popup_RewardGet。','奖励道具格统一使用 Cell_RewardItem，不使用 Cell_Item 或 Cell_Gift 混写。','品质框统一 Frame_RewardQuality，数量文本统一 Txt_RewardCount。','奖励来源通过 RewardSource 或 reward_group_id 区分，不写进弹窗节点名。','确认按钮统一 Btn_RewardConfirm；再次领取用 Btn_RewardAgain，不使用 Btn_Again / Btn_Continue。']
+  }
+];
+
+
+const COMPONENT_LAYOUTS = {
+  titlebar:{type:'组件原型 / 顶部标题栏', window:'UI_Common_TitleBar_Default', note:'标题栏组件在所有系统中作为顶部通用区域复用；系统实例只替换标题 Key 和可用按钮。', sections:[
+    {label:'手机安全区', node:'Panel_SafeArea', size:'xs', kind:'window-head', tokens:['SafeArea_Top']},
+    {label:'标题栏根节点', node:'Panel_TitleBar / UI_Common_TitleBar_Default', size:'md', kind:'detail', tokens:['Img_TitleBg','Txt_Title','Btn_Back','Btn_Close','Btn_Help']},
+    {label:'标题栏下方内容占位', node:'Panel_Content_Placeholder', size:'fill', kind:'content', items:['系统内容区从这里开始，例如 Panel_TaskContent / Panel_BagContent']}
+  ]},
+  button:{type:'组件原型 / 操作按钮', window:'UI_Common_Btn_Primary', note:'按钮组件右侧展示的是按钮在竖屏底部操作区的典型落位；实例命名必须替换成具体业务动作。', sections:[
+    {label:'窗口内容占位', node:'Panel_Content', size:'fill', kind:'content', items:['业务内容区域','按钮通常出现在底部、列表项右侧或弹窗操作区']},
+    {label:'底部操作区', node:'Panel_BottomAction', size:'md', kind:'action', tokens:['Btn_Confirm','Btn_Cancel','Btn_Go']},
+    {label:'按钮内部结构', node:'Btn_[Action] / UI_Common_Btn_Primary', size:'sm', kind:'detail', tokens:['Img_BtnBg','Icon_Btn','Txt_BtnLabel','Effect_Click']}
+  ]},
+  tab:{type:'组件原型 / 分类页签', window:'UI_Common_TabGroup_Top', note:'页签组件用于系统分类切换；页签项必须使用业务分类名，不允许 Tab_1 / Tab_2。', sections:[
+    {label:'标题栏', node:'Panel_TitleBar', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close']},
+    {label:'页签组', node:'Group_Tab_[Name] / UI_Common_TabGroup_Top', size:'md', kind:'tabs', tokens:['Tab_All','Tab_Daily','Tab_Material','RedDot_Tab']},
+    {label:'页签内容区', node:'Panel_TabContent', size:'fill', kind:'content', items:['Content_TabAll','Content_TabDaily','State_Empty_Tab']}
+  ]},
+  listitem:{type:'组件原型 / 滚动列表', window:'UI_Common_Item_ListBase', note:'列表项组件用于重复条目；Scroll、Content、Item 三层必须分开命名。', sections:[
+    {label:'筛选/页签区', node:'Group_Tab_Filter', size:'sm', kind:'tabs', tokens:['Tab_All','Tab_CanUse']},
+    {label:'滚动列表', node:'Scroll_[Name]List → Viewport_[Name] → Content_[Name]List', size:'fill', kind:'content', items:['Item_[Name]_001：Btn_ItemClick / Txt_Name','Item_[Name]_002：Icon_Item / Txt_Count','Item_[Name]_003：RedDot_Item']},
+    {label:'列表空状态', node:'State_Empty_[Name]', size:'sm', kind:'detail', tokens:['Icon_Empty','Txt_EmptyTips']}
+  ]},
+  slot:{type:'组件原型 / 格子与槽位', window:'UI_Common_Cell_Item / UI_Common_Slot_Equip', note:'Cell 表示可重复格子，Slot 表示固定槽位，Item 表示业务数据，不允许混用。', sections:[
+    {label:'格子网格', node:'Grid_ItemCell', size:'fill', kind:'content', cells:['Cell_Item','Frame_Quality','Icon_Item','Txt_Count','RedDot_Cell','Img_Selected','State_Locked','Effect_New']},
+    {label:'固定槽位组', node:'Group_Slot', size:'md', kind:'detail', tokens:['Slot_Weapon','Slot_Armor','Slot_Material','Slot_Target']},
+    {label:'选中详情', node:'Panel_ItemDetail', size:'md', kind:'action', tokens:['Txt_ItemName','Btn_Use','Btn_Goto']}
+  ]},
+  reddot:{type:'组件原型 / 红点角标', window:'UI_Common_RedDot', note:'红点必须挂在具体宿主节点下，不能作为独立浮层随意摆放。', sections:[
+    {label:'系统入口按钮', node:'Btn_SystemEntry', size:'md', kind:'detail', tokens:['Icon_System','Txt_SystemName','RedDot_SystemEntry']},
+    {label:'页签红点', node:'Tab_Target → RedDot_Tab', size:'sm', kind:'tabs', tokens:['Tab_TaskDaily','RedDot_Tab','Badge_Unread']},
+    {label:'格子红点', node:'Cell_Target → RedDot_Cell', size:'fill', kind:'content', cells:['Cell_Item','RedDot_Cell','Badge_New','Txt_BadgeNum']}
+  ]},
+  progress:{type:'组件原型 / 进度条', window:'UI_Common_Bar_Progress', note:'进度条必须拆分背景、填充和文本，任务、经验、锻造、碎片进度都按同一结构实例化。', sections:[
+    {label:'进度标题区', node:'Panel_ProgressHeader', size:'sm', kind:'window-head', tokens:['Txt_ProgressTitle','Txt_ProgressValue']},
+    {label:'进度条主体', node:'Bar_[Name]Progress / UI_Common_Bar_Progress', size:'md', kind:'detail', tokens:['Img_BarBg','Img_BarFill','Txt_Progress','Effect_Full']},
+    {label:'关联奖励/操作', node:'Panel_ProgressReward', size:'fill', kind:'content', cells:['Cell_Reward','Btn_Claim','State_Locked','RedDot_Claim']}
+  ]},
+  input:{type:'组件原型 / 输入框', window:'UI_Common_Input_Chat', note:'输入框用于聊天、搜索、命名等；输入内容、占位文本、清除、发送按钮必须分层。', sections:[
+    {label:'内容流区域', node:'Scroll_ContentBeforeInput', size:'fill', kind:'content', items:['聊天消息 / 搜索结果 / 命名说明']},
+    {label:'输入栏', node:'Input_[Name] / UI_Common_Input_Chat', size:'md', kind:'inputbar', tokens:['Img_InputBg','Txt_Placeholder','Txt_Input','Btn_Clear','Btn_Send']},
+    {label:'输入反馈', node:'Panel_InputTips', size:'sm', kind:'action', tokens:['Txt_LimitCount','Toast_InputInvalid']}
+  ]},
+  popup:{type:'组件原型 / 弹窗', window:'UI_Common_Popup_Confirm', note:'弹窗必须包含遮罩、主体、标题、内容和关闭路径；确认、取消、关闭三个语义不能混。', sections:[
+    {label:'遮罩层', node:'Mask_Blocker', size:'xs', kind:'window-head', tokens:['PopupLayer']},
+    {label:'弹窗主体', node:'Popup_[Name] → Panel_Popup', size:'xl', kind:'popup-area', items:['Txt_Title / Btn_Close','Txt_Desc / Icon_Tips','Cell_Reward / Group_Cost']},
+    {label:'弹窗操作区', node:'Panel_PopupAction', size:'sm', kind:'action', tokens:['Btn_Confirm','Btn_Cancel','Btn_Close']}
+  ]},
+  toast:{type:'组件原型 / 轻提示', window:'UI_Common_Toast_Normal', note:'Toast 是轻反馈，不属于业务窗口；常用于获得道具、材料不足、操作成功等短提示。', sections:[
+    {label:'业务窗口占位', node:'Window_Current', size:'fill', kind:'content', items:['当前任意系统界面']},
+    {label:'Toast 浮层', node:'Toast_[Type] / UI_Common_Toast_Normal', size:'md', kind:'popup-area', tokens:['Panel_ToastBg','Icon_Toast','Txt_Toast','Anim_ToastInOut']}
+  ]},
+  empty:{type:'组件原型 / 空状态', window:'UI_Common_State_Empty', note:'空状态必须绑定具体内容区域，不作为整屏默认图层；文案使用业务 Key。', sections:[
+    {label:'筛选/页签区', node:'Group_Tab_Filter', size:'sm', kind:'tabs', tokens:['Tab_All','Tab_CanClaim']},
+    {label:'空状态区域', node:'State_Empty_[Name] / UI_Common_State_Empty', size:'fill', kind:'content', tokens:['Icon_Empty','Txt_EmptyTips','Btn_EmptyAction']},
+    {label:'底部操作区', node:'Panel_BottomAction', size:'sm', kind:'action', tokens:['Btn_Refresh','Btn_Goto']}
+  ]},
+  resource:{type:'组件原型 / 资源消耗组', window:'UI_Common_Group_Cost', note:'资源消耗组用于金币、钻石、材料、体力等消耗展示；不足态必须有独立状态命名。', sections:[
+    {label:'内容/预览区', node:'Panel_ResultPreview', size:'fill', kind:'content', items:['目标道具 / 装备 / 合成结果预览']},
+    {label:'消耗资源组', node:'Group_Cost_[Name] / UI_Common_Group_Cost', size:'md', kind:'detail', tokens:['Item_CostCurrency','Icon_Cost','Txt_CostCount','State_CostEnough','State_CostLack']},
+    {label:'确认操作', node:'Panel_BottomAction', size:'sm', kind:'action', tokens:['Btn_ConfirmCost','Btn_GotoSource']}
+  ]},
+  avatar:{type:'组件原型 / 玩家头像', window:'UI_Common_Avatar_Player', note:'头像组件通常用于好友、聊天、排行榜、玩家名片；头像、头像框、等级、在线态必须分开。', sections:[
+    {label:'头像列表项', node:'Item_PlayerRow', size:'md', kind:'detail', tokens:['Avatar_Player','Frame_Avatar','Txt_PlayerName','State_Online']},
+    {label:'玩家名片', node:'Panel_PlayerCard', size:'fill', kind:'content', items:['Avatar_PlayerLarge / Frame_Avatar','Txt_PlayerLevel / Txt_PlayerPower','Btn_AddFriend / Btn_PrivateChat']},
+    {label:'头像状态标识', node:'Badge_AvatarState', size:'sm', kind:'action', tokens:['State_Online','State_Offline','Badge_Vip','RedDot_Avatar']}
+  ]}
+};
+
+
+const SYSTEM_LAYOUTS = {
+  task:{type:'主窗口 / 任务列表', window:'Window_TaskMain', note:'任务系统应突出任务分类、任务列表、任务进度、奖励格与领取/前往按钮，不能使用单纯列表模板。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_TaskMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close','Btn_Help']},
+    {label:'任务分类页签', node:'Group_Tab_TaskType', size:'sm', kind:'tabs', tokens:['Tab_TaskDaily','Tab_TaskMain','Tab_TaskAchievement','RedDot_Tab']},
+    {label:'任务列表内容区', node:'Scroll_TaskList → Content_TaskList', size:'fill', kind:'content', items:['Item_TaskQuest_001：Txt_TaskName / Bar_TaskProgress','Cell_TaskReward：Frame_Quality / Icon_Item / Txt_Count','Btn_TaskGo / Btn_TaskClaim / RedDot_TaskClaim']},
+    {label:'底部操作区', node:'Panel_BottomAction', size:'sm', kind:'action', tokens:['Btn_ClaimAll','Btn_RefreshTask','Txt_ResetTime']}
+  ]},
+  bag:{type:'主窗口 / 格子 + 详情', window:'Window_BagMain', note:'背包系统应以分类页签、物品网格、右/下方详情和使用/出售按钮为核心，不能显示成任务列表结构。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_BagMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close']},
+    {label:'背包分类页签', node:'Group_Tab_BagType', size:'sm', kind:'tabs', tokens:['Tab_BagAll','Tab_BagEquip','Tab_BagMaterial','Tab_BagFragment']},
+    {label:'背包物品网格', node:'Scroll_BagGrid → Grid_BagItem', size:'xl', kind:'content', cells:['Cell_BagItem','Frame_Quality','Icon_Item','Txt_Count','RedDot_Cell']},
+    {label:'道具详情与操作', node:'Panel_ItemDetail', size:'lg', kind:'detail', items:['Txt_ItemName / Txt_ItemDesc / Txt_OwnCount','Btn_ItemUse / Btn_ItemSell / Btn_GotoSource']}
+  ]},
+  level:{type:'主窗口 / 章节关卡', window:'Window_LevelSelect', note:'关卡系统应体现章节、关卡列表、关卡详情、掉落预览和出征按钮，不应只显示通用内容区。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_LevelSelect', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Back','Btn_Close']},
+    {label:'章节选择', node:'Scroll_ChapterList → Item_Chapter', size:'sm', kind:'tabs', tokens:['Item_Chapter01','Item_Chapter02','State_ChapterLocked']},
+    {label:'关卡列表 / 地图节点', node:'Scroll_LevelList → Item_LevelStage', size:'fill', kind:'content', items:['Item_LevelStage：Txt_StageName / Star_Level / Btn_LevelSelect','Item_LevelBoss：Icon_Boss / State_Locked / RedDot_Level']},
+    {label:'关卡详情与掉落', node:'Panel_LevelDetail + Group_DropPreview', size:'lg', kind:'detail', items:['Txt_LevelName / Txt_RecommendPower','Cell_LevelDrop_001 / Cell_LevelDrop_002','Btn_LevelStart / Btn_LevelSweep']}
+  ]},
+  chat:{type:'主窗口 / 消息流', window:'Window_ChatMain', note:'聊天系统底部应是输入栏和发送按钮，中间是消息流；不应套用普通底部操作按钮结构。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_ChatMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close','Badge_ChatUnread']},
+    {label:'频道页签', node:'Group_Tab_ChatChannel', size:'sm', kind:'tabs', tokens:['Tab_ChatWorld','Tab_ChatGuild','Tab_ChatPrivate','Tab_ChatSystem']},
+    {label:'聊天消息流', node:'Scroll_ChatMessage → Content_ChatMessage', size:'chat', kind:'content', items:['Item_ChatMessageOther：Avatar_ChatSender / Txt_Message','Item_ChatMessageSelf：Txt_Message / Time_Chat','Item_SystemBroadcast：Txt_Broadcast']},
+    {label:'输入发送栏', node:'Input_ChatMessage + Btn_ChatSend', size:'sm', kind:'inputbar', tokens:['Btn_Emoji','Input_ChatMessage','Btn_ChatSend']}
+  ]},
+  social:{type:'主窗口 / 好友与名片', window:'Window_SocialMain', note:'社交系统应包含好友分类、玩家搜索、好友/申请列表和玩家名片，不应与聊天系统共用消息流结构。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_SocialMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close']},
+    {label:'社交分类 + 搜索', node:'Group_Tab_SocialType + Input_PlayerSearch', size:'md', kind:'tabs', tokens:['Tab_SocialFriend','Tab_SocialApply','Input_PlayerSearch']},
+    {label:'好友 / 申请列表', node:'Scroll_FriendList → Content_FriendList', size:'fill', kind:'content', items:['Item_Friend：Avatar_Friend / Txt_PlayerName / State_Online','Item_FriendApply：Btn_AcceptApply / Btn_RejectApply']},
+    {label:'玩家名片与社交动作', node:'Panel_PlayerCard', size:'lg', kind:'detail', items:['Avatar_Player / Txt_PlayerPower / Txt_GuildName','Btn_AddFriend / Btn_PrivateChat / Btn_DeleteFriend']}
+  ]},
+  forge:{type:'主窗口 / 配方锻造', window:'Window_ForgeMain', note:'锻造系统应突出配方选择、目标装备、材料槽、消耗组和开始锻造按钮，不应只展示通用列表。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_ForgeMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close','Btn_Help']},
+    {label:'锻造类型页签', node:'Group_Tab_ForgeType', size:'sm', kind:'tabs', tokens:['Tab_ForgeWeapon','Tab_ForgeArmor','Tab_ForgeUpgrade']},
+    {label:'配方列表', node:'Scroll_ForgeRecipe → Item_ForgeRecipe', size:'lg', kind:'content', items:['Item_ForgeRecipe：Icon_Result / Txt_RecipeName / State_CanForge','RedDot_ForgeRecipe']},
+    {label:'锻造预览与材料', node:'Panel_ForgePreview', size:'xl', kind:'detail', items:['Slot_ForgeTarget：Icon_Equip / Frame_Quality','Slot_ForgeMaterial_01 / Slot_ForgeMaterial_02','Group_Cost_Forge：Icon_Currency / Txt_CostCount','Btn_ForgeStart']}
+  ]},
+  cardmerge:{type:'主窗口 / 卡牌合成', window:'Window_CardMergeMain', note:'卡牌合成系统应展示来源卡、目标卡、材料卡格、碎片进度和合成按钮，不能只显示材料列表。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_CardMergeMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close','Btn_Help']},
+    {label:'合成类型页签', node:'Group_Tab_CardMergeType', size:'sm', kind:'tabs', tokens:['Tab_CardSame','Tab_CardFragment','Tab_CardStarUp']},
+    {label:'合成预览区', node:'Panel_CardMergePreview', size:'lg', kind:'detail', items:['Slot_CardSource → Icon_Arrow → Slot_CardTarget','Bar_CardMergeProgress / Txt_Progress']},
+    {label:'材料卡选择网格', node:'Grid_CardMaterial → Cell_CardMaterial', size:'fill', kind:'content', cells:['Cell_CardMaterial','Frame_CardQuality','Icon_Card','Txt_CardCount','Img_Selected']},
+    {label:'合成操作', node:'Panel_BottomAction', size:'sm', kind:'action', tokens:['Group_Cost_CardMerge','Btn_CardMerge']}
+  ]},
+  equip:{type:'主窗口 / 装备穿戴', window:'Window_EquipMain', note:'装备系统应显示角色预览、固定装备槽、可装备列表、装备详情和穿戴/卸下按钮。', sections:[
+    {label:'安全区 / 标题栏', node:'Panel_SafeArea → Panel_TitleBar / Window_EquipMain', size:'xs', kind:'window-head', tokens:['Txt_Title','Btn_Close']},
+    {label:'角色预览与装备槽', node:'Panel_CharacterPreview + Group_EquipSlot', size:'xl', kind:'detail', items:['Slot_EquipWeapon / Slot_EquipArmor / Slot_EquipAccessory','Txt_CharacterPower / Btn_AutoEquip']},
+    {label:'可装备列表', node:'Scroll_EquipList → Cell_EquipItem', size:'fill', kind:'content', cells:['Cell_EquipItem','Frame_Quality','Icon_Equip','Txt_Level','Img_Selected']},
+    {label:'装备详情与操作', node:'Panel_EquipDetail', size:'lg', kind:'action', items:['Row_EquipAttr：Txt_AttrName / Txt_AttrValue','Btn_EquipWear / Btn_EquipRemove / Btn_EquipForge']}
+  ]},
+  itemmaterial:{type:'详情弹窗 / 来源跳转', window:'Popup_ItemDetail', note:'道具材料系统通常以详情弹窗出现，应体现遮罩、道具信息、所需材料、来源列表和前往来源按钮。', sections:[
+    {label:'遮罩层', node:'Mask_Blocker', size:'xs', kind:'window-head', tokens:['PopupLayer']},
+    {label:'道具详情弹窗', node:'Popup_ItemDetail → Panel_ItemInfo', size:'lg', kind:'popup-area', items:['Frame_ItemQuality / Icon_Item','Txt_ItemName / Txt_ItemDesc / Txt_OwnCount']},
+    {label:'所需材料组', node:'Group_MaterialNeed → Cell_Material', size:'md', kind:'detail', cells:['Cell_Material','Icon_Item','Txt_Count','State_NotEnough']},
+    {label:'来源列表', node:'Scroll_SourceList → Item_Source', size:'fill', kind:'content', items:['Item_Source_Level：Txt_SourceName / Btn_GotoSource','Item_Source_Shop：Icon_Source / State_Locked']},
+    {label:'弹窗操作', node:'Panel_PopupAction', size:'sm', kind:'action', tokens:['Btn_GotoSource','Btn_Close']}
+  ]},
+
+  rewardpopup:{type:'弹窗 / 奖励获得反馈', window:'Popup_RewardGet', note:'获得奖励弹窗应突出奖励标题、光效、奖励物品网格、奖励数量和确认操作。它通常被任务、关卡、邮件、活动、宝箱等系统调用，但弹窗自身作为独立通用业务系统维护。', sections:[
+    {label:'遮罩层', node:'Mask_Blocker', size:'xs', kind:'window-head', tokens:['PopupLayer','Mask_Blocker']},
+    {label:'奖励弹窗主体', node:'Popup_RewardGet → Panel_RewardContent', size:'lg', kind:'popup-area', items:['Img_RewardTitleBg / Txt_RewardTitle','Effect_RewardGlow / Icon_RewardChest']},
+    {label:'奖励物品网格', node:'Grid_RewardItem → Cell_RewardItem', size:'fill', kind:'content', cells:['Cell_RewardItem','Frame_RewardQuality','Icon_RewardItem','Txt_RewardCount','Txt_RewardName']},
+    {label:'奖励操作区', node:'Panel_RewardAction', size:'sm', kind:'action', tokens:['Btn_RewardConfirm','Btn_RewardAgain','Btn_RewardShare']}
+  ]},
+
+};
+
+const OVERVIEW = {
+  overview:{
+    title:'总览与总原则', alias:'Overview', tag:'交互式规范库',
+    desc:'本版本将文档重构为“通用控件组件”和“游戏系统”两大类。通用组件定义可复用控件的标准结构；游戏系统定义具体业务界面的实例命名规则。v2.9 在 v2.8 基础上新增 Baum2 / PS 到 Unity 自动化导出适配层，并进一步收紧“PS 图层命名、Unity 最终节点命名、状态映射、导出参数、必需节点、禁止节点和校验器误判规则”。点击系统或组件时，右侧仍以手机界面原型卡片展示结构，同时在界面中标出关键节点命名，并在图下方保留命名清单。',
+    formula:'[控件前缀]_[业务模块]_[语义名称]_[状态/编号]',
+    mock:['Panel_SafeArea','Panel_TitleBar','Group_Tab / ResourceBar','Panel_Content','Panel_BottomAction'],
+    nodes:[['Window','完整界面窗口','如 Window_TaskMain'],['Popup','弹窗','如 Popup_ItemDetail'],['Panel','区域容器','如 Panel_ItemDetail'],['Group','控件组合','如 Group_Cost_Forge'],['Scroll/Grid','列表或网格','如 Scroll_BagGrid'],['Item/Cell/Slot','重复条目/格子/固定槽','如 Item_TaskQuest / Cell_BagItem / Slot_EquipWeapon'],['Btn/Txt/Icon/Img','基础控件','如 Btn_Claim / Txt_Title / Icon_Item / Img_Bg']],
+    examples:{prefab:['UI_[System]Main_View','UI_Common_[Component]_[Style]','UI_[System]_Item[Name]'],sprite:['spr_[system]_[name]_[state]','icon_[system]_[name]','fx_ui_[system]_[action]'],key:['ui.[system].title','ui.[system].btn.[action]','ui.[system].[module].[state]'],event:['OnClick[System][Action]()','On[System]TabChanged()','Refresh[System]View()']},
+    checklist:['先确定对象是通用控件还是系统实例。','系统实例允许复用通用组件，但节点名必须带业务语义。','禁止 Button1、Image2、New Text、Panel01 等默认命名。','窗口、弹窗、列表项、格子、槽位不可混用。']
+  },
+  base:{
+    title:'基础命名结构', alias:'Base', tag:'全局规则',
+    desc:'所有 GUI 命名必须遵循“类型前缀 + 系统/模块 + 语义 + 状态/编号”的结构。前缀用于识别控件类型，系统名用于识别业务归属，语义用于识别用途，状态/编号用于区分变体。',
+    formula:'Type_System_Name_State_Index，例如 Btn_TaskClaim_Disabled 或 Cell_BagItem_001',
+    mock:['Window_[System]Main','Panel_[Module]','Group_[Feature]','Item/Cell/Slot_[Name]','Btn/Txt/Icon_[Action]'],
+    nodes:[['类型前缀','必须','Window、Popup、Panel、Group、Scroll、Grid、Item、Cell、Slot、Btn、Txt、Icon、Img、Bar、Input、RedDot'],['系统名','必须','Task、Bag、Level、Chat、Social、Forge、CardMerge、Equip、ItemMaterial'],['语义名','必须','Claim、Reward、Material、Stage、PrivateChat、ForgeStart'],['状态名','可选','Normal、Selected、Disabled、Locked、Empty、Unread、Claimable'],['编号','可选','001、002、Lv01、Chapter01、Stage01']],
+    examples:{prefab:['UI_TaskMain_View','UI_Bag_CellItem','UI_Common_Popup_Confirm'],sprite:['spr_task_item_bg_normal','icon_bag_material','spr_common_btn_primary'],key:['ui.task.btn.claim','ui.bag.empty','ui.common.popup.confirm'],event:['OnClickTaskClaim(taskId)','OnClickBagItem(itemUid)','OnClickPopupConfirm()']},
+    checklist:['英文使用 PascalCase 或 snake_case，不能中英混排。','场景节点使用 PascalCase，资源文件使用 snake_case。','业务系统名保持唯一，不同系统不得共用含糊模块名。','状态后缀必须来自状态表，不允许随意创建近义词。']
+  }
+  ,validator:{
+    title:'命名校验器', alias:'Validator', tag:'检查/纠错/交付前自检',
+    desc:'用于在交付前快速检查 GUI 节点、Prefab、资源、本地化 Key、事件名是否存在默认命名、中文命名、大小写错误、前缀不合法、系统名缺失、状态后缀混乱等问题。输入一行一个名称，点击检查即可得到建议。',
+    formula:'输入待检查名称 → 识别类型前缀 / 命名风格 / 系统归属 / 禁止词 / 状态后缀 → 输出通过、警告或错误',
+    mock:['Textarea_NamingInput','Btn_RunNamingCheck','Table_NamingResult','Group_PrefixQuickRef','Panel_DeliveryChecklist'],
+    nodes:[['Textarea_NamingInput','Input','待检查命名输入区，一行一个名称'],['Btn_RunNamingCheck','Button','执行命名检查'],['Btn_LoadSampleNames','Button','载入示例'],['Table_NamingResult','Table','检查结果表格'],['Group_PrefixQuickRef','Group','前缀速查表'],['Group_SystemCodeQuickRef','Group','系统英文名速查表'],['Panel_DeliveryChecklist','Panel','交付检查流程']],
+    examples:{prefab:['UI_TaskMain_View','UI_Reward_PopupGet','UI_Common_Btn_Primary'],sprite:['spr_reward_popup_bg','icon_bag_material','fx_ui_reward_get_glow'],key:['ui.reward.title.get','ui.task.btn.claim','ui.common.toast.not_enough'],event:['OnClickRewardConfirm()','OnClickTaskClaim(taskId)','RefreshBagView()']},
+    checklist:['提交前必须检查是否存在 Button、Image、Text、Panel、New Text 等默认命名。','场景节点使用 PascalCase；资源文件使用 snake_case；本地化 Key 使用小写点分隔。','业务系统实例必须带系统语义，如 Task、Bag、Level、Reward。','Cell、Slot、Item 不得混用：Cell 是网格格子，Slot 是固定槽位，Item 是列表条目。','状态后缀必须使用统一词表，如 Normal、Selected、Disabled、Locked、Empty、Unread、Claimable。']
+  }
+  ,states:{
+    title:'状态后缀词典', alias:'States', tag:'状态/变体/后缀',
+    desc:'用于统一 GUI 节点、资源、动画和样式状态后缀。状态后缀只能表达 UI 状态或业务状态，不允许把临时备注、策划说明、中文含义写进节点名。',
+    formula:'[BaseName]_[State]，例如 Btn_Claim_Disabled / Tab_TaskDaily_Selected / Cell_Reward_Claimable',
+    mock:['Normal / Selected / Disabled','Locked / Unlocked','Empty / Loading / Loaded','Unread / Read','Claimable / Claimed'],
+    nodes:[['Normal','默认态','控件或资源的默认可用状态'],['Selected','选中态','页签、列表项、格子的当前选中状态'],['Disabled','禁用态','按钮不可点击或条件未满足'],['Locked','锁定态','功能、关卡、槽位未解锁'],['Empty','空状态','列表、网格、消息流没有内容'],['Unread','未读态','聊天、邮件、社交申请等未读状态'],['Claimable','可领取态','任务、奖励、宝箱可领取'],['Claimed','已领取态','奖励已领取，不可重复领取'],['Equipped','已装备','装备或卡牌已穿戴/上阵'],['Insufficient','不足态','材料、货币、道具数量不足']],
+    examples:{prefab:['UI_Common_Btn_Primary_Disabled','UI_Task_ItemQuest_Claimable','UI_Equip_SlotWeapon_Empty'],sprite:['spr_common_btn_primary_disabled','spr_tab_selected','spr_slot_locked'],key:['ui.common.state.locked','ui.reward.state.claimable','ui.material.state.insufficient'],event:['SetButtonState(Disabled)','RefreshCellState(Claimable)','ShowStateEmpty()']},
+    checklist:['状态后缀必须来自统一词典，不得自造 Enable、Unable、CanGet、NoOpen 等近义词。','状态后缀只放在末尾，不插在系统名和语义名之间。','资源状态使用小写 snake_case，如 spr_btn_primary_disabled。','同一个组件的状态集合必须完整：Normal、Selected、Disabled 至少覆盖常规交互。']
+  },
+  folders:{
+    title:'目录与文件规范', alias:'Folders', tag:'目录/Prefab/资源/本地化',
+    desc:'用于统一 H5 / Unity 项目内 GUI 文件目录、Prefab、图片、图标、动效、音效、本地化和脚本绑定文件的存放方式，避免资源散落和同名冲突。系统英文名与本地化域名允许存在映射，但必须显式声明，例如 RewardPopup 系统使用 ui.reward.* 域名。',
+    formula:'Assets/UI/[System]/[Type]/[FileName] 或 ui/[system]/[type]/[file_name]',
+    mock:['Assets/UI/Common/Prefab','Assets/UI/Task/Sprite','Assets/UI/RewardPopup/FX','Localization/ui.reward.json','Scripts/UI/RewardPopup'],
+    nodes:[['Common','通用组件目录','标题栏、按钮、弹窗、Toast、红点、头像等复用组件'],['System','业务系统目录','Task、Bag、Level、Chat、Social、Forge、CardMerge、Equip、ItemMaterial、RewardPopup'],['Prefab','界面或组件预制体','UI_TaskMain_View、UI_Reward_PopupGet'],['Sprite','界面背景和切图','spr_task_panel_bg、spr_reward_popup_bg'],['Icon','功能入口和物品图标','icon_chat_world、icon_reward_chest'],['FX','界面特效','fx_ui_reward_get_glow'],['Audio','UI音效','audio_ui_reward_get'],['Localization','本地化文件','ui.reward.json、ui.task.json；RewardPopup → ui.reward.*'],['ScriptBinding','脚本绑定','TaskMainView、RewardPopupView']],
+    examples:{prefab:['Assets/UI/Task/Prefab/UI_TaskMain_View.prefab','Assets/UI/RewardPopup/Prefab/UI_Reward_PopupGet.prefab','Assets/UI/Common/Prefab/UI_Common_Btn_Primary.prefab'],sprite:['Assets/UI/RewardPopup/Sprite/spr_reward_popup_bg.png','Assets/UI/Bag/Icon/icon_bag_material.png','Assets/UI/Common/Sprite/spr_common_mask_dark.png'],key:['Localization/ui.reward.json','Localization/ui.task.json','Localization/ui.common.json'],event:['Scripts/UI/RewardPopup/RewardPopupView.cs','Scripts/UI/Task/TaskMainView.cs','Scripts/UI/Common/CommonButton.cs']},
+    checklist:['目录名使用系统英文名，不使用中文目录或临时目录。','Prefab、Sprite、Icon、FX、Audio 必须分目录，不混放。','Common 目录只放真正可跨系统复用的组件。','业务系统专属资源不得放入 Common。','同名资源必须通过系统名前缀区分。']
+  },
+  crossrules:{
+    title:'跨系统调用规则', alias:'CrossRules', tag:'系统边界/复用/跳转',
+    desc:'用于规范任务、背包、材料、装备、锻造、奖励弹窗等系统之间的调用关系。跨系统调用时，界面节点归属保持在被调用系统内，来源信息用参数或数据字段表达，不写进节点名。',
+    formula:'调用方只传 source / reward_group_id / item_id；被调用方保持自身命名，如 Popup_RewardGet 不写 Popup_TaskRewardGet',
+    mock:['Task → RewardPopup','Level → RewardPopup','Bag → ItemMaterial','Equip → Forge','ItemMaterial → Level / Shop'],
+    nodes:[['任务领取奖励','Task → RewardPopup','任务系统只触发奖励弹窗，不把奖励弹窗节点命名为 TaskRewardPopup'],['关卡结算奖励','Level → RewardPopup','关卡奖励统一调用 Popup_RewardGet，通过 source=level 区分'],['背包查看材料','Bag → ItemMaterial','背包格点击打开 Popup_ItemDetail，详情弹窗不归属 Bag'],['装备跳转锻造','Equip → Forge','装备详情里的 Btn_EquipForge 跳转 Window_ForgeMain'],['材料来源跳转','ItemMaterial → Level/Shop/Forge','来源条目 Item_Source 负责跳转，不改目标系统节点名'],['聊天跳转玩家名片','Chat → Social','聊天头像 Avatar_ChatSender 点击打开 Panel_PlayerCard'],['社交进入私聊','Social → Chat','Btn_PrivateChat 打开 Chat 私聊频道，聊天窗口仍叫 Window_ChatMain']],
+    examples:{prefab:['Popup_RewardGet，而不是 Popup_TaskRewardGet','Popup_ItemDetail，而不是 Popup_BagItemDetail','Window_ForgeMain，而不是 Window_EquipForge'],sprite:['spr_reward_popup_bg','spr_item_detail_bg','spr_forge_panel_bg'],key:['ui.reward.source.task','ui.item.source.level','ui.chat.channel.private'],event:['OpenRewardPopup(source,rewardGroupId)','OpenItemDetail(itemId,source)','OpenChatPrivate(playerId)']},
+    checklist:['跨系统复用时，节点名归属被调用系统，不归属调用方。','来源、参数、入口类型写入数据字段，不写入 UI 节点名。','Common 组件可以复用，但系统实例节点必须改为业务语义。','跳转按钮应表达当前系统动作，如 Btn_EquipForge、Btn_GotoSource、Btn_PrivateChat。']
+  },
+  baum2:{
+    title:'PS导出适配 / Baum2', alias:'Baum2', tag:'PSD / Photoshop / Unity 自动生成',
+    desc:'用于把 Photoshop 图层命名、Baum2 识别规则和本 GUI 命名规范连接起来。PS 图层层使用 ui_ 前缀和 snake_case 便于 Baum2 自动识别；Unity 最终节点仍使用 Window_、Panel_、Btn_、Txt_、Cell_、Slot_ 等 PascalCase 业务命名。Baum2 是导出工具层，不替代项目 GUI 命名规范。',
+    formula:'PS 图层：ui_[type]_[system]_[semantic]_[state]@layout → Unity 节点：Type_System_Semantic_State',
+    mock:['ui_btn_task_claim_normal@center → Btn_TaskClaim','ui_txt_title@center → Txt_Title','ui_panel_reward_content@stretchxy → Panel_RewardContent','ui_glg_reward_item → Grid_RewardItem'],
+    nodes:[['PS 图层命名','snake_case','使用 ui_ 前缀，匹配 BaumMapping.json 的控件映射'],['Unity 节点命名','PascalCase','使用本规范的 Window_ / Popup_ / Panel_ / Btn_ / Cell_ / Slot_'],['状态映射','双写映射','PS 使用 _disabled，Unity 使用 Disabled；PS 使用 _selected，Unity 使用 Selected'],['布局参数','@suffix','@center、@stretchx、@stretchy、@stretchxy、@rot90、@flipx 等只作为导出参数，不进入 Unity 业务节点名'],['跨系统归属','参数化','Task 调用 RewardPopup 时仍生成 Popup_RewardGet，来源用 source 或 reward_group_id 表达'],['生成后校验','必须','Baum2 生成 Prefab 后，需要跑命名校验器检查默认名、中文名、前缀边界和系统归属']],
+    examples:{prefab:['UI_TaskMain_View','UI_Reward_PopupGet','UI_Common_Btn_Primary'],sprite:['ui_btn_task_claim_normal@center','ui_panel_reward_content@stretchxy','ui_glg_reward_item'],key:['ui.reward.title.get','ui.task.btn.claim','ui.common.toast.not_enough'],event:['Generate UI from .layout.txt','NormalizeUnityNodeName(layerName)','RunNamingCheckAfterImport()']},
+    checklist:['PS 图层只使用 Baum2 可识别的 ui_ 前缀，不使用 Button1、图层 1、中文图层名。','PS 图层使用 snake_case；Unity 最终节点使用 PascalCase。','@center、@stretchxy 等导出参数不得写进 Unity 节点名。','状态后缀必须进入映射表，不得临时出现 _can_get、_no_open、_lack 等近义词。','生成后必须经过命名校验器，尤其检查 Item / Cell / Slot 混用。']
+  },
+  badcases:{
+    title:'错误示例库', alias:'BadCases', tag:'反例/纠错/审查',
+    desc:'汇总研发交付中最容易出现的错误命名，并给出推荐写法。该页用于美术切图、前端搭界面、Unity 绑定节点前的快速审查。',
+    formula:'错误写法 → 问题原因 → 推荐命名',
+    mock:['Button1 → Btn_TaskClaim','Image_奖励 → Icon_RewardItem','Cell_EquipWeapon → Slot_EquipWeapon','Popup_TaskRewardGet → Popup_RewardGet'],
+    nodes:[['Button1 / Image2 / Text3','默认命名','必须改为业务语义名'],['Image_奖励 / 按钮_领取','中文混入','节点和资源只使用英文'],['Btn_OK / Btn_Cancel2','动作不清','使用 Btn_Confirm / Btn_Cancel / Btn_RewardConfirm'],['Cell_WeaponSlot','Cell 与 Slot 混用','固定槽位使用 Slot_EquipWeapon'],['Item_BagItem','Item 与 Cell 混用','背包格子使用 Cell_BagItem'],['Txt_Num','数量语义不统一','统一使用 Txt_Count'],['Popup_TaskRewardGet','跨系统归属错误','统一使用 Popup_RewardGet'],['spr_bg_01','资源无系统语义','使用 spr_reward_popup_bg']],
+    examples:{prefab:['错误：UI_NewPanel / 正确：UI_TaskMain_View','错误：UI_TaskRewardPopup / 正确：UI_Reward_PopupGet','错误：UI_BagItem / 正确：UI_Bag_CellItem'],sprite:['错误：spr_bg_01 / 正确：spr_reward_popup_bg','错误：icon_奖励 / 正确：icon_reward_chest','错误：fx_light / 正确：fx_ui_reward_get_glow'],key:['错误：reward_title / 正确：ui.reward.title.get','错误：ui.title1 / 正确：ui.task.title','错误：ui.btn.ok / 正确：ui.common.btn.confirm'],event:['错误：Click1() / 正确：OnClickTaskClaim(taskId)','错误：DoReward() / 正确：OpenRewardPopup(rewardGroupId)','错误：Refresh() / 正确：RefreshBagView()']},
+    checklist:['所有默认命名必须在提交前清零。','所有中文节点名、中文资源名必须改为英文。','所有跨系统弹窗必须按弹窗自身系统命名。','所有按钮必须体现动作语义。','所有数量文本统一 Txt_Count，所有品质框统一 Frame_Quality 或 Frame_RewardQuality。']
+  }
+
+
+};
+
+
+const STRICT_SYSTEM_RULES = {
+  task:{required:['Window_TaskMain','Group_Tab_TaskType','Scroll_TaskList','Content_TaskList','Item_TaskQuest','Bar_TaskProgress','Cell_TaskReward','Btn_TaskClaim'],optional:['Btn_TaskGo','Btn_ClaimAll','Txt_ResetTime','State_Empty_Task','RedDot_TaskClaim'],forbidden:['Button1','Item_Reward','Cell_TaskQuest','Popup_TaskRewardGet','Txt_Num']},
+  bag:{required:['Window_BagMain','Group_Tab_BagType','Scroll_BagGrid','Grid_BagItem','Cell_BagItem','Panel_ItemDetail'],optional:['Btn_ItemUse','Btn_ItemSell','Btn_GotoSource','State_Empty_Bag','RedDot_Cell'],forbidden:['Item_BagItem','Slot_BagItem','Panel01','Txt_Num','Popup_BagItemDetail']},
+  level:{required:['Window_LevelSelect','Scroll_ChapterList','Item_Chapter','Scroll_LevelList','Item_LevelStage','Panel_LevelDetail','Group_DropPreview','Btn_LevelStart'],optional:['Btn_BossEnter','Btn_LevelSweep','Cell_LevelDrop','State_LevelLocked','RedDot_Level'],forbidden:['Item_Level','Btn_Start','Cell_LevelStage','Popup_LevelRewardGet','spr_bg_01']},
+  chat:{required:['Window_ChatMain','Group_Tab_ChatChannel','Scroll_ChatMessage','Content_ChatMessage','Item_ChatMessage','Input_ChatMessage','Btn_ChatSend'],optional:['Avatar_ChatSender','Badge_ChatUnread','Item_SystemBroadcast','Btn_Emoji','Toast_ChatError'],forbidden:['Txt_MessageRoot','Input_Message','Btn_Send','Window_SocialChat','Tab_1']},
+  social:{required:['Window_SocialMain','Group_Tab_SocialType','Input_PlayerSearch','Scroll_FriendList','Item_Friend','Panel_PlayerCard'],optional:['Item_FriendApply','Btn_AddFriend','Btn_PrivateChat','Btn_DeleteFriend','State_Empty_Friend'],forbidden:['Item_Player','Btn_Chat','Window_SocialChat','Input_Search','Panel_UserInfo']},
+  forge:{required:['Window_ForgeMain','Group_Tab_ForgeType','Scroll_ForgeRecipe','Item_ForgeRecipe','Panel_ForgePreview','Slot_ForgeTarget','Slot_ForgeMaterial','Group_Cost_Forge','Btn_ForgeStart'],optional:['Popup_ForgeResult','RedDot_ForgeRecipe','State_Empty_ForgeRecipe','Effect_ForgeSuccess'],forbidden:['List_ForgeRecipe','Cell_ForgeMaterial','Btn_Start','Popup_Result','Txt_Num']},
+  cardmerge:{required:['Window_CardMergeMain','Group_Tab_CardMergeType','Panel_CardMergePreview','Slot_CardSource','Slot_CardTarget','Grid_CardMaterial','Cell_CardMaterial','Btn_CardMerge'],optional:['Bar_CardMergeProgress','Popup_CardMergeResult','Group_Cost_CardMerge','Img_Selected'],forbidden:['Cell_CardSource','Cell_CardTarget','Slot_CardMaterial','Btn_Merge','Popup_Result']},
+  equip:{required:['Window_EquipMain','Panel_CharacterPreview','Group_EquipSlot','Slot_EquipWeapon','Slot_EquipArmor','Scroll_EquipList','Cell_EquipItem','Panel_EquipDetail'],optional:['Slot_EquipAccessory','Btn_EquipWear','Btn_EquipRemove','Row_EquipAttr','Btn_AutoEquip'],forbidden:['Cell_EquipWeapon','Cell_EquipArmor','Item_EquipItem','Btn_Wear','Txt_Num']},
+  itemmaterial:{required:['Popup_ItemDetail','Panel_ItemInfo','Icon_Item','Txt_ItemName','Txt_ItemDesc','Txt_OwnCount','Scroll_SourceList','Item_Source','Btn_GotoSource'],optional:['Group_MaterialNeed','Cell_Material','State_NotEnough','Btn_Close'],forbidden:['Popup_BagItemDetail','Popup_LevelItemDetail','Item_Material','Btn_Go','Txt_Num']},
+  rewardpopup:{required:['Popup_RewardGet','Mask_Blocker','Panel_RewardContent','Grid_RewardItem','Cell_RewardItem','Frame_RewardQuality','Icon_RewardItem','Txt_RewardCount','Btn_RewardConfirm'],optional:['Effect_RewardGlow','Txt_RewardTitle','Txt_RewardName','Btn_RewardAgain','Btn_RewardShare'],forbidden:['Popup_TaskRewardGet','Popup_LevelRewardGet','Cell_Item','Cell_Gift','Btn_Again','Txt_Num']}
+};
+
+const GLOBAL_STRICT_RULES = {
+  typeBoundary:[
+    ['Window','完整界面根节点，只用于全屏或主窗口，不用于弹窗内容区。'],
+    ['Popup','弹窗根节点，必须包含 Mask_Blocker 和关闭路径。'],
+    ['Panel','区域容器，不表示可点击动作。'],
+    ['Group','控件组合，不表示滚动容器或列表项。'],
+    ['Item','列表条目，用于 Scroll/Content 下的重复行。'],
+    ['Cell','网格格子，用于背包、奖励、材料等可重复格。'],
+    ['Slot','固定槽位，用于装备位、目标槽、来源/目标卡槽、固定材料槽。']
+  ],
+  stateGroups:[
+    ['控件视觉状态','Normal / Selected / Disabled / Hover / Pressed'],
+    ['业务可操作状态','Locked / Unlocked / Claimable / Claimed / Equipped / Insufficient'],
+    ['数据状态','Empty / Loading / Loaded / Unread / Read'],
+    ['结果反馈状态','Success / Fail，仅用于结果弹窗、Toast、动效，不作为普通按钮状态。']
+  ]
+};
+
+let currentType = 'overview';
+let currentId = 'overview';
+let searchText = '';
+let lastOverviewId = 'overview';
+const detail = document.getElementById('detail');
+const commonNav = document.getElementById('commonNav');
+const systemNav = document.getElementById('systemNav');
+const search = document.getElementById('search');
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>'"`]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;','`':'&#96;'}[s]));
+}
+function normalize(str){ return String(str).toLowerCase(); }
+function matchItem(item){
+  if(!searchText) return true;
+  const hay = [item.title,item.alias,item.tag,item.desc,item.formula,(item.nodes||[]).flat().join(' '),Object.values(item.examples||{}).flat().join(' ')].join(' ');
+  return normalize(hay).includes(normalize(searchText));
+}
+function navBtn(item,type){
+  const active = currentType===type && currentId===item.id ? ' active' : '';
+  return `<button class="nav-button${active}" data-type="${type}" data-id="${item.id}"><span>${escapeHtml(item.title)}</span><span class="small">${escapeHtml(item.alias)}</span></button>`;
+}
+function renderNav(){
+  commonNav.innerHTML = COMMON.filter(matchItem).map(i=>navBtn(i,'common')).join('') || '<div class="empty">没有匹配的通用组件</div>';
+  systemNav.innerHTML = SYSTEMS.filter(matchItem).map(i=>navBtn(i,'system')).join('') || '<div class="empty">没有匹配的系统</div>';
+  document.querySelectorAll('.nav-button').forEach(btn=>{
+    const type=btn.dataset.type,id=btn.dataset.id;
+    btn.classList.toggle('active', currentType===type && currentId===id);
+    btn.onclick=()=>select(type,id);
+  });
+}
+function getItem(type,id){
+  if(type==='overview') return OVERVIEW[id] || OVERVIEW.overview;
+  if(type==='common') return COMMON.find(x=>x.id===id) || COMMON[0];
+  return SYSTEMS.find(x=>x.id===id) || SYSTEMS[0];
+}
+function select(type,id){
+  currentType=type; currentId=id;
+  if(type==='overview' && id!=='validator') lastOverviewId=id;
+  renderNav(); renderDetail(); updateModeBtns();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function updateModeBtns(){
+  document.querySelectorAll('.mode-btn').forEach(btn=>{
+    const jump=btn.dataset.jump;
+    btn.classList.toggle('active', (jump==='overview'&&currentType==='overview'&&currentId!=='validator') || (jump==='validator'&&currentType==='overview'&&currentId==='validator') || (jump==='baum2'&&currentType==='overview'&&currentId==='baum2') || (jump==='common'&&currentType==='common') || (jump==='systems'&&currentType==='system'));
+  });
+}
+function tableRows(rows){
+  return rows.map(r=>`<tr>${r.map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('');
+}
+function exampleBlock(examples){
+  return `<div class="rule-grid">
+    ${Object.entries(examples).map(([k,v])=>`<div class="rule-box"><div class="label">${labelMap[k]||k}</div><pre>${escapeHtml(v.join('\n'))}</pre></div>`).join('')}
+  </div>`;
+}
+const labelMap={prefab:'Prefab / 视图文件',sprite:'Sprite / Icon / FX 资源',key:'本地化 Key',event:'程序事件 / 方法'};
+
+function pickNodeNames(section){
+  const raw = [section.node||'', ...(section.tokens||[]), ...(section.items||[]), ...(section.cells||[])].join(' ');
+  const matches = raw.match(/\b(?:Window|Popup|Panel|Group|Scroll|Viewport|Content|Grid|Item|Cell|Slot|Btn|Txt|Icon|Img|Frame|RedDot|Badge|Bar|Input|State|Mask|Row|Avatar|Toast|Effect|Anim|Tab)_[A-Za-z0-9\[\]_-]+\b/g) || [];
+  const seen = [];
+  matches.forEach(x=>{ if(!seen.includes(x) && seen.length<8) seen.push(x); });
+  return seen;
+}
+function shortNodeName(text){
+  const names = pickNodeNames({node:text});
+  if(names.length) return names[0];
+  return String(text||'Panel_Content').split('→').pop().split('+')[0].trim();
+}
+function mockNode(name){ return `<span class="mock-node-badge">${escapeHtml(name)}</span>`; }
+function mockCard(node, body, cls=''){
+  return `<div class="mock-card ${cls}">${mockNode(node)}${body}</div>`;
+}
+function mockSectionTitle(text){
+  return `<div class="mock-card-title">${escapeHtml(text)}</div>`;
+}
+function mockGrid(names){
+  return `<div class="mock-grid">${names.map((n,i)=>`<div class="mock-cell"><div class="mini-icon"></div><strong>${escapeHtml(n)}</strong><span class="mock-count">x8</span></div>`).join('')}</div>`;
+}
+function taskItem(name, action, pct){
+  return `<div class="mock-item"><div class="mock-icon-box">${escapeHtml(name)}</div><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-progress"><span style="width:${pct}%"></span></div></div><div class="mock-btn ${action==='前往'?'alt':''}">${escapeHtml(action)}</div></div>`;
+}
+function renderShowcaseHeader(item, layout, type){
+  return `<div class="showcase-head"><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(layout.note || item.desc)}</p></div><span class="showcase-badge">${escapeHtml(item.alias || layout.type || (type==='system'?'System':'Common'))}</span></div>`;
+}
+function renderMockTopbar(title,left='‹',right='✕'){
+  return `<div class="mock-topbar"><div class="mock-icons"><div class="mock-icon">${left}</div><div class="mock-icon">${right}</div></div><div class="mock-title">${escapeHtml(title)}</div></div>`;
+}
+function systemScreen(id, layout){
+  switch(id){
+    case 'task':
+      return `${renderMockTopbar('任务')}<div class="mock-body">
+        ${mockCard('Panel_ResourceBar', `<div class="mock-resource-row"><div class="mock-resource-chip">Gold 12.5K</div><div class="mock-resource-chip">Energy 80</div></div>`)}
+        ${mockCard('Group_Tab_TaskType', `<div class="mock-tabs"><div class="mock-tab active">每日</div><div class="mock-tab">主线</div><div class="mock-tab">成就</div></div>`)}
+        ${mockCard('Scroll_TaskList', `${mockSectionTitle('任务列表')}<div class="mock-list">${taskItem('EXP','领取',76)}${taskItem('G','前往',58)}<div class="mock-card flat" style="padding:8px;"><div class="mock-inline between"><strong style="font-size:11px;color:#5b351d;">任务奖励</strong><strong style="font-size:10px;color:#6e482d;">3/5</strong></div>${mockGrid(['Gold','Mat','Gem','Box'])}</div></div>`)}
+      </div><div class="mock-bottomnav"><span>主页</span><span class="active">任务</span><span>背包</span><span>社交</span></div>`;
+    case 'bag':
+      return `${renderMockTopbar('背包')}<div class="mock-body">
+        ${mockCard('Panel_PreviewArea', `<div style="height:112px;border-radius:12px;background:#efdfc6;border:1px solid #dcb98f;"></div>`,'flat')}
+        ${mockCard('Group_SearchFilter', `<div class="mock-search"><div class="mock-input">Input_SearchItem</div><div class="mock-btn" style="min-width:48px;">筛选</div></div>`)}
+        ${mockCard('Group_Tab_BagType', `<div class="mock-tabs four"><div class="mock-tab active">全部</div><div class="mock-tab">材料</div><div class="mock-tab">装备</div><div class="mock-tab">消耗</div></div>`)}
+        ${mockCard('Grid_BagItem', mockGrid(['Item','Mat','Eq','Box','Key','Gem','Ore','Food']))}
+        ${mockCard('Panel_ItemDetail', `${mockSectionTitle('道具详情')}<div class="mock-detail"><div class="mock-text-row"><span>Txt_ItemName</span><strong>Q2</strong></div><div class="mock-text-row"><span>Txt_ItemDesc</span><strong>铁矿</strong></div><div class="mock-actions"><div class="mock-btn">使用</div><div class="mock-btn alt">出售</div><div class="mock-btn light">来源</div></div></div>`)}
+      </div>`;
+    case 'level':
+      return `${renderMockTopbar('关卡','‹','?')}<div class="mock-body">
+        ${mockCard('Panel_LevelInfo', `<div class="mock-resource-row"><div class="mock-resource-chip">Chapter 01</div><div class="mock-resource-chip">Power 3560</div></div>`)}
+        ${mockCard('Scroll_LevelList', `<div class="mock-map"><div class="mock-map-node" style="left:22px;top:24px;">1-1</div><div class="mock-map-node" style="right:38px;top:70px;">1-2</div><div class="mock-map-node gray" style="left:68px;bottom:54px;">1-3</div><div class="mock-map-node boss" style="right:28px;bottom:20px;">BOSS</div></div>`,'flat')}
+        ${mockCard('Group_DropPreview', `${mockSectionTitle('掉落预览')}<div class="mock-inline between" style="margin-bottom:7px;"><span style="font-size:10px;color:#6f4d34;">掉落预览</span><strong style="font-size:11px;color:#5c361f;">List_LevelDrop</strong></div>${mockGrid(['Gold','Ore','Eq','Box'])}`)}
+        ${mockCard('Panel_BottomAction', `<div class="mock-btn" style="width:100%;">开始挑战</div>`)}
+      </div>`;
+    case 'chat':
+      return `${renderMockTopbar('聊天')}<div class="mock-body">
+        ${mockCard('Group_Tab_ChatChannel', `<div class="mock-channel-row"><div class="mock-channel active">世界</div><div class="mock-channel">联盟</div><div class="mock-channel">私聊</div><div class="mock-channel">系统</div></div>`)}
+        ${mockCard('Scroll_ChatMessage', `<div class="mock-msglist"><div class="mock-msg"><div class="mock-avatar"></div><div class="mock-bubble">Item_ChatMessageOther<br/>大家晚上一起打 Boss 吗？</div></div><div class="mock-msg self"><div class="mock-bubble">Item_ChatMessageSelf<br/>可以，我 10 分钟后上线。</div></div><div class="mock-msg"><div class="mock-avatar"></div><div class="mock-bubble">Item_SystemBroadcast<br/>系统广播：活动将在 20:00 开启。</div></div></div>`,'flat')}
+      </div><div class="mock-inputbar">${mockNode('Input_ChatMessage')}<div class="mock-icon">☺</div><div class="mock-input">说点什么...</div><div class="mock-btn" style="min-width:58px;">发送</div></div>`;
+    case 'social':
+      return `${renderMockTopbar('社交')}<div class="mock-body">
+        ${mockCard('Group_Tab_SocialType', `<div class="mock-tabs"><div class="mock-tab active">好友</div><div class="mock-tab">申请</div><div class="mock-tab">黑名单</div></div><div class="mock-search" style="margin-top:8px;"><div class="mock-input">Input_PlayerSearch</div><div class="mock-btn" style="min-width:50px;">搜索</div></div>`)}
+        ${mockCard('Scroll_FriendList', `<div class="mock-list"><div class="mock-friend-item"><div class="mock-avatar"></div><div><div style="font-size:11px;font-weight:900;color:#5a341f;">Player_A</div><div class="mock-status">在线</div></div><div class="mock-btn light" style="min-width:42px;height:24px;">私聊</div></div><div class="mock-friend-item"><div class="mock-avatar"></div><div><div style="font-size:11px;font-weight:900;color:#5a341f;">Player_B</div><div style="font-size:9px;color:#8b7157;">2h 前</div></div><div class="mock-btn light" style="min-width:42px;height:24px;">查看</div></div></div>`)}
+        ${mockCard('Panel_PlayerCard', `<div class="mock-playercard"><div class="mock-avatar" style="width:42px;height:42px;"></div><div style="flex:1;"><div style="font-size:12px;font-weight:900;color:#5c341f;">Txt_PlayerName</div><div style="font-size:10px;color:#7b624b;">Power 12890 · Guild West</div><div class="mock-actions two" style="margin-top:7px;"><div class="mock-btn">加好友</div><div class="mock-btn alt">私聊</div></div></div></div>`)}
+      </div>`;
+    case 'forge':
+      return `${renderMockTopbar('锻造')}<div class="mock-body">
+        ${mockCard('Group_Tab_ForgeType', `<div class="mock-tabs"><div class="mock-tab active">武器</div><div class="mock-tab">防具</div><div class="mock-tab">强化</div></div>`)}
+        ${mockCard('Scroll_ForgeRecipe', `<div class="mock-list"><div class="mock-item"><div class="mock-icon-box">图</div><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-small-tag">可锻造</div></div><div class="mock-item"><div class="mock-icon-box">图</div><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-small-tag">缺材料</div></div></div>`)}
+        ${mockCard('Panel_ForgePreview', `${mockSectionTitle('锻造预览')}<div class="mock-slot-row"><div class="mock-slot">Slot_ForgeTarget<div class="mini-icon"></div><strong>目标装备</strong></div><div class="mock-arrow">+</div><div class="mock-slot">Slot_ForgeMaterial<div class="mini-icon"></div><strong>材料槽</strong></div></div><div class="mock-costbar" style="margin-top:8px;"><span style="font-size:10px;color:#6a482f;">Group_Cost_Forge</span><strong style="font-size:11px;color:#5a331f;">Coin x1200</strong></div><div class="mock-btn" style="width:100%;margin-top:8px;">开始锻造</div>`)}
+      </div>`;
+    case 'cardmerge':
+      return `${renderMockTopbar('卡牌合成')}<div class="mock-body">
+        ${mockCard('Group_Tab_CardMergeType', `<div class="mock-tabs"><div class="mock-tab active">同卡</div><div class="mock-tab">碎片</div><div class="mock-tab">升星</div></div>`)}
+        ${mockCard('Panel_CardMergePreview', `${mockSectionTitle('合成预览')}<div class="mock-slot-row"><div class="mock-slot">Slot_CardSource<div class="mini-icon"></div><strong>来源卡</strong></div><div class="mock-arrow">→</div><div class="mock-slot">Slot_CardTarget<div class="mini-icon"></div><strong>目标卡</strong></div></div><div style="margin-top:8px;"><div class="mock-pbar"><span style="width:68%"></span></div><div style="font-size:10px;color:#7a6149;margin-top:4px;text-align:right;">Bar_CardMergeProgress 68%</div></div>`)}
+        ${mockCard('Grid_CardMaterial', mockGrid(['Mat1','Mat2','Mat3','Mat4','Mat5','Mat6','Mat7','Mat8']))}
+        ${mockCard('Panel_BottomAction', `<div class="mock-costbar"><span style="font-size:10px;color:#6b4a31;">Group_Cost_CardMerge</span><div class="mock-btn">合成</div></div>`)}
+      </div>`;
+    case 'equip':
+      return `${renderMockTopbar('装备')}<div class="mock-body">
+        ${mockCard('Panel_CharacterPreview', `<div class="mock-figure"><div class="mock-silhouette"></div><div class="mock-equip-slot slot-wpn">武器</div><div class="mock-equip-slot slot-arm">防具</div><div class="mock-equip-slot slot-acc">饰品</div></div><div style="font-size:10px;color:#6d4c34;margin-top:6px;">Txt_CharacterPower · 12680</div>`)}
+        ${mockCard('Scroll_EquipList', mockGrid(['Eq1','Eq2','Eq3','Eq4','Eq5','Eq6','Eq7','Eq8']))}
+        ${mockCard('Panel_EquipDetail', `${mockSectionTitle('装备详情')}<div class="mock-detail"><div class="mock-text-row"><span>Row_EquipAttr</span><strong>ATK +120</strong></div><div class="mock-text-row"><span>Row_EquipAttr</span><strong>HP +560</strong></div><div class="mock-actions"><div class="mock-btn">穿戴</div><div class="mock-btn alt">卸下</div><div class="mock-btn light">锻造</div></div></div>`)}
+      </div>`;
+    case 'itemmaterial':
+      return `<div class="mock-popup-wrap"><div class="mock-popup">${mockNode('Popup_ItemDetail')}<div class="mock-topbar" style="margin:-10px -10px 0;border-radius:18px 18px 0 0;padding-bottom:9px;"><div class="mock-icons"><div class="mock-icon">‹</div><div class="mock-icon">✕</div></div><div class="mock-title">道具详情</div></div><div class="mock-card" style="padding-top:12px;">${mockNode('Panel_ItemInfo')}<div class="mock-inline"><div class="mock-slot" style="height:64px;max-width:72px;flex:0 0 72px;"><div class="mini-icon"></div><strong>Icon_Item</strong></div><div style="flex:1;"><div style="font-size:12px;font-weight:900;color:#5c341f;">Txt_ItemName</div><div style="font-size:10px;color:#7d674f;line-height:1.5;margin-top:4px;">Txt_ItemDesc · 稀有锻造材料</div><div style="font-size:10px;color:#7d674f;margin-top:4px;">Txt_OwnCount · x25</div></div></div></div><div class="mock-card">${mockNode('Group_MaterialNeed')}${mockSectionTitle('所需材料')}${mockGrid(['MatA','MatB','MatC','MatD'])}</div><div class="mock-card">${mockNode('Scroll_SourceList')}${mockSectionTitle('来源列表')}<div class="mock-list"><div class="mock-item"><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-btn light">前往</div></div><div class="mock-item"><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-small-tag">未解锁</div></div></div></div></div></div>`;
+
+    case 'rewardpopup':
+      return `<div class="mock-popup-wrap"><div class="mock-popup" style="width:90%;">${mockNode('Popup_RewardGet')}<div class="mock-topbar" style="margin:-10px -10px 0;border-radius:18px 18px 0 0;padding-bottom:9px;background:linear-gradient(180deg,#c57a3d,#9d552c);"><div class="mock-icons"><div class="mock-icon">‹</div><div class="mock-icon">✕</div></div><div class="mock-reward-title">获得奖励</div></div><div class="mock-reward-glow">${mockNode('Effect_RewardGlow')}<div class="mock-reward-chest"></div></div><div class="mock-card" style="padding-top:12px;">${mockNode('Grid_RewardItem')}<div class="mock-reward-grid"><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Gold</strong><span class="mock-count">x800</span></div><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Ore</strong><span class="mock-count">x25</span></div><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Box</strong><span class="mock-count">x1</span></div><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Gem</strong><span class="mock-count">x5</span></div><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Mat</strong><span class="mock-count">x12</span></div><div class="mock-reward-cell"><div class="mock-quality-frame"></div><div class="mini-icon"></div><strong>Key</strong><span class="mock-count">x1</span></div></div></div><div class="mock-card">${mockNode('Panel_RewardAction')}<div class="mock-actions two"><div class="mock-btn">确认</div><div class="mock-btn alt">再来一次</div></div></div></div></div>`;
+
+    default:
+      return `${renderMockTopbar('系统界面')}<div class="mock-body"><div class="mock-card">${mockNode(layout.window || 'Window_Main')}<div style="height:420px;border-radius:14px;border:1px dashed #d8b58e;background:#fff8ef;"></div></div></div>`;
+  }
+}
+function commonScreen(id, layout){
+  const title = {
+    titlebar:'标题栏',button:'按钮',tab:'页签',listitem:'列表项',slot:'格子槽位',reddot:'红点角标',progress:'进度条',input:'输入框',popup:'弹窗',toast:'Toast',empty:'空状态',resource:'资源消耗组',avatar:'头像组件'
+  }[id] || '通用组件';
+  const top = renderMockTopbar(title,'‹','✕');
+  switch(id){
+    case 'titlebar':
+      return `${top}<div class="mock-body">${mockCard('Panel_TitleBar', `<div class="mock-inline between"><div class="mock-icon">‹</div><div style="font-size:18px;font-weight:900;color:#fff0e0;position:absolute;left:0;right:0;text-align:center;top:-39px;">标题栏</div><div class="mock-icon">?</div></div><div class="mock-resource-row" style="margin-top:30px;"><div class="mock-resource-chip">Txt_Title</div><div class="mock-resource-chip">Btn_Close / Btn_Back</div></div>`)}${mockCard('Panel_Content', `<div style="height:360px;border-radius:12px;background:#fff8ef;border:1px dashed #dbbb94;"></div>`,'flat')}</div>`;
+    case 'button':
+      return `${top}<div class="mock-body">${mockCard('Panel_ButtonShowcase', `${mockSectionTitle('按钮样式')}<div class="mock-actions two"><div class="mock-btn">Btn_Confirm</div><div class="mock-btn alt">Btn_Cancel</div></div><div class="mock-actions two" style="margin-top:8px;"><div class="mock-btn light">Btn_Go</div><div class="mock-btn">Btn_Claim</div></div>`)}${mockCard('Panel_States', `${mockSectionTitle('状态命名')}<div class="mock-inline"><div class="mock-btn">Normal</div><div class="mock-btn alt">Disabled</div></div>`,'flat')}</div>`;
+    case 'tab':
+      return `${top}<div class="mock-body">${mockCard('Group_Tab_Common', `<div class="mock-tabs four"><div class="mock-tab active">Tab_All</div><div class="mock-tab">Tab_Daily</div><div class="mock-tab">Tab_Material</div><div class="mock-tab">Tab_Private</div></div>`)}${mockCard('Panel_Content', `<div style="height:360px;border-radius:12px;background:#fff8ef;border:1px dashed #dbbb94;display:flex;align-items:center;justify-content:center;color:#8a6f57;font-size:12px;">Panel_Content</div>`,'flat')}</div>`;
+    case 'listitem':
+      return `${top}<div class="mock-body">${mockCard('Scroll_MainList', `${mockSectionTitle('列表项展示')}<div class="mock-list"><div class="mock-item"><div class="mock-avatar"></div><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-btn light">操作</div></div><div class="mock-item"><div class="mock-avatar"></div><div class="mock-lines"><div class="mock-line mid"></div><div class="mock-line short"></div></div><div class="mock-btn light">操作</div></div></div>`)}${mockCard('Content_MainList', `<div style="font-size:10px;color:#7f664f;">Item_[Name] / Btn_ItemClick / State_Selected</div>`,'flat')}</div>`;
+    case 'slot':
+      return `${top}<div class="mock-body">${mockCard('Group_SlotShowcase', `${mockGrid(['Cell_Item','Cell_Reward','Slot_Weapon','Slot_Armor'])}`)}${mockCard('Panel_Detail', `${mockSectionTitle('格子规范')}<div class="mock-text-row"><span>Frame_Quality</span><strong>Icon_Item</strong></div><div class="mock-text-row"><span>Txt_Count</span><strong>RedDot_Cell</strong></div>`,'flat')}</div>`;
+    case 'reddot':
+      return `${top}<div class="mock-body">${mockCard('Panel_EntryButtons', `<div class="mock-actions two"><div class="mock-btn" style="position:relative;">Btn_Task<em style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:999px;background:#cf4938;"></em></div><div class="mock-btn light" style="position:relative;">Btn_Bag<em style="position:absolute;top:-4px;right:-4px;padding:0 4px;border-radius:999px;background:#cf4938;color:#fff;font-size:8px;font-style:normal;">12</em></div></div>`)}${mockCard('Panel_RedDotRule', `<div class="mock-text-row"><span>RedDot_[Host]</span><strong>Badge_[Type]</strong></div><div class="mock-text-row"><span>Txt_BadgeNum</span><strong>宿主绑定</strong></div>`,'flat')}</div>`;
+    case 'progress':
+      return `${top}<div class="mock-body">${mockCard('Bar_Progress', `<div class="mock-section-title">任务进度</div><div class="mock-pbar"><span style="width:72%"></span></div><div style="font-size:11px;color:#7c634b;margin-top:5px;">Txt_Progress · 72/100</div>`)}${mockCard('Bar_Exp', `<div class="mock-section-title">经验进度</div><div class="mock-pbar"><span style="width:46%"></span></div><div style="font-size:11px;color:#7c634b;margin-top:5px;">Txt_Progress · Lv12</div>`,'flat')}</div>`;
+    case 'input':
+      return `${top}<div class="mock-body">${mockCard('Input_Search', `<div class="mock-search"><div class="mock-input">Txt_Placeholder</div><div class="mock-btn light" style="min-width:52px;">搜索</div></div>`)}${mockCard('Input_ChatMessage', `<div class="mock-inputbar" style="position:static;border:1px solid #dec2a2;border-radius:12px;"><div class="mock-icon">☺</div><div class="mock-input">Txt_Input</div><div class="mock-btn" style="min-width:58px;">Btn_Send</div></div>`,'flat')}</div>`;
+    case 'popup':
+      return `<div class="mock-popup-wrap"><div class="mock-popup">${mockNode('Popup_Confirm')}<div class="mock-card-title">确认弹窗</div><div style="font-size:12px;color:#6b5039;line-height:1.7;">Txt_Title / Txt_Desc / Btn_Confirm / Btn_Cancel</div><div class="mock-actions two" style="margin-top:6px;"><div class="mock-btn">确认</div><div class="mock-btn alt">取消</div></div></div></div>`;
+    case 'toast':
+      return `${top}<div class="mock-body"><div style="height:300px;"></div>${mockCard('Toast_Normal', `<div class="mock-inline"><div class="mock-icon">i</div><div style="font-size:12px;color:#6c5038;">Txt_Toast · 获得奖励 x10</div></div>`,'flat')}<div style="height:60px;"></div></div>`;
+    case 'empty':
+      return `${top}<div class="mock-body">${mockCard('State_Empty_Default', `<div style="height:320px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="mock-avatar" style="width:40px;height:40px;border-radius:14px;"></div><div style="font-size:12px;color:#7b634d;">Txt_EmptyDesc</div><div class="mock-btn light">Btn_EmptyAction</div></div>`,'flat')}</div>`;
+    case 'resource':
+      return `${top}<div class="mock-body">${mockCard('Group_Cost_Common', `${mockSectionTitle('资源消耗组')}<div class="mock-costbar"><span>Icon_Currency + Txt_CostCount</span><div class="mock-btn">Btn_Action</div></div><div class="mock-costbar" style="margin-top:8px;"><span>Icon_Item + Txt_ItemCount</span><div class="mock-small-tag">不足</div></div>`)}${mockCard('Group_Reward', `${mockSectionTitle('奖励展示')}<div class="mock-grid two"><div class="mock-cell"><div class="mini-icon"></div><strong>Gold</strong></div><div class="mock-cell"><div class="mini-icon"></div><strong>Gem</strong></div></div>`,'flat')}</div>`;
+    case 'avatar':
+      return `${top}<div class="mock-body">${mockCard('Avatar_Player', `<div style="display:flex;justify-content:center;padding:10px 0;"><div class="mock-avatar" style="width:70px;height:70px;border:3px solid #c68a45;"></div></div><div style="text-align:center;font-size:12px;color:#6b4b33;">Avatar_Player / Frame_Avatar / Badge_Online</div>`)}${mockCard('Panel_FriendItem', `<div class="mock-friend-item"><div class="mock-avatar"></div><div><div style="font-size:11px;font-weight:900;color:#5c361f;">Txt_PlayerName</div><div style="font-size:9px;color:#7f654d;">Lv.32</div></div><div class="mock-small-tag">在线</div></div>`,'flat')}</div>`;
+    default:
+      return `${top}<div class="mock-body">${mockCard(shortNodeName(layout.window || 'Panel_Content'), `<div style="height:420px;border-radius:12px;background:#fff8ef;border:1px dashed #dbbb94;"></div>`,'flat')}</div>`;
+  }
+}
+function namingLegend(layout){
+  if(!layout || !layout.sections) return '';
+  const rows = layout.sections.map(sec=>{
+    const names = pickNodeNames(sec);
+    return `<div class="naming-row"><strong>${escapeHtml(sec.label)}</strong><div>${names.length ? names.map(n=>`<code>${escapeHtml(n)}</code>`).join('') : `<code>${escapeHtml(sec.node)}</code>`}</div></div>`;
+  }).join('');
+  return `<div class="naming-panel"><h4>当前原型命名标注清单</h4>${rows}</div>`;
+}
+
+function phoneMock(item,type){
+  const layout = type==='system' ? SYSTEM_LAYOUTS[item.id] : (type==='common' ? COMPONENT_LAYOUTS[item.id] : null);
+  if(layout){
+    const preview = type==='system' ? systemScreen(item.id, layout) : commonScreen(item.id, layout);
+    return `<div class="phone-card">
+      ${renderShowcaseHeader(item, layout, type)}
+      <div class="phone phone-showcase" aria-hidden="true"><div class="phone-screen phone-screen-rich"><div class="notch"></div>${preview}</div></div>
+      <div class="showcase-subnote">右侧示意图已改为接近图 1 的界面示意形式：不是单纯分区块，而是更接近真实竖屏界面原型的结构展示。</div>
+      ${namingLegend(layout)}
+      <div class="notice good" style="margin-top:14px;">当前示意对应 <code>${escapeHtml(layout.window)}</code>，界面中已按系统 / 组件展示关键结构与命名。</div>
+      <div class="notice" style="margin-top:10px;">${escapeHtml(layout.note)}</div>
+    </div>`;
+  }
+  const lines = item.mock || [];
+  const fallbackLayout = {window:item.alias||'Overview', sections:[
+    {label:'安全区 / 标题栏', node:lines[0] || 'Panel_SafeArea', tokens:['Panel_TitleBar','Txt_Title','Btn_Close']},
+    {label:'内容区', node:lines[3] || 'Panel_Content', items:['Item_List','Cell_Grid','Panel_Detail']},
+    {label:'底部操作区', node:lines[lines.length-1] || 'Panel_BottomAction', tokens:['Btn_Confirm','Btn_Cancel']}
+  ]};
+  return `<div class="phone-card">
+    <div class="showcase-head"><div><h3>竖屏界面示意图</h3><p>该条目未配置独立原型时，使用标准界面示意作为兜底展示。</p></div><span class="showcase-badge">Default</span></div>
+    <div class="phone phone-showcase" aria-hidden="true"><div class="phone-screen phone-screen-rich"><div class="notch"></div>${renderMockTopbar(item.title || '界面')}<div class="mock-body">${mockCard('Panel_Content', `<div style="height:420px;border-radius:12px;background:#fff8ef;border:1px dashed #dbbb94;"></div>`,'flat')}</div></div></div>
+    ${namingLegend(fallbackLayout)}
+  </div>`;
+}
+function overviewExtra(){
+  if(currentId==='validator') return validatorExtra();
+  if(currentId==='states') return statesExtra();
+  if(currentId==='folders') return foldersExtra();
+  if(currentId==='crossrules') return crossRulesExtra();
+  if(currentId==='baum2') return baum2Extra();
+  if(currentId==='badcases') return badCasesExtra();
+  if(currentId==='base') return baseExtra();
+  return `<div class="card" id="common"><h3>通用控件组件入口</h3><p>点击任一组件可查看该组件的命名结构、内部节点、资源命名和通用检查项。</p><div class="component-gallery">
+    ${COMMON.map(i=>`<div class="component-card" role="button" tabindex="0" data-card-type="common" data-card-id="${i.id}"><strong>${escapeHtml(i.title)}</strong><span class="chip">${escapeHtml(i.alias)}</span><br><code>${escapeHtml(i.formula.split('/')[0].trim())}</code></div>`).join('')}
+  </div></div>
+  <div class="card" id="systems"><h3>游戏系统入口</h3><p>点击系统卡片可查看对应系统的窗口命名、控件命名、Prefab、资源、本地化 Key、程序事件和竖屏结构。</p><div class="component-gallery">
+    ${SYSTEMS.map(i=>`<div class="component-card" role="button" tabindex="0" data-card-type="system" data-card-id="${i.id}"><strong>${escapeHtml(i.title)}</strong><span class="chip">${escapeHtml(i.alias)}</span><br><code>${escapeHtml(i.formula.split('/')[0].trim())}</code></div>`).join('')}
+  </div></div>
+  <div class="card"><h3>v2.8 严谨性优化</h3><div class="flow-steps"><div class="flow-step"><strong>状态后缀词典</strong><span>分层约束控件视觉状态、业务状态、数据状态和结果反馈状态。</span></div><div class="flow-step"><strong>目录结构规范</strong><span>补齐系统目录、本地化域名映射、脚本绑定与资源归属规则。</span></div><div class="flow-step"><strong>跨系统调用规则</strong><span>明确被调用系统归属，来源只进参数，不进节点名。</span></div><div class="flow-step"><strong>必需/禁止节点</strong><span>每个系统补充最小必需节点、可选节点、禁止节点。</span></div></div></div>`;
+}
+function baseExtra(){
+  return `<div class="card"><h3>全局前缀速查</h3><div class="quick-table">
+    <div class="quick-card"><h4>窗口与容器</h4><div class="tag-list"><code>Window_</code><code>Popup_</code><code>Panel_</code><code>Group_</code><code>Mask_</code><code>State_</code></div></div>
+    <div class="quick-card"><h4>列表与格子</h4><div class="tag-list"><code>Scroll_</code><code>Viewport_</code><code>Content_</code><code>Grid_</code><code>Item_</code><code>Cell_</code><code>Slot_</code><code>Row_</code></div></div>
+    <div class="quick-card"><h4>基础控件</h4><div class="tag-list"><code>Btn_</code><code>Txt_</code><code>Icon_</code><code>Img_</code><code>Input_</code><code>Bar_</code><code>Tab_</code><code>Avatar_</code></div></div>
+    <div class="quick-card"><h4>状态与反馈</h4><div class="tag-list"><code>RedDot_</code><code>Badge_</code><code>Toast_</code><code>Effect_</code><code>Anim_</code><code>Frame_</code></div></div>
+  </div></div>
+  <div class="card"><h3>系统英文名速查</h3><div class="quick-table">
+    <div class="quick-card"><h4>系统名</h4><div class="tag-list">${SYSTEMS.map(s=>`<code>${escapeHtml(s.alias)}</code>`).join('')}</div></div>
+    <div class="quick-card"><h4>常用状态后缀</h4><div class="tag-list"><code>Normal</code><code>Selected</code><code>Disabled</code><code>Locked</code><code>Empty</code><code>Unread</code><code>Claimable</code><code>Claimed</code><code>Equipped</code><code>Insufficient</code></div></div>
+  </div></div>
+  <div class="card"><h3>禁止命名示例</h3><div class="table-wrap"><table><thead><tr><th>禁止写法</th><th>问题</th><th>推荐写法</th></tr></thead><tbody>
+    <tr><td><code>Button</code> / <code>Button1</code></td><td>默认名，无法识别业务动作</td><td><code>Btn_TaskClaim</code></td></tr>
+    <tr><td><code>Image_道具</code></td><td>中英混用，不利于工具链</td><td><code>Icon_Item</code></td></tr>
+    <tr><td><code>Panel01</code></td><td>编号无语义</td><td><code>Panel_ItemDetail</code></td></tr>
+    <tr><td><code>Txt_Num</code></td><td>数量语义不统一</td><td><code>Txt_Count</code></td></tr>
+    <tr><td><code>Cell_EquipWeapon</code> 用作固定装备位</td><td>Cell 与 Slot 混用</td><td><code>Slot_EquipWeapon</code></td></tr>
+  </tbody></table></div></div>`;
+}
+
+function statesExtra(){
+  const states=[
+    ['Normal','默认态','Btn_Confirm_Normal','spr_common_btn_primary_normal'],
+    ['Selected','选中态','Tab_TaskDaily_Selected','spr_common_tab_selected'],
+    ['Disabled','禁用态','Btn_RewardConfirm_Disabled','spr_common_btn_disabled'],
+    ['Locked','锁定态','Item_LevelStage_Locked','spr_level_stage_locked'],
+    ['Empty','空状态','Slot_EquipWeapon_Empty','spr_common_slot_empty'],
+    ['Unread','未读态','Badge_ChatUnread','spr_common_badge_unread'],
+    ['Claimable','可领取态','Cell_RewardItem_Claimable','fx_ui_reward_claimable'],
+    ['Claimed','已领取态','Item_TaskQuest_Claimed','spr_task_claimed'],
+    ['Equipped','已装备','Cell_EquipItem_Equipped','spr_equip_equipped'],
+    ['Insufficient','不足态','Txt_CostCount_Insufficient','spr_cost_insufficient']
+  ];
+  return `<div class="card"><h3>状态后缀统一表</h3><div class="table-wrap"><table><thead><tr><th>状态</th><th>含义</th><th>节点示例</th><th>资源示例</th></tr></thead><tbody>${states.map(r=>`<tr>${r.map(c=>`<td><code>${escapeHtml(c)}</code></td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><h3>状态后缀使用规则</h3><div class="two-col"><div class="notice good">状态后缀放在命名末尾，例如 <code>Btn_Claim_Disabled</code>。</div><div class="notice good">资源文件状态使用小写 snake_case，例如 <code>spr_btn_claim_disabled</code>。</div><div class="notice">业务状态与视觉状态不要混写，例如可领取用 <code>Claimable</code>，选中用 <code>Selected</code>。</div><div class="notice">不要使用近义词：<code>CanGet</code>、<code>Got</code>、<code>NoOpen</code>、<code>Unable</code>。</div></div></div>`;
+}
+function foldersExtra(){
+  return `<div class="card"><h3>推荐目录结构</h3><pre>Assets/UI/
+├─ Common/
+│  ├─ Prefab/
+│  ├─ Sprite/
+│  ├─ Icon/
+│  ├─ FX/
+│  └─ Audio/
+├─ Task/
+│  ├─ Prefab/UI_TaskMain_View.prefab
+│  ├─ Sprite/spr_task_panel_bg.png
+│  └─ Icon/icon_task_daily.png
+├─ RewardPopup/
+│  ├─ Prefab/UI_Reward_PopupGet.prefab
+│  ├─ Sprite/spr_reward_popup_bg.png
+│  └─ FX/fx_ui_reward_get_glow.prefab
+└─ Localization/
+   ├─ ui.common.json
+   ├─ ui.task.json
+   └─ ui.reward.json</pre></div>
+  <div class="card"><h3>目录归属判定</h3><div class="table-wrap"><table><thead><tr><th>资源类型</th><th>放置目录</th><th>命名示例</th><th>说明</th></tr></thead><tbody>
+    <tr><td>通用按钮</td><td><code>Common/Prefab</code></td><td><code>UI_Common_Btn_Primary</code></td><td>可跨系统复用</td></tr>
+    <tr><td>任务主界面</td><td><code>Task/Prefab</code></td><td><code>UI_TaskMain_View</code></td><td>任务系统专属</td></tr>
+    <tr><td>奖励弹窗</td><td><code>RewardPopup/Prefab</code></td><td><code>UI_Reward_PopupGet</code></td><td>多系统调用，但归属奖励弹窗系统</td></tr>
+    <tr><td>奖励光效</td><td><code>RewardPopup/FX</code></td><td><code>fx_ui_reward_get_glow</code></td><td>奖励弹窗专属 FX</td></tr>
+    <tr><td>本地化文本</td><td><code>Localization</code></td><td><code>ui.reward.json</code></td><td>按系统拆分 Key 文件</td></tr>
+    <tr><td>系统名映射</td><td><code>RewardPopup</code></td><td><code>ui.reward.*</code></td><td>系统英文名可比本地化域名更完整，但必须在规范中固定映射</td></tr>
+  </tbody></table></div></div>`;
+}
+function crossRulesExtra(){
+  return `<div class="card"><h3>跨系统调用边界表</h3><div class="table-wrap"><table><thead><tr><th>调用关系</th><th>正确命名</th><th>错误命名</th><th>说明</th></tr></thead><tbody>
+    <tr><td>任务领取奖励 → 奖励弹窗</td><td><code>Popup_RewardGet</code></td><td><code>Popup_TaskRewardGet</code></td><td>奖励弹窗归属 RewardPopup 系统</td></tr>
+    <tr><td>关卡掉落预览 → 道具详情</td><td><code>Popup_ItemDetail</code></td><td><code>Popup_LevelItemDetail</code></td><td>道具详情归属 ItemMaterial</td></tr>
+    <tr><td>装备详情 → 锻造</td><td><code>Btn_EquipForge</code> 打开 <code>Window_ForgeMain</code></td><td><code>Window_EquipForge</code></td><td>锻造窗口不归属装备系统</td></tr>
+    <tr><td>社交好友 → 私聊</td><td><code>Btn_PrivateChat</code> 打开 <code>Window_ChatMain</code></td><td><code>Window_SocialChat</code></td><td>聊天归属 Chat</td></tr>
+    <tr><td>材料来源 → 关卡</td><td><code>Btn_GotoSource</code></td><td><code>Btn_LevelGoFromMat</code></td><td>来源用数据参数表达，不写进节点名</td></tr>
+  </tbody></table></div></div>
+  <div class="card"><h3>跨系统参数建议</h3><pre>OpenRewardPopup({
+  source: 'task',
+  reward_group_id: 'task_daily_001',
+  auto_close: false
+})
+
+OpenItemDetail({
+  item_id: 'ore_001',
+  source: 'bag',
+  show_goto_source: true
+})</pre></div>`;
+}
+function baum2Extra(){
+  return `<div class="card"><h3>Baum2 接入定位</h3><div class="two-col"><div class="notice good">Baum2 只负责从 PSD / Photoshop 图层生成 Unity UI 结构，不负责定义项目最终业务命名。</div><div class="notice good">项目最终命名仍以本规范为主：<code>Btn_TaskClaim</code>、<code>Popup_RewardGet</code>、<code>Cell_BagItem</code>。</div><div class="notice">PS 图层命名使用 <code>ui_</code> 前缀和 snake_case，以便 Baum2 识别控件类型。</div><div class="notice">Unity 生成后必须执行命名规范化和校验，防止直接保留 <code>ui_btn_*</code> 作为 C# 绑定节点。</div></div></div>
+  <div class="card"><h3>PS 图层 → Baum2 → Unity 节点映射表</h3><div class="table-wrap"><table><thead><tr><th>目标 GUI 节点</th><th>PS 图层命名</th><th>Baum2 组件识别</th><th>最终 Unity 节点</th><th>说明</th></tr></thead><tbody>
+    <tr><td><code>Btn_TaskClaim</code></td><td><code>ui_btn_task_claim_normal@center</code></td><td>Button</td><td><code>Btn_TaskClaim</code></td><td>按钮根节点不保留 Normal；状态图资源保留状态。</td></tr>
+    <tr><td><code>Txt_Title</code></td><td><code>ui_txt_title@center</code></td><td>Text</td><td><code>Txt_Title</code></td><td>标题文本按业务窗口挂载本地化 Key。</td></tr>
+    <tr><td><code>Icon_RewardItem</code></td><td><code>ui_icon_reward_item</code></td><td>Image</td><td><code>Icon_RewardItem</code></td><td>图标不使用 Img_，避免和背景图混用。</td></tr>
+    <tr><td><code>Panel_RewardContent</code></td><td><code>ui_panel_reward_content@stretchxy</code></td><td>Panel</td><td><code>Panel_RewardContent</code></td><td>@stretchxy 是布局参数，不进入节点名。</td></tr>
+    <tr><td><code>Mask_Blocker</code></td><td><code>ui_mask_blocker@stretchxy</code></td><td>Mask</td><td><code>Mask_Blocker</code></td><td>遮罩统一命名为 Mask_Blocker。</td></tr>
+    <tr><td><code>Scroll_TaskList</code></td><td><code>ui_scroll_task_list@stretchy</code></td><td>ScrollRect</td><td><code>Scroll_TaskList</code></td><td>滚动容器使用 Scroll_，内容容器另建 Content_。</td></tr>
+    <tr><td><code>Grid_BagItem</code></td><td><code>ui_glg_bag_item</code></td><td>GridLayoutGroup</td><td><code>Grid_BagItem</code></td><td>Grid 只表示布局容器，格子仍使用 Cell_。</td></tr>
+    <tr><td><code>Cell_RewardItem</code></td><td><code>ui_item_reward_item</code></td><td>Panel</td><td><code>Cell_RewardItem</code></td><td>Baum2 的 ui_item_ 只表示导出组件，项目内按语义转为 Cell_。</td></tr>
+  </tbody></table></div></div>
+  <div class="card"><h3>状态后缀映射</h3><div class="table-wrap"><table><thead><tr><th>GUI 状态</th><th>PS / Baum2 状态</th><th>是否当前 Baum2 原生映射</th><th>处理建议</th></tr></thead><tbody>
+    <tr><td><code>Normal</code></td><td><code>_normal</code></td><td>是</td><td>按钮、页签、格子默认态。</td></tr>
+    <tr><td><code>Selected</code></td><td><code>_selected</code></td><td>是</td><td>页签、格子、列表项选中态。</td></tr>
+    <tr><td><code>Disabled</code></td><td><code>_disabled</code></td><td>是</td><td>按钮禁用态。</td></tr>
+    <tr><td><code>Locked</code></td><td><code>_locked</code></td><td>是</td><td>关卡、槽位、功能未解锁。</td></tr>
+    <tr><td><code>Claimed</code></td><td><code>_claimed</code></td><td>是</td><td>奖励已领取。</td></tr>
+    <tr><td><code>New</code></td><td><code>_new</code></td><td>是</td><td>新内容提示。</td></tr>
+    <tr><td><code>Claimable</code></td><td><code>_claimable</code></td><td>建议扩展</td><td>任务、奖励、宝箱可领取。</td></tr>
+    <tr><td><code>Unread</code></td><td><code>_unread</code></td><td>建议扩展</td><td>聊天、社交、邮件未读。</td></tr>
+    <tr><td><code>Insufficient</code></td><td><code>_insufficient</code></td><td>建议扩展</td><td>金币、材料、货币不足。</td></tr>
+  </tbody></table></div></div>
+  <div class="card"><h3>严谨导出流程</h3><div class="flow-steps"><div class="flow-step"><strong>PS 命名</strong><span>设计师在图层中使用 <code>ui_btn_</code>、<code>ui_txt_</code>、<code>ui_panel_</code>、<code>ui_glg_</code> 等 Baum2 前缀。</span></div><div class="flow-step"><strong>Baum2 导出</strong><span>导出 layout.txt 与 PNG 资源，只保留工具识别信息和布局参数。</span></div><div class="flow-step"><strong>Unity 规范化</strong><span>按映射规则把 <code>ui_btn_task_claim</code> 转成 <code>Btn_TaskClaim</code>。</span></div><div class="flow-step"><strong>交付校验</strong><span>运行命名校验器，检查默认名、中文名、前缀非法、系统名缺失和 Cell / Slot / Item 混用。</span></div></div></div>
+  <div class="card"><h3>Baum2 映射扩展建议</h3><pre>{
+  "state_suffixes": {
+    "_claimable": { "state": "claimable" },
+    "_unread": { "state": "unread" },
+    "_insufficient": { "state": "insufficient" }
+  }
+}</pre><p>该扩展不改变现有 Baum2 前缀体系，只补足手游常用业务状态。若项目不改 BaumMapping.json，也可以在导出后由 Unity 侧规范化脚本识别这些状态。</p></div>`;
+}
+
+function badCasesExtra(){
+  return `<div class="card"><h3>错误示例库</h3><div class="table-wrap"><table><thead><tr><th>错误命名</th><th>问题</th><th>推荐命名</th></tr></thead><tbody>
+    <tr><td><code>Button1</code></td><td>默认名，无业务动作</td><td><code>Btn_TaskClaim</code></td></tr>
+    <tr><td><code>Image_奖励</code></td><td>中文混入节点名</td><td><code>Icon_RewardItem</code></td></tr>
+    <tr><td><code>Txt_Num</code></td><td>数量命名不统一</td><td><code>Txt_Count</code> / <code>Txt_RewardCount</code></td></tr>
+    <tr><td><code>Cell_EquipWeapon</code></td><td>固定装备槽不应使用 Cell</td><td><code>Slot_EquipWeapon</code></td></tr>
+    <tr><td><code>Item_BagItem</code></td><td>背包网格格子不应使用 Item</td><td><code>Cell_BagItem</code></td></tr>
+    <tr><td><code>Popup_TaskRewardGet</code></td><td>跨系统弹窗归属错误</td><td><code>Popup_RewardGet</code></td></tr>
+    <tr><td><code>spr_bg_01</code></td><td>资源无系统语义</td><td><code>spr_reward_popup_bg</code></td></tr>
+    <tr><td><code>Click()</code></td><td>事件动作不明确</td><td><code>OnClickRewardConfirm()</code></td></tr>
+  </tbody></table></div></div>
+  <div class="card"><h3>审查口径</h3><div class="flow-steps"><div class="flow-step"><strong>先看前缀</strong><span>确认 Window、Popup、Panel、Item、Cell、Slot 是否符合控件类型。</span></div><div class="flow-step"><strong>再看系统</strong><span>确认 Task、Bag、RewardPopup 等系统归属是否正确。</span></div><div class="flow-step"><strong>再看语义</strong><span>确认 Claim、Confirm、GotoSource 等动作是否明确。</span></div><div class="flow-step"><strong>最后看状态</strong><span>确认 Disabled、Locked、Claimable 等后缀是否来自词典。</span></div></div></div>`;
+}
+
+function validatorExtra(){
+  return `<div class="card"><h3>批量命名校验器</h3><p>输入一行一个名称，支持检查场景节点、Prefab、Sprite/Icon/FX、本地化 Key、事件/方法命名，也支持检查 Baum2 的 PS 图层命名，例如 ui_btn_task_claim_normal@center。该校验器用于交付前自检，不替代代码编译检查。</p>
+    <div class="validator-panel"><textarea id="namingInput" class="validator-input" spellcheck="false" placeholder="示例：\nWindow_TaskMain\nBtn_TaskClaim\nspr_reward_popup_bg\nui.reward.title.get\nOnClickRewardConfirm()\nButton1\nImage_道具"></textarea>
+    <div class="validator-actions"><button id="runNamingCheck" class="mode-btn active" type="button">开始检查</button><button id="loadSampleNames" class="mode-btn" type="button">载入示例</button><button id="clearNamingCheck" class="mode-btn" type="button">清空</button><span class="hint">规则：Unity 节点 PascalCase，资源和 PS 图层 snake_case，Key 小写点分隔，事件 PascalCase + 动词。</span></div>
+    <div id="namingCheckResult"></div></div></div>
+    <div class="card"><h3>交付前检查流程</h3><div class="flow-steps"><div class="flow-step"><strong>检查节点</strong><span>Window / Popup / Panel / Group / Item / Cell / Slot 层级是否清晰。</span></div><div class="flow-step"><strong>检查资源</strong><span>Sprite、Icon、FX、Audio 是否使用 snake_case 与系统名。</span></div><div class="flow-step"><strong>检查 Key</strong><span>本地化是否使用 ui.[system].[module].[name]。</span></div><div class="flow-step"><strong>检查事件</strong><span>OnClick / Refresh / Open / Close / Play 等动词是否明确。</span></div></div></div>
+    <div class="card"><h3>命名速查</h3><div class="quick-table"><div class="quick-card"><h4>允许的节点前缀</h4><div class="tag-list"><code>Window_</code><code>Popup_</code><code>Panel_</code><code>Group_</code><code>Scroll_</code><code>Grid_</code><code>Item_</code><code>Cell_</code><code>Slot_</code><code>Btn_</code><code>Txt_</code><code>Icon_</code><code>Img_</code><code>Bar_</code><code>Input_</code><code>RedDot_</code><code>Badge_</code></div></div><div class="quick-card"><h4>资源前缀</h4><div class="tag-list"><code>spr_</code><code>icon_</code><code>fx_</code><code>anim_</code><code>audio_</code><code>ui_</code></div></div></div></div>`;
+}
+function strictSystemExtra(item){
+  if(currentType!=='system') return '';
+  const rule = STRICT_SYSTEM_RULES[item.id];
+  if(!rule) return '';
+  const chips = arr => arr.map(x=>`<code>${escapeHtml(x)}</code>`).join('');
+  return `<div class="card"><h3>严谨交付清单</h3><p>该表用于研发搭界面、Unity 绑定节点、美术切图交付前自检。必需节点缺失视为结构不完整；禁止节点出现视为命名不合格。</p><div class="table-wrap"><table class="strict-table"><thead><tr><th>级别</th><th>节点清单</th><th>判定口径</th></tr></thead><tbody><tr><td><span class="strict-badge required">必需</span></td><td>${chips(rule.required)}</td><td>系统最小可运行结构，Prefab 或场景层级中必须存在。</td></tr><tr><td><span class="strict-badge optional">可选</span></td><td>${chips(rule.optional)}</td><td>按功能开启、入口状态或运营配置决定是否出现。</td></tr><tr><td><span class="strict-badge forbidden">禁止</span></td><td>${chips(rule.forbidden)}</td><td>默认名、跨系统归属错误、Cell/Slot/Item 混用或动作语义不清。</td></tr></tbody></table></div></div>`;
+}
+function strictOverviewExtra(){
+  if(currentType!=='overview' || currentId!=='overview') return '';
+  const rows = GLOBAL_STRICT_RULES.typeBoundary.map(r=>`<tr><td><code>${escapeHtml(r[0])}</code></td><td>${escapeHtml(r[1])}</td></tr>`).join('');
+  const stateRows = GLOBAL_STRICT_RULES.stateGroups.map(r=>`<tr><td>${escapeHtml(r[0])}</td><td><code>${escapeHtml(r[1])}</code></td></tr>`).join('');
+  return `<div class="card"><h3>全局严谨边界</h3><p>命名先判定对象类型，再判定系统归属，最后判定语义和状态。不得为了方便把节点类型、业务来源、临时备注混写在同一个名称里。</p><div class="table-wrap"><table><thead><tr><th>前缀</th><th>边界说明</th></tr></thead><tbody>${rows}</tbody></table></div></div><div class="card"><h3>状态分层约束</h3><div class="table-wrap"><table><thead><tr><th>状态层级</th><th>允许词</th></tr></thead><tbody>${stateRows}</tbody></table></div></div>`;
+}
+
+function renderDetail(){
+  detail.classList.add('loading');
+  const item = getItem(currentType,currentId);
+  const typeLabel = currentType==='common'?'通用控件组件':currentType==='system'?'游戏系统':'规范总览';
+  detail.innerHTML = `<div class="hero">
+    <h2>${escapeHtml(item.title)}</h2>
+    <p>${escapeHtml(item.desc)}</p>
+    <div class="meta-row"><span class="pill">分类：${typeLabel}</span><span class="pill">英文模块：${escapeHtml(item.alias)}</span><span class="pill">标签：${escapeHtml(item.tag)}</span></div>
+  </div>
+  <div class="content-grid">
+    <div>
+      <div class="card"><h3>命名公式</h3><pre>${escapeHtml(item.formula)}</pre><p>场景节点建议使用 PascalCase；图片、音效、动画等资源文件建议使用 snake_case；本地化 Key 统一使用小写点分隔。</p></div>
+      <div class="card"><h3>${currentType==='system'?'系统核心控件命名表':'核心节点命名表'}</h3><div class="table-wrap"><table><thead><tr><th>节点/字段</th><th>类型</th><th>用途</th></tr></thead><tbody>${tableRows(item.nodes)}</tbody></table></div></div>
+      <div class="card"><h3>资源 / Key / 事件命名示例</h3>${exampleBlock(item.examples)}</div>
+      <div class="card"><h3>提交检查项</h3><div class="two-col">${(item.checklist||[]).map((x,idx)=>`<div class="notice ${idx%2?'':'good'}">${escapeHtml(x)}</div>`).join('')}</div></div>
+      ${strictSystemExtra(item)}
+      ${strictOverviewExtra()}
+      ${currentType==='overview' ? overviewExtra() : crossRule(currentType,item)}
+    </div>
+    ${phoneMock(item,currentType)}
+  </div>`;
+  document.querySelectorAll('.component-card').forEach(card=>{
+    card.onclick=()=>select(card.dataset.cardType,card.dataset.cardId);
+    card.onkeydown=(e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); select(card.dataset.cardType,card.dataset.cardId); } };
+  });
+  initValidator();
+  requestAnimationFrame(()=>detail.classList.remove('loading'));
+}
+function crossRule(type,item){
+  if(type==='common'){
+    return `<div class="card"><h3>系统实例化规则</h3><p>通用组件在系统内落地时，根 Prefab 可继续使用 <code>UI_Common_*</code>，但场景实例节点必须改成业务语义。</p><div class="table-wrap"><table><thead><tr><th>通用组件</th><th>任务系统实例</th><th>背包系统实例</th><th>锻造系统实例</th></tr></thead><tbody>
+      <tr><td>Btn_[Action]</td><td>Btn_TaskClaim</td><td>Btn_ItemUse</td><td>Btn_ForgeStart</td></tr>
+      <tr><td>Cell_[ItemType]</td><td>Cell_TaskReward</td><td>Cell_BagItem</td><td>Slot_ForgeMaterial</td></tr>
+      <tr><td>State_Empty_[Name]</td><td>State_Empty_Task</td><td>State_Empty_Bag</td><td>State_Empty_ForgeRecipe</td></tr>
+      <tr><td>Group_Cost_[Name]</td><td>Group_Cost_TaskRefresh</td><td>Group_Cost_ItemUse</td><td>Group_Cost_Forge</td></tr>
+    </tbody></table></div></div>`;
+  }
+  return `<div class="card"><h3>该系统建议复用的通用组件</h3><div class="chip-row">${recommendCommon(item.id).map(id=>{const c=COMMON.find(x=>x.id===id);return `<button class="mode-btn" data-reuse-id="${id}" style="padding:7px 10px;">${escapeHtml(c?c.title:id)}</button>`}).join('')}</div><p>点击上方组件可跳转查看该组件的基础命名规范。</p></div>`;
+}
+function recommendCommon(systemId){
+  const map={
+    task:['titlebar','tab','listitem','slot','progress','reddot','toast','empty'],
+    bag:['titlebar','tab','slot','popup','empty','resource'],
+    level:['titlebar','listitem','slot','progress','popup','empty'],
+    chat:['titlebar','tab','listitem','input','avatar','reddot','toast'],
+    social:['titlebar','tab','listitem','input','avatar','popup','empty'],
+    forge:['titlebar','tab','listitem','slot','resource','progress','popup','toast'],
+    cardmerge:['titlebar','tab','slot','progress','resource','popup','toast'],
+    equip:['titlebar','slot','listitem','popup','resource','empty'],
+    itemmaterial:['popup','slot','listitem','resource','toast'],
+    rewardpopup:['popup','slot','button','toast','resource']
+  };
+  return map[systemId] || ['titlebar','button','popup'];
+}
+
+
+function initValidator(){
+  const input = document.getElementById('namingInput');
+  const run = document.getElementById('runNamingCheck');
+  const sample = document.getElementById('loadSampleNames');
+  const clear = document.getElementById('clearNamingCheck');
+  const result = document.getElementById('namingCheckResult');
+  if(!input || !run || !result) return;
+  const sampleText = ['Window_TaskMain','Popup_RewardGet','Panel_RewardContent','Grid_RewardItem','Cell_RewardItem','Slot_CardSource','Slot_CardTarget','Btn_RewardConfirm','spr_reward_popup_bg','icon_bag_material','fx_ui_reward_get_glow','ui.reward.title.get','OnClickRewardConfirm()','Button1','Image_道具','Panel01','Txt_Num','Slot_BagItem','Cell_EquipWeapon','ui_btn_task_claim_normal@center','ui_panel_reward_content@stretchxy','ui_glg_reward_item','ui_btn_ok_normal@center','ui_btn_领取@center','ui_btn_task_claim_can_get@center'].join('\n');
+  sample.onclick=()=>{ input.value=sampleText; runCheck(); };
+  clear.onclick=()=>{ input.value=''; result.innerHTML=''; };
+  run.onclick=runCheck;
+  function runCheck(){
+    const lines = input.value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    const rows = lines.map(checkName);
+    const ok = rows.filter(r=>r.level==='ok').length;
+    const warn = rows.filter(r=>r.level==='warn').length;
+    const bad = rows.filter(r=>r.level==='bad').length;
+    result.innerHTML = `<div class="validator-summary"><div class="validator-stat"><strong>${lines.length}</strong><span>检查总数</span></div><div class="validator-stat"><strong class="status-ok">${ok}</strong><span>通过</span></div><div class="validator-stat"><strong class="status-warn">${warn}</strong><span>警告</span></div><div class="validator-stat"><strong class="status-bad">${bad}</strong><span>错误</span></div></div>
+      <div class="validator-result"><div class="table-wrap"><table aria-label="命名校验结果"><thead><tr><th>名称</th><th>类型</th><th>结果</th><th>建议</th></tr></thead><tbody>${rows.map(r=>`<tr><td><code>${escapeHtml(r.name)}</code></td><td>${escapeHtml(r.type)}</td><td class="status-${r.level==='bad'?'bad':r.level==='warn'?'warn':'ok'}">${escapeHtml(r.label)}</td><td>${escapeHtml(r.suggestion)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  }
+}
+function checkBaum2LayerName(name){
+  const baumPrefixes = ['ui_btn_','ui_txt_','ui_img_','ui_icon_','ui_input_','ui_slider_','ui_tog_','ui_drop_','ui_scroll_','ui_tab_','ui_badge_','ui_progress_','ui_check_','ui_radio_','ui_panel_','ui_bg_','ui_mask_','ui_divider_','ui_frame_','ui_card_','ui_popup_','ui_toast_','ui_loading_','ui_item_','ui_header_','ui_footer_','ui_arrow_','ui_close_','ui_handle_','ui_thumb_','ui_glg_','ui_vlg_','ui_hlg_','ui_cg_'];
+  const baumParams = ['center','top','bottom','left','right','middle','stretchx','stretchy','stretchxy','rot90','rot-90','flipx','flipy','scale2'];
+  const baumStates = ['_normal','_hover','_pressed','_disabled','_selected','_highlighted','_inactive','_empty','_filled','_locked','_completed','_claimed','_new','_claimable','_unread','_insufficient'];
+  if(name === '#Canvas') return {name,type:'Baum2 特殊图层',level:'ok',label:'通过',suggestion:'#Canvas 用于定义画布区域。'};
+  if(/^#/.test(name)) return {name,type:'Baum2 注释图层',level:'ok',label:'通过',suggestion:'# 开头图层作为注释，不导出。'};
+  if(/^\*/.test(name)) return {name,type:'Baum2 栅格化图层',level:'ok',label:'通过',suggestion:'* 开头图层表示需要栅格化。'};
+  if(!name.startsWith('ui_')) return null;
+  const parts = name.split('@');
+  const base = parts.shift();
+  const params = parts.filter(Boolean);
+  if(!/^[a-z0-9_]+$/.test(base)) return {name,type:'Baum2 PS 图层',level:'bad',label:'错误',suggestion:'PS 图层必须使用小写 snake_case，不能使用中文、大写或空格，例如 ui_btn_task_claim_normal@center。'};
+  const badParam = params.find(p=>!baumParams.includes(p));
+  if(badParam) return {name,type:'Baum2 PS 图层',level:'warn',label:'警告',suggestion:'发现未登记导出参数 @'+badParam+'。建议只使用 @center、@stretchx、@stretchy、@stretchxy、@rot90、@flipx 等 Baum2 参数。'};
+  const prefix = baumPrefixes.find(p=>base.startsWith(p));
+  if(!prefix) return {name,type:'Baum2 PS 图层',level:'bad',label:'错误',suggestion:'ui_ 前缀未登记到 Baum2 映射表。请使用 ui_btn_、ui_txt_、ui_img_、ui_icon_、ui_panel_、ui_scroll_、ui_glg_ 等。'};
+  let semantic = base.slice(prefix.length);
+  const matchedState = baumStates.find(st=>semantic.endsWith(st));
+  if(matchedState) semantic = semantic.slice(0, -matchedState.length);
+  if(!semantic) return {name,type:'Baum2 PS 图层',level:'bad',label:'错误',suggestion:'缺少业务语义。格式应为 ui_[type]_[system]_[semantic]_[state]@layout。'};
+  if(/(^|_)(button|image|text|panel|ok|go|bg|new|temp|copy)(_|$)/.test(semantic) && /ui_(btn|txt|panel|item)_/.test(prefix)){
+    return {name,type:'Baum2 PS 图层',level:'warn',label:'警告',suggestion:'Baum2 前缀合法，但语义偏通用。建议补充系统和动作，例如 ui_btn_task_claim_normal@center → Btn_TaskClaim。'};
+  }
+  const knownBusiness = ['task','bag','level','chat','social','forge','cardmerge','equip','item','material','reward','common'];
+  const hasBusiness = knownBusiness.some(x=>semantic.split('_').includes(x) || semantic.includes(x));
+  return {name,type:'Baum2 PS 图层',level:hasBusiness?'ok':'warn',label:hasBusiness?'通过':'警告',suggestion:hasBusiness?'PS 图层符合 Baum2 前缀、snake_case、状态和布局参数规则；导入 Unity 后需转换为 PascalCase 业务节点。':'Baum2 前缀合法，但建议补充系统归属，例如 task、bag、reward、common。'};
+}
+
+function checkName(name){
+  const nodePrefixes = ['Window_','Popup_','Panel_','Group_','Scroll_','Viewport_','Content_','Grid_','Item_','Cell_','Slot_','Btn_','Txt_','Icon_','Img_','Bar_','Input_','RedDot_','Badge_','State_','Mask_','Row_','Avatar_','Toast_','Effect_','Anim_','Tab_','Frame_'];
+  const resourcePrefixes = ['spr_','icon_','fx_','anim_','audio_','ui_'];
+  const systemAliases = SYSTEMS.map(s=>s.alias);
+  const forbidden = [/^Button\d*$/i,/^Image\d*$/i,/^Text\d*$/i,/^Panel\d*$/i,/^New Text$/i,/^GameObject\d*$/i,/^Untitled/i];
+  const hasChinese = /[\u4e00-\u9fa5]/.test(name);
+  if(forbidden.some(r=>r.test(name))) return {name,type:'默认命名',level:'bad',label:'错误',suggestion:'禁止使用引擎默认名。改为“前缀_系统_语义”，例如 Btn_TaskClaim。'};
+  if(hasChinese) return {name,type:'含中文',level:'bad',label:'错误',suggestion:'节点、资源、Key、事件、PS 图层统一使用英文命名；中文只进入本地化文本。'};
+  const baum2Result = checkBaum2LayerName(name);
+  if(baum2Result) return baum2Result;
+  if(/^ui\.[a-z0-9_.-]+$/.test(name)){
+    const okSystem = /^ui\.(common|task|bag|level|chat|social|forge|cardmerge|equip|itemmaterial|reward|rewardpopup)(\.|$)/.test(name);
+    return {name,type:'本地化 Key',level:okSystem?'ok':'warn',label:okSystem?'通过':'警告',suggestion:okSystem?'Key 符合小写点分隔规则。':'建议使用 ui.[system].[module].[name]，例如 ui.reward.title.get。'};
+  }
+  if(/^On[A-Z][A-Za-z0-9_]*\(.*\)$/.test(name) || /^(Refresh|Open|Close|Play|Set|Get)[A-Z][A-Za-z0-9_]*\(.*\)$/.test(name)){
+    return {name,type:'事件/方法',level:'ok',label:'通过',suggestion:'事件/方法使用 PascalCase 动词结构。'};
+  }
+  if(resourcePrefixes.some(p=>name.startsWith(p))){
+    if(!/^[a-z0-9_]+$/.test(name)) return {name,type:'资源文件',level:'bad',label:'错误',suggestion:'资源文件必须使用 snake_case，例如 spr_reward_popup_bg。'};
+    const hasSystem = ['common','task','bag','level','chat','social','forge','cardmerge','equip','item','reward'].some(s=>name.includes('_'+s+'_') || name.startsWith('ui_'+s+'_'));
+    return {name,type:'资源文件',level:hasSystem?'ok':'warn',label:hasSystem?'通过':'警告',suggestion:hasSystem?'资源命名符合 snake_case 且包含系统语义。':'建议在资源名中加入系统语义，如 spr_reward_popup_bg。'};
+  }
+  if(nodePrefixes.some(p=>name.startsWith(p))){
+    if(!/^[A-Za-z][A-Za-z0-9_\[\]-]*$/.test(name)) return {name,type:'GUI 节点',level:'bad',label:'错误',suggestion:'GUI 节点只允许英文、数字、下划线和少量模板符号。'};
+    if(name.includes('__')) return {name,type:'GUI 节点',level:'warn',label:'警告',suggestion:'避免连续下划线，保持 Type_System_Name_State。'};
+    if(/^Txt_Num$/.test(name)) return {name,type:'GUI 节点',level:'warn',label:'警告',suggestion:'数量文本统一使用 Txt_Count 或 Txt_[业务]Count。'};
+    if(/^Cell_Equip(Weapon|Armor|Accessory)$/i.test(name)) return {name,type:'GUI 节点',level:'warn',label:'警告',suggestion:'固定装备部位必须使用 Slot_EquipWeapon / Slot_EquipArmor / Slot_EquipAccessory；Cell_EquipItem 只用于装备列表格。'};
+    const fixedSlotAllow = /^(Slot_Equip(Weapon|Armor|Accessory)|Slot_Forge(Target|Material)|Slot_Card(Source|Target)|Slot_MaterialNeed|Slot_Target)$/;
+    if(fixedSlotAllow.test(name)) return {name,type:'GUI 节点',level:'ok',label:'通过',suggestion:'Slot 用于固定槽位，该命名符合固定槽位规则。'};
+    if(/^Slot_(Bag|Item|Reward|CardMaterial|MaterialItem)/.test(name)) return {name,type:'GUI 节点',level:'warn',label:'警告',suggestion:'列表/网格中的可重复格子应使用 Cell_ 前缀；Slot 仅用于固定槽位，例如 Slot_EquipWeapon、Slot_CardSource。'};
+    const hasSystem = systemAliases.some(alias=>name.includes(alias)) || name.includes('Common') || name.includes('Reward');
+    return {name,type:'GUI 节点',level:hasSystem?'ok':'warn',label:hasSystem?'通过':'警告',suggestion:hasSystem?'节点前缀合法且包含业务语义。':'前缀合法，但建议补充系统或业务语义，例如 Btn_RewardConfirm。'};
+  }
+  if(/^UI_[A-Za-z0-9_]+$/.test(name)) return {name,type:'Prefab / View',level:'ok',label:'通过',suggestion:'Prefab 使用 UI_[System]_[Name] 结构。'};
+  return {name,type:'未知',level:'warn',label:'警告',suggestion:'未识别到标准前缀。请按 Window_ / Popup_ / Btn_ / spr_ / ui. / OnClick 等规则重命名。'};
+}
+
+document.addEventListener('click', e=>{
+  const reuse = e.target.closest('[data-reuse-id]');
+  if(reuse) select('common',reuse.dataset.reuseId);
+});
+search.addEventListener('input', debounce(e=>{ searchText=e.target.value.trim(); renderNav(); }, 250));
+
+function debounce(fn,ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args),ms); }; }
+document.querySelectorAll('.mode-btn[data-jump]').forEach(btn=>{
+  btn.onclick=()=>{
+    const j=btn.dataset.jump;
+    if(j==='overview') select('overview', lastOverviewId);
+    if(j==='common') select('common','titlebar');
+    if(j==='systems') select('system','task');
+    if(j==='baum2') select('overview','baum2');
+    if(j==='validator') select('overview','validator');
+  };
+});
+renderNav();
+renderDetail();
+</script>
+</body>
+</html>

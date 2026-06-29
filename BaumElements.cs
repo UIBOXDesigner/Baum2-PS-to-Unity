@@ -16,12 +16,21 @@ namespace Baum2.Editor
             { "Image", (d, p) => new ImageElement(d, p) },
             { "Mask", (d, p) => new MaskElement(d, p) },
             { "Group", (d, p) => new GroupElement(d, p) },
+            { "Panel", (d, p) => new PanelElement(d, p) },
             { "Text", (d, p) => new TextElement(d, p) },
             { "Button", (d, p) => new ButtonElement(d, p) },
             { "List", (d, p) => new ListElement(d, p) },
+            { "ScrollRect", (d, p) => new ScrollRectElement(d, p) },
             { "Slider", (d, p) => new SliderElement(d, p) },
             { "Scrollbar", (d, p) => new ScrollbarElement(d, p) },
             { "Toggle", (d, p) => new ToggleElement(d, p) },
+            { "ToggleGroup", (d, p) => new ToggleGroupElement(d, p) },
+            { "InputField", (d, p) => new InputFieldElement(d, p) },
+            { "Dropdown", (d, p) => new DropdownElement(d, p) },
+            { "GridLayoutGroup", (d, p) => new GridLayoutGroupElement(d, p) },
+            { "VerticalLayoutGroup", (d, p) => new VerticalLayoutGroupElement(d, p) },
+            { "HorizontalLayoutGroup", (d, p) => new HorizontalLayoutGroupElement(d, p) },
+            { "CanvasGroup", (d, p) => new CanvasGroupElement(d, p) },
         };
 
         public static Element Generate(Dictionary<string, object> json, Element parent)
@@ -35,6 +44,7 @@ namespace Baum2.Editor
     public abstract class Element
     {
         public string name;
+        public string nodeName;
         protected string pivot;
         protected bool stretchX;
         protected bool stretchY;
@@ -51,6 +61,7 @@ namespace Baum2.Editor
         {
             this.parent = parent;
             name = json.Get("name");
+            nodeName = BaumNameNormalizer.Normalize(name);
             if (json.ContainsKey("pivot")) pivot = json.Get("pivot");
             if (json.ContainsKey("stretchxy") || json.ContainsKey("stretchx") || (parent != null ? parent.stretchX : false)) stretchX = true;
             if (json.ContainsKey("stretchxy") || json.ContainsKey("stretchy") || (parent != null ? parent.stretchY : false)) stretchY = true;
@@ -68,7 +79,7 @@ namespace Baum2.Editor
 
         protected GameObject CreateUIGameObject(Renderer renderer)
         {
-            var go = new GameObject(name);
+            var go = new GameObject(nodeName);
             go.AddComponent<RectTransform>();
             return go;
         }
@@ -166,7 +177,7 @@ namespace Baum2.Editor
         public GroupElement(Dictionary<string, object> json, Element parent, bool resetStretch = false) : base(json, parent)
         {
             elements = new List<Element>();
-            var jsonElements = json.Get<List<object>>("elements");
+            var jsonElements = json.Get<List<object>>("elements") ?? new List<object>();
             foreach (var jsonElement in jsonElements)
             {
                 var x = stretchX;
@@ -268,6 +279,173 @@ namespace Baum2.Editor
         }
     }
 
+    public class PanelElement : GroupElement
+    {
+        public PanelElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+    }
+
+    public sealed class ScrollRectElement : GroupElement
+    {
+        private string scroll;
+
+        public ScrollRectElement(Dictionary<string, object> json, Element parent) : base(json, parent, true)
+        {
+            if (json.ContainsKey("scroll")) scroll = json.Get("scroll");
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = CreateSelf(renderer);
+            var content = new GameObject("Content");
+            content.AddComponent<RectTransform>();
+            content.transform.SetParent(go.transform, false);
+
+            var contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = Vector2.zero;
+            contentRect.anchorMax = Vector2.one;
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
+            contentRect.localScale = Vector3.one;
+
+            RenderChildren(renderer, content);
+
+            var image = go.GetComponent<Image>();
+            if (image == null)
+            {
+                image = go.AddComponent<Image>();
+                image.color = new Color(0f, 0f, 0f, 0f);
+                image.raycastTarget = true;
+            }
+            if (go.GetComponent<RectMask2D>() == null) go.AddComponent<RectMask2D>();
+
+            var scrollRect = go.AddComponent<ScrollRect>();
+            scrollRect.content = contentRect;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.viewport = go.GetComponent<RectTransform>();
+            if (scroll == "horizontal")
+            {
+                scrollRect.horizontal = true;
+                scrollRect.vertical = false;
+            }
+            else
+            {
+                scrollRect.horizontal = false;
+                scrollRect.vertical = true;
+            }
+
+            SetStretch(go, renderer);
+            SetPivot(go, renderer);
+            return go;
+        }
+    }
+
+    public sealed class ToggleGroupElement : GroupElement
+    {
+        public ToggleGroupElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            if (go.GetComponent<ToggleGroup>() == null) go.AddComponent<ToggleGroup>();
+            return go;
+        }
+    }
+
+    public sealed class CanvasGroupElement : GroupElement
+    {
+        public CanvasGroupElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            if (go.GetComponent<CanvasGroup>() == null) go.AddComponent<CanvasGroup>();
+            return go;
+        }
+    }
+
+    public sealed class InputFieldElement : GroupElement
+    {
+        public InputFieldElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            var input = go.AddComponent<TMP_InputField>();
+            var texts = go.GetComponentsInChildren<TextMeshProUGUI>(true);
+            if (texts.Length > 0) input.textComponent = texts[0];
+            if (texts.Length > 1) input.placeholder = texts[1];
+            return go;
+        }
+    }
+
+    public sealed class DropdownElement : GroupElement
+    {
+        public DropdownElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            if (go.GetComponent<TMP_Dropdown>() == null) go.AddComponent<TMP_Dropdown>();
+            return go;
+        }
+    }
+
+    public sealed class GridLayoutGroupElement : GroupElement
+    {
+        public GridLayoutGroupElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            var grid = go.AddComponent<UnityEngine.UI.GridLayoutGroup>();
+            grid.childAlignment = TextAnchor.MiddleCenter;
+            grid.enabled = false; // 保留 PS 像素布局，不在导入瞬间重排子节点。
+            return go;
+        }
+    }
+
+    public sealed class VerticalLayoutGroupElement : GroupElement
+    {
+        public VerticalLayoutGroupElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            var layout = go.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
+            layout.enabled = false; // 保留 PS 像素布局，需要动态排版时再手动开启。
+            return go;
+        }
+    }
+
+    public sealed class HorizontalLayoutGroupElement : GroupElement
+    {
+        public HorizontalLayoutGroupElement(Dictionary<string, object> json, Element parent) : base(json, parent)
+        {
+        }
+
+        public override GameObject Render(Renderer renderer)
+        {
+            var go = base.Render(renderer);
+            var layout = go.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+            layout.enabled = false; // 保留 PS 像素布局，需要动态排版时再手动开启。
+            return go;
+        }
+    }
+
     public class RootElement : GroupElement
     {
         private Vector2 sizeDelta;
@@ -360,6 +538,34 @@ namespace Baum2.Editor
         private Color strokeColor;
         private string type;
 
+        private static Color SafeHexToColor(string value, Color fallback)
+        {
+            if (string.IsNullOrEmpty(value)) return fallback;
+
+            value = value.Trim().TrimStart('#');
+            if (value.Length == 3)
+            {
+                value = new string(new[] { value[0], value[0], value[1], value[1], value[2], value[2] });
+            }
+            else if (value.Length < 6)
+            {
+                value = value.PadLeft(6, '0');
+            }
+            else if (value.Length > 6)
+            {
+                value = value.Substring(value.Length - 6);
+            }
+
+            try
+            {
+                return EditorUtil.HexToColor(value);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
         public TextElement(Dictionary<string, object> json, Element parent) : base(json, parent)
         {
             message = json.Get("text");
@@ -373,12 +579,12 @@ namespace Baum2.Editor
                 strokeSize = json.GetInt("strokeSize");
                 
                 var strokeStr = json.Get("strokeColor");
-                strokeColor = !string.IsNullOrEmpty(strokeStr) ? EditorUtil.HexToColor(strokeStr) : Color.black;
+                strokeColor = SafeHexToColor(strokeStr, Color.black);
             }
             
             // 【修复6】增加颜色兜底，防止出现 null 引发报错崩溃
             var colorStr = json.Get("color");
-            fontColor = !string.IsNullOrEmpty(colorStr) ? EditorUtil.HexToColor(colorStr) : Color.black;
+            fontColor = SafeHexToColor(colorStr, Color.black);
             
             sizeDelta = json.GetVector2("w", "h");
             canvasPosition = json.GetVector2("x", "y");

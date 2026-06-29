@@ -3,9 +3,9 @@
 # 适配 UI资源命名规范.md 的完整工作流
 # 
 # 命名规则：
-# - 控件前缀：ui_btn_, ui_txt_, ui_img_, ui_icon_, ui_input_, ui_slider_, ui_tog_, ui_drop_, ui_scroll_, ui_tab_, ui_badge_, ui_progress_, ui_check_, ui_radio_
+# - 控件前缀：ui_btn_, ui_txt_, ui_img_, ui_icon_, ui_input_, ui_slider_, ui_tog_, ui_drop_, ui_scroll_, ui_tab_, ui_badge_, ui_progress_, ui_check_, ui_radio_, ui_cell_, ui_slot_, ui_reddot_, ui_state_, ui_effect_, ui_anim_, ui_avatar_
 # - 面板容器：ui_panel_, ui_bg_, ui_mask_, ui_divider_, ui_frame_, ui_card_, ui_popup_, ui_toast_, ui_loading_, ui_item_, ui_header_, ui_footer_, ui_arrow_, ui_close_, ui_handle_, ui_thumb_
-# - 状态后缀：_normal, _hover, _pressed, _disabled, _selected, _highlighted, _inactive, _empty, _filled, _locked, _completed, _claimed, _new
+# - 状态后缀：_normal, _hover, _pressed, _disabled, _selected, _highlighted, _inactive, _empty, _filled, _locked, _completed, _claimed, _new, _claimable, _unread, _insufficient, _equipped, _loading
 # - 布局组件：ui_glg_, ui_vlg_, ui_hlg_, ui_cg_
 # 
 # 使用示例：
@@ -32,7 +32,7 @@ class Baum
     alert('complete!')
 
 
-  runOneFile: (after_close) =>
+  runOneFile: (after_close) ->
     @saveFolder = Folder.selectDialog("选择保存至文件夹") if @saveFolder == null
     return if @saveFolder == null
 
@@ -458,7 +458,7 @@ class PsdToJson
       hash = { type: 'Button' }
     else if name.startsWith('ui_txt_')
       hash = { type: 'Text' }
-    else if name.startsWith('ui_img_') || name.startsWith('ui_icon_') || name.startsWith('ui_bg_') || name.startsWith('ui_frame_') || name.startsWith('ui_arrow_') || name.startsWith('ui_handle_') || name.startsWith('ui_thumb_') || name.startsWith('ui_badge_') || name.startsWith('ui_divider_')
+    else if name.startsWith('ui_img_') || name.startsWith('ui_icon_') || name.startsWith('ui_bg_') || name.startsWith('ui_frame_') || name.startsWith('ui_arrow_') || name.startsWith('ui_handle_') || name.startsWith('ui_thumb_') || name.startsWith('ui_badge_') || name.startsWith('ui_divider_') || name.startsWith('ui_cell_') || name.startsWith('ui_slot_') || name.startsWith('ui_reddot_') || name.startsWith('ui_state_') || name.startsWith('ui_effect_') || name.startsWith('ui_anim_') || name.startsWith('ui_avatar_')
       hash = { type: 'Image' }
     else if name.startsWith('ui_input_')
       hash = { type: 'InputField' }
@@ -495,7 +495,7 @@ class PsdToJson
     hash['stretchxy'] = opt['stretchxy'] if opt['stretchxy']
     
     # 状态后缀识别
-    for suffix in ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new']
+    for suffix in ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new', '_claimable', '_unread', '_insufficient', '_equipped', '_loading']
       if name.endsWith(suffix)
         hash['state'] = suffix.substring(1)
         break
@@ -555,7 +555,7 @@ class PsdToImage
     if opt['slice'] == 'false'
       fileName += "-noslice"
     fileNames.push(fileName)
-    saveFile = new File("#{@baseFolder.fsName}/#{fileName}.png")
+    saveFile = new File(@baseFolder.fsName + "/" + fileName + ".png")
     options = new ExportOptionsSaveForWeb()
     options.format = SaveDocumentType.PNG
     options.PNG8 = false
@@ -581,7 +581,7 @@ class Util
     baseName = layer.name.split("@")[0]
     
     # 移除状态后缀
-    for suffix in ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new']
+    for suffix in ['_normal', '_hover', '_pressed', '_disabled', '_selected', '_highlighted', '_inactive', '_empty', '_filled', '_locked', '_completed', '_claimed', '_new', '_claimable', '_unread', '_insufficient', '_equipped', '_loading']
       if baseName.endsWith(suffix)
         baseName = baseName.substring(0, baseName.length - suffix.length)
         break

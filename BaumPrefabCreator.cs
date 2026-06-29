@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEditor;
@@ -73,11 +74,35 @@ namespace Baum2.Editor
 
             Postprocess(root);
 
+            // 递归归一化所有GameObject名称（安全兜底，确保无遗漏）
+            NormalizeHierarchyNames(root.transform);
+
             // (这部分是默认的 Cache，如果你不需要了可以注释掉)
             // var cache = root.AddComponent<Cache>();
             // cache.CreateCache(root.transform);
 
             return root;
+        }
+
+        /// <summary>
+        /// 递归遍历所有子节点，对仍使用原始PS图层名的GameObject进行归一化。
+        /// 这是兜底逻辑，正常路径已在 Element.CreateUIGameObject 中完成归一化。
+        /// </summary>
+        private static void NormalizeHierarchyNames(Transform t)
+        {
+            if (t == null) return;
+
+            // 尝试归一化当前节点名
+            string normalized = BaumNameNormalizer.Normalize(t.name);
+            if (normalized != t.name)
+            {
+                t.name = normalized;
+            }
+
+            foreach (Transform child in t)
+            {
+                NormalizeHierarchyNames(child);
+            }
         }
 
         private void Postprocess(GameObject go)
@@ -121,7 +146,24 @@ namespace Baum2.Editor
         {
             var fullPath = Path.Combine(spriteRootPath, spriteName) + ".png";
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(fullPath);
-            Assert.IsNotNull(sprite, string.Format("[Baum2] sprite \"{0}\" is not found fullPath:{1}", spriteName, fullPath));
+
+            // Unity 默认可能把 Photoshop 导出的 PNG 当作 Default Texture，
+            // LoadAssetAtPath<Sprite> 会返回 null。这里自动修正为 Sprite 后重新导入。
+            if (sprite == null)
+            {
+                var importer = AssetImporter.GetAtPath(fullPath) as TextureImporter;
+                if (importer != null)
+                {
+                    importer.textureType = TextureImporterType.Sprite;
+                    importer.spriteImportMode = SpriteImportMode.Single;
+                    importer.alphaIsTransparency = true;
+                    importer.mipmapEnabled = false;
+                    importer.SaveAndReimport();
+                    sprite = AssetDatabase.LoadAssetAtPath<Sprite>(fullPath);
+                }
+            }
+
+            Assert.IsNotNull(sprite, string.Format("[Baum2] sprite \"{0}\" is not found or cannot be imported as Sprite. fullPath:{1}", spriteName, fullPath));
             return sprite;
         }
 
@@ -209,32 +251,36 @@ namespace Baum2.Editor
     {
         public static string Get(this Dictionary<string, object> json, string key)
         {
-            return json[key] as string;
+            if (json == null || !json.ContainsKey(key) || json[key] == null) return null;
+            return Convert.ToString(json[key], CultureInfo.InvariantCulture);
         }
 
         public static float GetFloat(this Dictionary<string, object> json, string key)
         {
-            return (float)json[key];
+            if (json == null || !json.ContainsKey(key) || json[key] == null) return 0f;
+            return Convert.ToSingle(json[key], CultureInfo.InvariantCulture);
         }
 
         public static int GetInt(this Dictionary<string, object> json, string key)
         {
-            return (int)(float)json[key];
+            return Mathf.RoundToInt(json.GetFloat(key));
         }
 
         public static T Get<T>(this Dictionary<string, object> json, string key) where T : class
         {
+            if (json == null || !json.ContainsKey(key)) return null;
             return json[key] as T;
         }
 
         public static Dictionary<string, object> GetDic(this Dictionary<string, object> json, string key)
         {
+            if (json == null || !json.ContainsKey(key)) return null;
             return json[key] as Dictionary<string, object>;
         }
 
         public static Vector2 GetVector2(this Dictionary<string, object> json, string keyX, string keyY)
         {
-            return new Vector2((float)json[keyX], (float)json[keyY]);
+            return new Vector2(json.GetFloat(keyX), json.GetFloat(keyY));
         }
     }
 }
