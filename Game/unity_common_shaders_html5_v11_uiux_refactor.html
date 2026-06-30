@@ -1,0 +1,4294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unity 常备 Shader 清单 - UI交互重构版</title>
+<style>
+
+:root{
+    --bg:#f5efe6;
+    --paper:#fffaf2;
+    --ink:#2d241a;
+    --muted:#756653;
+    --line:#d9c5a8;
+    --brand:#8a4f23;
+    --brand2:#b06c33;
+    --good:#2e7d4f;
+    --warn:#a96d13;
+    --soft:#f0dfc4;
+    --card:#fff7e9;
+    --code:#2b241e;
+    --gold:#ffd46a;
+    --red:#bf3d2d;
+    --green:#2e9d64;
+    --blue:#3476d7;
+    --purple:#7e4acc;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+    margin:0;
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(176,108,51,.18), transparent 32rem),
+        linear-gradient(180deg,#f9f1e5 0%,var(--bg) 100%);
+    color:var(--ink);
+}
+header{
+    padding:42px 28px 28px;
+    background:linear-gradient(135deg,#3a2517,#7a431e 58%,#b8793d);
+    color:#fff7e7;
+    border-bottom:6px solid #d7b37b;
+}
+.header-inner{max-width:1220px;margin:0 auto}
+.kicker{
+    display:inline-block;
+    padding:6px 12px;
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;
+    font-size:13px;
+    letter-spacing:.08em;
+    color:#ffe7bf;
+    margin-bottom:14px;
+}
+h1{margin:0;font-size:38px;line-height:1.18;letter-spacing:.02em}
+.subtitle{max-width:900px;margin:14px 0 0;color:#f4dfbd;line-height:1.8;font-size:16px}
+.meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:22px;
+}
+.meta span{
+    padding:8px 12px;
+    border-radius:10px;
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.16);
+    font-size:13px;
+}
+main{max-width:1220px;margin:0 auto;padding:28px}
+nav{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:rgba(245,239,230,.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+}
+.nav-inner{
+    max-width:1220px;
+    margin:0 auto;
+    padding:12px 28px;
+    display:flex;
+    gap:10px;
+    overflow:auto;
+}
+.nav-inner a{
+    white-space:nowrap;
+    color:var(--brand);
+    text-decoration:none;
+    padding:8px 12px;
+    border:1px solid var(--line);
+    background:#fff8ec;
+    border-radius:999px;
+    font-size:13px;
+}
+.panel{
+    background:rgba(255,250,242,.88);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 10px 30px rgba(60,35,15,.08);
+    margin-bottom:22px;
+}
+h2{
+    margin:0 0 10px;
+    font-size:24px;
+    color:#4a2b17;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+h2:before{
+    content:"";
+    width:8px;
+    height:24px;
+    border-radius:8px;
+    background:linear-gradient(180deg,var(--brand2),#4e2c18);
+}
+h3{margin:0 0 10px;color:#4a2b17}
+.section-desc{margin:0 0 18px;color:var(--muted);line-height:1.7}
+.toolbar{
+    display:grid;
+    grid-template-columns:1fr auto auto auto;
+    gap:10px;
+    margin-bottom:18px;
+}
+input,select,button{
+    font:inherit;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fffaf2;
+    color:var(--ink);
+    padding:10px 12px;
+}
+button{
+    cursor:pointer;
+    background:#7a431e;
+    color:#fff4df;
+    border-color:#7a431e;
+}
+button.secondary{
+    background:#fffaf2;
+    color:#7a431e;
+}
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+}
+.summary-card{
+    padding:18px;
+    border-radius:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+}
+.summary-card strong{display:block;font-size:28px;color:#693817}
+.summary-card span{display:block;margin-top:6px;color:var(--muted);font-size:14px}
+.cards{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+}
+.shader-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    position:relative;
+}
+.shader-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+}
+.shader-name{
+    font-weight:800;
+    color:#3b2516;
+    font-size:17px;
+    line-height:1.35;
+}
+.badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:48px;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    white-space:nowrap;
+    border:1px solid;
+}
+.badge.must{background:#e6f3eb;color:#1f6f42;border-color:#b8dcc5}
+.badge.common{background:#fff0d6;color:#875711;border-color:#e7c485}
+.badge.optional{background:#ece7ff;color:#5c46a2;border-color:#cfc4ff}
+.shader-card dl{margin:0;display:grid;grid-template-columns:72px 1fr;gap:8px 10px;line-height:1.65}
+.shader-card dt{color:#8a4f23;font-weight:700}
+.shader-card dd{margin:0;color:#4d4234}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px}
+table{width:100%;border-collapse:collapse;background:#fffaf2}
+th,td{padding:13px 14px;text-align:left;border-bottom:1px solid #ead9bf;vertical-align:top}
+th{background:#ecd5b3;color:#442712;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td{line-height:1.6}
+.checklist{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px 18px;
+    margin:0;
+    padding:0;
+    list-style:none;
+}
+.checklist li{
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fff8ec;
+    line-height:1.6;
+}
+.checklist li:before{
+    content:"✓";
+    color:var(--good);
+    font-weight:800;
+    margin-right:8px;
+}
+pre{
+    margin:0;
+    padding:18px;
+    overflow:auto;
+    border-radius:16px;
+    background:var(--code);
+    color:#f5e3c8;
+    line-height:1.45;
+    font-size:13px;
+    border:1px solid #4d3c30;
+}
+.code-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+}
+
+/* UI demo area */
+.demo-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+.demo-card{
+    border:1px solid var(--line);
+    background:#fff8ec;
+    border-radius:18px;
+    padding:16px;
+    overflow:hidden;
+}
+.demo-card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+}
+.demo-card-title{
+    font-weight:900;
+    color:#3b2516;
+    font-size:18px;
+}
+.demo-card-sub{
+    margin-top:4px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.55;
+}
+.demo-stage{
+    min-height:190px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:16px;
+    border:1px dashed #d6bd93;
+    background:
+        linear-gradient(45deg, rgba(122,67,30,.05) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(122,67,30,.05) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(122,67,30,.05) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(122,67,30,.05) 75%);
+    background-size:22px 22px;
+    background-position:0 0,0 11px,11px -11px,-11px 0px;
+    margin-bottom:12px;
+    position:relative;
+}
+.demo-foot{
+    display:grid;
+    grid-template-columns:88px 1fr;
+    gap:8px 10px;
+    font-size:13px;
+    line-height:1.55;
+}
+.demo-foot b{color:#8a4f23}
+.demo-foot span{color:#4d4234}
+.param-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+}
+.param{
+    display:inline-flex;
+    border:1px solid #e4c898;
+    background:#fff3d8;
+    color:#75461f;
+    border-radius:999px;
+    padding:5px 8px;
+    font-size:12px;
+}
+
+/* mock components */
+.mock-panel{
+    width:210px;
+    min-height:118px;
+    border-radius:18px;
+    background:linear-gradient(180deg,#ffe5a8,#c9873b);
+    border:4px solid #704017;
+    box-shadow:0 8px 0 #4b2812,0 14px 22px rgba(45,36,26,.22);
+    padding:14px;
+    color:#3b2516;
+    text-align:center;
+}
+.mock-panel .title{font-weight:900;font-size:20px;margin:3px 0 8px}
+.mock-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:136px;
+    height:42px;
+    border-radius:14px;
+    background:linear-gradient(180deg,#ffe87b,#c98527);
+    border:3px solid #6c3a14;
+    color:#3d210d;
+    font-weight:900;
+    box-shadow:0 4px 0 #5a2d10;
+}
+.reward-icon{
+    width:96px;
+    height:96px;
+    border-radius:22px;
+    background:
+      radial-gradient(circle at 36% 30%,#fff8bb 0 9%,transparent 10%),
+      linear-gradient(145deg,#ffe56e,#c06d23 62%,#6b3718);
+    border:5px solid #6a3515;
+    box-shadow:inset 0 0 0 4px rgba(255,255,255,.25),0 8px 18px rgba(70,36,13,.28);
+    position:relative;
+}
+.reward-icon:before{
+    content:"★";
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff4c4;
+    text-shadow:0 2px 0 #7a3d12;
+    font-size:44px;
+}
+.reward-icon:after{
+    content:"x99";
+    position:absolute;
+    right:-8px;
+    bottom:-8px;
+    background:#2b241e;
+    color:#fff1c7;
+    border:2px solid #fff1c7;
+    border-radius:999px;
+    padding:3px 7px;
+    font-size:13px;
+    font-weight:900;
+}
+.demo-gray .demo-stage{
+    gap:18px;
+}
+.demo-gray .reward-icon.gray{
+    filter:grayscale(1);
+    opacity:.68;
+}
+.demo-outline .reward-icon{
+    outline:5px solid #fff4ad;
+    box-shadow:
+      0 0 0 10px #7e4acc,
+      0 0 0 14px #f2d173,
+      inset 0 0 0 4px rgba(255,255,255,.25),
+      0 8px 18px rgba(70,36,13,.28);
+}
+.demo-glow .reward-icon{
+    animation:pulseGlow 1.45s ease-in-out infinite;
+}
+@keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 12px rgba(255,212,106,.4),0 0 0 4px rgba(255,255,255,.25) inset,0 8px 18px rgba(70,36,13,.25)}
+    50%{box-shadow:0 0 34px rgba(255,212,106,.95),0 0 16px rgba(255,83,57,.55),0 0 0 4px rgba(255,255,255,.25) inset,0 8px 18px rgba(70,36,13,.25)}
+}
+.flow-button{
+    width:190px;
+    height:62px;
+    border-radius:18px;
+    border:4px solid #623414;
+    background:linear-gradient(180deg,#ffdc74,#b86f25);
+    box-shadow:0 6px 0 #4d2811;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:21px;
+    font-weight:900;
+    color:#3c220f;
+}
+.flow-button:before{
+    content:"";
+    position:absolute;
+    top:-30%;
+    left:-45%;
+    width:32%;
+    height:170%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+    transform:rotate(24deg);
+    animation:flowLight 2s linear infinite;
+}
+.flow-button span{position:relative;z-index:2}
+@keyframes flowLight{
+    0%{left:-45%}
+    100%{left:120%}
+}
+.cooldown-wrap{
+    position:relative;
+    width:108px;
+    height:108px;
+    border-radius:50%;
+    border:5px solid #6a3515;
+    background:
+        conic-gradient(rgba(0,0,0,.62) 0 138deg, transparent 138deg 360deg),
+        radial-gradient(circle,#f7ca66,#b76727 60%,#683113);
+    box-shadow:inset 0 0 0 5px rgba(255,255,255,.22),0 8px 18px rgba(70,36,13,.22);
+}
+.cooldown-wrap:before{
+    content:"⚡";
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff3bd;
+    font-size:42px;
+    text-shadow:0 2px 0 #653111;
+}
+.cooldown-wrap:after{
+    content:"3.2";
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:23px;
+    font-weight:900;
+    color:#fff;
+    text-shadow:0 2px 3px #000;
+    transform:translateY(34px);
+}
+.progress-box{
+    width:260px;
+    display:grid;
+    gap:16px;
+}
+.bar{
+    height:26px;
+    border-radius:999px;
+    background:#56301a;
+    border:3px solid #2d190c;
+    overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+}
+.bar .fill{
+    width:68%;
+    height:100%;
+    background:linear-gradient(90deg,#33a35f,#9fed70);
+    border-radius:999px;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.35);
+}
+.bar.hp .fill{
+    width:42%;
+    background:linear-gradient(90deg,#ba2e2e,#ff795f);
+}
+.round-progress{
+    margin:auto;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at center,#fff8ec 0 54%,transparent 55%),
+      conic-gradient(#ffd46a 0 254deg,#56301a 254deg 360deg);
+    border:4px solid #2d190c;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    color:#5d3319;
+}
+.rounded-chat{
+    width:280px;
+    display:grid;
+    grid-template-columns:72px 1fr;
+    gap:12px;
+    align-items:center;
+}
+.avatar{
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 34%,#f7d6a7 0 22%,transparent 23%),
+      radial-gradient(circle at 50% 68%,#6f3a1a 0 34%,transparent 35%),
+      linear-gradient(135deg,#ffd878,#c56e2b);
+    border:4px solid #6a3515;
+    box-shadow:0 4px 0 #4b2812;
+}
+.bubble{
+    min-height:78px;
+    border-radius:22px 22px 22px 8px;
+    background:#fff3d8;
+    border:3px solid #7a431e;
+    padding:12px;
+    color:#4a2b17;
+    line-height:1.45;
+    font-weight:700;
+}
+.default-combo{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+}
+.note-box{
+    margin-top:16px;
+    padding:14px;
+    border-radius:14px;
+    background:#fff1d7;
+    border:1px solid #e5c28d;
+    line-height:1.75;
+    color:#554737;
+}
+
+/* design mock phone */
+.phone-demo{
+    width:310px;
+    min-height:520px;
+    border:8px solid #3c2516;
+    border-radius:36px;
+    background:linear-gradient(180deg,#9ccfd8,#f6d49d 44%,#8f5b32);
+    padding:18px 14px;
+    box-shadow:0 18px 38px rgba(45,36,26,.2);
+    position:relative;
+    overflow:hidden;
+}
+.phone-top{
+    height:46px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+}
+.res-pill{
+    background:rgba(255,248,236,.92);
+    border:2px solid #704017;
+    color:#3b2516;
+    font-weight:900;
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:12px;
+}
+.quest-panel{
+    margin-top:12px;
+    background:rgba(255,248,236,.96);
+    border:3px solid #704017;
+    border-radius:20px;
+    padding:12px;
+    box-shadow:0 6px 0 #4b2812;
+}
+.quest-title{font-weight:900;font-size:19px;color:#3b2516;margin-bottom:8px}
+.quest-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:10px 0;
+}
+.small-icon{
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(145deg,#ffe56e,#c06d23);
+    border:3px solid #6a3515;
+}
+.quest-info{flex:1}
+.quest-name{font-weight:800;color:#3b2516;font-size:14px}
+.quest-bar{
+    margin-top:5px;height:12px;border-radius:99px;
+    background:#56301a;overflow:hidden;border:2px solid #2d190c;
+}
+.quest-bar span{display:block;height:100%;width:72%;background:linear-gradient(90deg,#33a35f,#9fed70)}
+.disabled-row{filter:grayscale(1);opacity:.65}
+.claim-btn{
+    margin-top:12px;
+    width:100%;
+    height:46px;
+    border-radius:16px;
+    border:3px solid #623414;
+    background:linear-gradient(180deg,#ffdc74,#b86f25);
+    box-shadow:0 5px 0 #4d2811;
+    font-weight:900;
+    position:relative;
+    overflow:hidden;
+    color:#3c220f;
+}
+.claim-btn:before{
+    content:"";
+    position:absolute;
+    top:-40%;left:-45%;width:28%;height:185%;
+    transform:rotate(24deg);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+    animation:flowLight 2.2s linear infinite;
+}
+.skill-row{
+    position:absolute;
+    left:16px;
+    right:16px;
+    bottom:20px;
+    display:flex;
+    justify-content:space-between;
+}
+.skill-slot{
+    width:58px;height:58px;border-radius:50%;
+    border:4px solid #6a3515;
+    background:radial-gradient(circle,#f7ca66,#b76727 62%,#683113);
+    box-shadow:0 4px 0 #4b2812;
+    position:relative;
+}
+.skill-slot.cd{
+    background:
+        conic-gradient(rgba(0,0,0,.62) 0 150deg, transparent 150deg 360deg),
+        radial-gradient(circle,#f7ca66,#b76727 62%,#683113);
+}
+.skill-slot.selected{
+    box-shadow:0 0 0 5px #fff4ad,0 0 0 9px #7e4acc,0 4px 0 #4b2812;
+}
+.skill-slot.glow{
+    animation:pulseGlow 1.5s ease-in-out infinite;
+}
+footer{
+    max-width:1220px;
+    margin:0 auto;
+    padding:4px 28px 40px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.7;
+}
+@media (max-width:920px){
+    h1{font-size:30px}
+    .toolbar{grid-template-columns:1fr}
+    .summary-grid{grid-template-columns:repeat(2,1fr)}
+    .cards{grid-template-columns:1fr}
+    .demo-grid{grid-template-columns:1fr}
+    .checklist{grid-template-columns:1fr}
+    main{padding:18px}
+    .nav-inner{padding:10px 18px}
+}
+@media print{
+    nav,.toolbar,button{display:none!important}
+    body{background:#fff}
+    header{background:#fff;color:#111;border-bottom:2px solid #111}
+    .subtitle,.kicker,.meta span{color:#111;border-color:#999;background:#fff}
+    .panel,.shader-card,.summary-card,.demo-card{box-shadow:none;break-inside:avoid}
+    .demo-stage{background:#fff}
+}
+
+
+
+.usage-guide{
+    margin-top:14px;
+    padding:14px;
+    border-radius:14px;
+    background:#fffdf7;
+    border:1px solid #e7cf9f;
+}
+.usage-guide h4{
+    margin:0 0 8px;
+    color:#4a2b17;
+    font-size:16px;
+}
+.usage-guide p{
+    margin:8px 0;
+    color:#4d4234;
+    line-height:1.65;
+    font-size:13px;
+}
+.usage-guide ol{
+    margin:8px 0 8px 18px;
+    padding:0;
+    color:#4d4234;
+    line-height:1.65;
+    font-size:13px;
+}
+.usage-guide li{
+    margin:4px 0;
+}
+.usage-guide b{
+    color:#8a4f23;
+}
+.warning-text{
+    padding:9px 10px;
+    border-radius:10px;
+    background:#fff0df;
+    border:1px solid #edc28b;
+}
+.implementation-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+}
+.implementation-card{
+    padding:14px;
+    border-radius:14px;
+    background:#fff8ec;
+    border:1px solid var(--line);
+}
+.implementation-card strong{
+    display:block;
+    color:#4a2b17;
+    margin-bottom:6px;
+    font-size:15px;
+}
+.implementation-card p{
+    margin:0;
+    color:#554737;
+    line-height:1.65;
+    font-size:13px;
+}
+@media (max-width:920px){
+    .implementation-grid{grid-template-columns:1fr}
+}
+
+
+
+.method-guide{
+    margin-top:14px;
+    padding:14px;
+    border-radius:14px;
+    background:#f8efe2;
+    border:1px solid #d9b77f;
+}
+.method-guide h4{
+    margin:0 0 10px;
+    color:#4a2b17;
+    font-size:16px;
+}
+.method-rows{
+    display:grid;
+    gap:8px;
+}
+.method-row{
+    display:grid;
+    grid-template-columns:86px 1fr;
+    gap:10px;
+    padding:9px 10px;
+    border-radius:10px;
+    background:#fffaf2;
+    border:1px solid #ead6b8;
+    line-height:1.55;
+    font-size:13px;
+}
+.method-row b{
+    color:#8a4f23;
+}
+.method-row span{
+    color:#4d4234;
+}
+.method-code{
+    margin-top:10px;
+    border-radius:12px;
+    background:#fffaf2;
+    border:1px solid #ead6b8;
+    overflow:hidden;
+}
+.method-code summary{
+    cursor:pointer;
+    padding:10px 12px;
+    color:#7a431e;
+    font-weight:800;
+}
+.method-code pre{
+    margin:0;
+    border-radius:0;
+    border:0;
+    border-top:1px solid #ead6b8;
+    max-height:280px;
+}
+@media (max-width:620px){
+    .method-row{
+        grid-template-columns:1fr;
+    }
+}
+
+
+.example-deep-guide,
+.example-method-table,
+.example-flow-guide{
+    margin-top:14px;
+    padding:14px;
+    border-radius:14px;
+    background:#fffaf2;
+    border:1px solid #e3c79a;
+}
+.example-deep-guide h4,
+.example-method-table h4,
+.example-flow-guide h4{
+    margin:0 0 10px;
+    color:#4a2b17;
+    font-size:16px;
+}
+.example-deep-guide ol,
+.example-flow-guide ol{
+    margin:0 0 0 18px;
+    padding:0;
+    color:#4d4234;
+    line-height:1.7;
+    font-size:13px;
+}
+.example-deep-guide li,
+.example-flow-guide li{
+    margin:5px 0;
+}
+.mini-table table{
+    font-size:13px;
+}
+.mini-table th{
+    width:92px;
+    background:#ecd5b3;
+}
+.mini-table td{
+    color:#4d4234;
+}
+
+
+section[id]{scroll-margin-top:86px;}
+
+.shader-script-guide{
+    margin-top:14px;
+    padding:14px;
+    border-radius:14px;
+    background:#f6ead8;
+    border:1px solid #d8b176;
+}
+.shader-script-guide h4{
+    margin:0 0 8px;
+    color:#4a2b17;
+    font-size:16px;
+}
+.shader-script-guide p{
+    margin:0 0 10px;
+    color:#4d4234;
+    line-height:1.65;
+    font-size:13px;
+}
+.shader-script-guide code{
+    padding:2px 6px;
+    border-radius:6px;
+    background:#ead5b4;
+    color:#6b3a1a;
+}
+.shader-code-block pre{
+    max-height:520px;
+}
+
+
+/* v11 UI/UX refactor */
+#readProgress{
+    position:fixed;
+    top:0;
+    left:0;
+    height:4px;
+    width:0%;
+    z-index:9999;
+    background:linear-gradient(90deg,#8a4f23,#d89b4a,#ffd46a);
+}
+.quick-toc{
+    position:fixed;
+    right:18px;
+    top:118px;
+    width:142px;
+    z-index:20;
+    display:grid;
+    gap:6px;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:rgba(255,250,242,.92);
+    box-shadow:0 10px 28px rgba(60,35,15,.12);
+    backdrop-filter:blur(8px);
+}
+.quick-toc-title{
+    font-size:12px;
+    font-weight:900;
+    color:#4a2b17;
+    padding:4px 6px;
+}
+.quick-toc a{
+    text-decoration:none;
+    color:#7a431e;
+    font-size:12px;
+    border-radius:999px;
+    padding:6px 8px;
+    border:1px solid transparent;
+}
+.quick-toc a:hover,
+.quick-toc a.active{
+    background:#7a431e;
+    color:#fff4df;
+    border-color:#7a431e;
+}
+.floating-actions{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:30;
+    display:grid;
+    gap:8px;
+}
+.floating-actions button{
+    min-width:92px;
+    padding:9px 10px;
+    border-radius:999px;
+    box-shadow:0 8px 20px rgba(60,35,15,.18);
+}
+.ux-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+}
+.ux-card{
+    display:block;
+    padding:16px;
+    border-radius:16px;
+    background:#fff8ec;
+    border:1px solid var(--line);
+    color:inherit;
+    text-decoration:none;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.ux-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 24px rgba(60,35,15,.12);
+    border-color:#b06c33;
+}
+.ux-card strong{
+    display:block;
+    color:#4a2b17;
+    font-size:18px;
+    margin-bottom:6px;
+}
+.ux-card span{
+    color:#756653;
+    font-size:13px;
+    line-height:1.55;
+}
+.example-controls{
+    display:grid;
+    grid-template-columns:1fr auto auto auto auto;
+    gap:10px;
+    align-items:center;
+}
+.example-result{
+    margin-top:10px;
+    font-size:13px;
+    color:#756653;
+}
+.demo-card{
+    transition:transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.demo-card:hover{
+    transform:translateY(-1px);
+    box-shadow:0 12px 26px rgba(60,35,15,.12);
+}
+.demo-card.is-hidden{
+    display:none!important;
+}
+.code-wrap{
+    position:relative;
+}
+.copy-code-btn{
+    position:absolute;
+    right:8px;
+    top:8px;
+    z-index:2;
+    padding:6px 9px;
+    border-radius:999px;
+    font-size:12px;
+    background:#fffaf2;
+    color:#7a431e;
+    border:1px solid #d9c5a8;
+}
+.copy-code-btn.copied{
+    background:#2e7d4f;
+    color:#fff;
+    border-color:#2e7d4f;
+}
+details.method-code > summary{
+    position:sticky;
+    top:53px;
+    z-index:3;
+    background:#fffaf2;
+}
+section[id]{
+    scroll-margin-top:92px;
+}
+.nav-inner a.nav-active{
+    background:#7a431e;
+    color:#fff4df;
+    border-color:#7a431e;
+}
+@media (max-width:1280px){
+    .quick-toc{display:none}
+}
+@media (max-width:920px){
+    .ux-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .example-controls{grid-template-columns:1fr}
+    .floating-actions{
+        right:10px;
+        bottom:10px;
+        grid-template-columns:repeat(3,auto);
+    }
+    .floating-actions button{
+        min-width:auto;
+        font-size:12px;
+        padding:8px 9px;
+    }
+}
+@media (max-width:560px){
+    .ux-grid{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+
+<div id="readProgress"></div>
+
+<aside class="quick-toc" aria-label="快速目录">
+    <div class="quick-toc-title">快速目录</div>
+    <a href="#overview">总览</a>
+    <a href="#ui-examples">UI 示例</a>
+    <a href="#script-check">C# 脚本</a>
+    <a href="#shader-script-check">Shader 脚本</a>
+    <a href="#ui-usage">使用矩阵</a>
+    <a href="#rules">规范</a>
+</aside>
+
+<div class="floating-actions">
+    <button type="button" id="floatExpand">展开代码</button>
+    <button type="button" id="floatCollapse">收起代码</button>
+    <button type="button" id="backToTop">顶部</button>
+</div>
+
+<header>
+    <div class="header-inner">
+        <div class="kicker">UNITY SHADER LIBRARY · HTML5 · UI/UX REFACTOR</div>
+        <h1>Unity 项目常备 Shader 清单</h1>
+        <p class="subtitle">面向移动端、卡通扁平、UGUI/2D/URP 混合项目的常用 Shader 归档。本版在 UI 类 Shader 全量示例基础上，重构文档 UI/交互体验：强化快速入口、示例筛选、脚本复制、代码展开收起、阅读进度、返回顶部和移动端阅读效率。</p>
+        <div class="meta">
+            <span>适用：Unity / URP / UGUI / 2D / 移动端</span>
+            <span>新增：8 类 UI Shader 示例展示</span>
+            <span>版本：v11.0 UI交互重构版</span>
+        </div>
+    </div>
+</header>
+
+<nav>
+    <div class="nav-inner">
+        <a href="#overview">总览</a>
+        <a href="#ux-refactor">交互说明</a>
+        <a href="#script-check">脚本检查</a>
+        <a href="#shader-script-check">Shader脚本</a>
+        <a href="#ui-examples">UI 示例</a>
+        <a href="#ui-combined">组合示例</a>
+        <a href="#ui-usage">使用矩阵</a>
+        <a href="#section-1">Shader 分类</a>
+        <a href="#table">总表</a>
+        <a href="#rules">规范</a>
+        <a href="#sample">灰度示例</a>
+    </div>
+</nav>
+
+<main>
+
+    <section class="panel ux-refactor-panel" id="ux-refactor">
+        <h2>UI/交互重构说明</h2>
+        <p class="section-desc">本版把文档从“长页面阅读”调整为“按任务快速定位”。研发可以直接找 Shader 脚本和 C# 调用脚本；美术可以先看示例和参数；TA 可以重点检查材质、Mask、批处理和管线兼容。</p>
+        <div class="ux-grid">
+            <a class="ux-card" href="#ui-examples">
+                <strong>看效果</strong>
+                <span>进入 UI 示例区，按 Shader 类型筛选效果。</span>
+            </a>
+            <a class="ux-card" href="#shader-script-check">
+                <strong>拿 Shader</strong>
+                <span>查看每个示例对应的 ShaderLab 脚本。</span>
+            </a>
+            <a class="ux-card" href="#script-check">
+                <strong>拿 C#</strong>
+                <span>查看已检查修正的 Unity 调用脚本。</span>
+            </a>
+            <a class="ux-card" href="#ui-usage">
+                <strong>看用法</strong>
+                <span>查看使用矩阵、挂载对象和验收重点。</span>
+            </a>
+        </div>
+    </section>
+
+
+    <section class="panel" id="overview">
+        <h2>总览</h2>
+        <p class="section-desc">建议把 Shader 分为“必备、常用、可选”三个接入优先级。必备项优先沉淀为项目基础材质库；常用项按系统需求接入；可选项只在明确存在表现需求时接入。</p>
+        <div class="summary-grid">
+            <div class="summary-card"><strong>27</strong><span>推荐 Shader 条目</span></div>
+            <div class="summary-card"><strong>9</strong><span>必备项</span></div>
+            <div class="summary-card"><strong>14</strong><span>常用项</span></div>
+            <div class="summary-card"><strong>4</strong><span>可选项</span></div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>筛选与检索</h2>
+        <div class="toolbar">
+            <input id="searchInput" type="search" placeholder="输入 Shader 名称或用途，例如：Grayscale / Outline / 粒子 / 冷却">
+            <select id="levelFilter">
+                <option value="all">全部优先级</option>
+                <option value="必备">必备</option>
+                <option value="常用">常用</option>
+                <option value="可选">可选</option>
+            </select>
+            <button class="secondary" onclick="resetFilter()">重置筛选</button>
+            <button onclick="window.print()">打印 / 导出 PDF</button>
+        </div>
+        <p class="section-desc">筛选会同时影响 UI 示例卡、分类卡片和总表，便于快速查找项目需要的 Shader。</p>
+    </section>
+
+
+
+    <section class="panel" id="shader-script-check">
+        <h2>每个 UI 示例的 Shader 脚本补齐情况</h2>
+        <p class="section-desc">已为 8 个 UI 示例分别补齐 ShaderLab 脚本。脚本以 UGUI 使用为目标，包含透明队列、基础混合、Stencil 参数、RectMask2D 裁剪宏和 AlphaClip 宏。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Shader</th>
+                        <th>建议文件名</th>
+                        <th>文档位置</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>UI/Default</strong></td><td>UI_DefaultExample.shader</td><td>UI/Default Shader 脚本示例</td></tr>
+<tr><td><strong>UI/Grayscale</strong></td><td>UI_Grayscale.shader</td><td>UI/Grayscale 灰度 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/Outline</strong></td><td>UI_Outline.shader</td><td>UI/Outline 描边 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/Glow</strong></td><td>UI_Glow.shader</td><td>UI/Glow 发光 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/FlowLight</strong></td><td>UI_FlowLight.shader</td><td>UI/FlowLight 流光 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/CooldownMask</strong></td><td>UI_CooldownMask.shader</td><td>UI/CooldownMask 冷却遮罩 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/ProgressFill</strong></td><td>UI_ProgressFill.shader</td><td>UI/ProgressFill 进度填充 Shader 脚本示例</td></tr>
+<tr><td><strong>UI/RoundedClip</strong></td><td>UI_RoundedClip.shader</td><td>UI/RoundedClip 圆角裁剪 Shader 脚本示例</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+    <section class="panel" id="script-check">
+        <h2>脚本检查结果</h2>
+        <p class="section-desc">已逐个检查 UI 示例里的 C# 调用脚本。原文档中的思路基本成立，但部分脚本直接修改共享 Material，多个 UI 同屏时容易出现参数互相影响。本版已改为运行时实例化材质，并补齐挂载、显隐、参数和销毁逻辑。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>示例</th>
+                        <th>脚本</th>
+                        <th>检查结论</th>
+                        <th>本版修正</th>
+                    </tr>
+                </thead>
+                <tbody>
+<tr><td><strong>UI/Default</strong></td><td>UIDefaultColorSetter</td><td>原脚本基本正确</td><td>保留 Image.color 控制，补 Awake 自动取 Image，避免未绑定时报错。</td></tr>
+<tr><td><strong>UI/Grayscale</strong></td><td>UIGrayController</td><td>原脚本可运行但不够安全</td><td>补运行时材质实例化和 Destroy，避免共享灰度材质参数串联。</td></tr>
+<tr><td><strong>UI/Outline</strong></td><td>UIOutlineState</td><td>原脚本可运行但挂载方式偏粗</td><td>改为独立 OutlineImage 层显隐，支持颜色和宽度参数。</td></tr>
+<tr><td><strong>UI/Glow</strong></td><td>UIGlowController</td><td>原脚本缺少材质挂载和实例化</td><td>补 glowImage.material 赋值、运行时材质实例、颜色和强度控制。</td></tr>
+<tr><td><strong>UI/FlowLight</strong></td><td>UIFlowLightController</td><td>原脚本缺少材质挂载和实例化</td><td>补 flowImage.material 赋值、运行时材质实例、速度缓存和显隐控制。</td></tr>
+<tr><td><strong>UI/CooldownMask</strong></td><td>UICooldownMask</td><td>原脚本有明显风险</td><td>补独立材质实例；多个技能按钮不会共用一个 _Cooldown 参数。</td></tr>
+<tr><td><strong>UI/ProgressFill</strong></td><td>UIProgressFill</td><td>原脚本可运行但边界不完整</td><td>补 Image.Type.Filled 选项、SetValue01、运行时材质实例。</td></tr>
+<tr><td><strong>UI/RoundedClip</strong></td><td>UIRoundedClipController</td><td>原脚本有共享材质风险</td><td>补运行时材质实例、Radius/Softness 控制和销毁逻辑。</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+
+    <section class="panel example-control-panel" id="example-controls">
+        <h2>UI 示例筛选与代码控制</h2>
+        <p class="section-desc">可按 Shader 类型快速筛选示例，也可以统一展开/收起所有代码块。每个代码块右上角会自动生成复制按钮。</p>
+        <div class="example-controls">
+            <input id="exampleSearch" type="search" placeholder="搜索示例、参数、脚本，例如：FlowLight / Cooldown / _GrayAmount">
+            <select id="exampleTypeFilter">
+                <option value="all">全部 UI 示例</option>
+                <option value="UI/Default">UI/Default</option>
+                <option value="UI/Grayscale">UI/Grayscale</option>
+                <option value="UI/Outline">UI/Outline</option>
+                <option value="UI/Glow">UI/Glow</option>
+                <option value="UI/FlowLight">UI/FlowLight</option>
+                <option value="UI/CooldownMask">UI/CooldownMask</option>
+                <option value="UI/ProgressFill">UI/ProgressFill</option>
+                <option value="UI/RoundedClip">UI/RoundedClip</option>
+            </select>
+            <button type="button" class="secondary" id="expandAllCode">展开全部代码</button>
+            <button type="button" class="secondary" id="collapseAllCode">收起全部代码</button>
+            <button type="button" id="resetExampleFilter">重置</button>
+        </div>
+        <div class="example-result" id="exampleResult">当前显示 8 个 UI 示例</div>
+    </section>
+
+
+    <section class="panel" id="ui-examples">
+        <h2>UI 类 Shader 示例展示</h2>
+        <p class="section-desc">以下示例用 HTML/CSS 模拟 Unity UI Shader 的视觉目标。每个示例后面都补充 Unity 使用详解、UI 方法总表和 UI 接入流程，便于研发、美术、TA 按单个 Shader 直接创建、设置、挂载和验收。</p>
+        <div class="demo-grid">
+            
+    <article class="demo-card demo-default" data-shader="UI/Default" data-name="ui/default" data-level="必备">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/Default</div>
+                <div class="demo-card-sub">普通 Image、Button、Panel、RawImage。</div>
+            </div>
+            <span class="badge must">必备</span>
+        </div>
+        <div class="demo-stage">
+            
+        <div class="default-combo">
+            <div class="mock-panel">
+                <div class="title">系统弹窗</div>
+                <div style="font-size:13px;line-height:1.5;">默认 UI 材质<br>保留贴图原始颜色</div>
+            </div>
+            <div class="mock-btn">确认</div>
+        </div>
+        
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>主界面、弹窗、导航栏、资源栏、普通按钮。</span>
+            <b>接入建议</b><span>保持默认即可，适合绝大多数静态 UI。</span>
+        </div>
+        <div class="param-list"><span class="param">_MainTex：主贴图</span><span class="param">_Color：整体颜色叠加</span><span class="param">Stencil：遮罩相关参数</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>普通 UI 元素需要保持贴图原始表现时使用。它是项目 UI 材质库的基准，不承担特效职责。</p>
+            <ol>
+                <li>UGUI 的 Image、Button、RawImage 默认优先使用该材质。</li>
+                <li>通过 Image.color 做轻量颜色叠加，不建议为普通按钮额外创建自定义材质。</li>
+                <li>需要遮罩时优先确认是否兼容 Mask、RectMask2D 和 Stencil。</li>
+            </ol>
+            <p><b>参数建议：</b>常用参数为 _MainTex、_Color、Stencil 系列参数。通常不需要暴露额外运行时参数。</p>
+            <p class="warning-text"><b>注意：</b>不要把所有按钮都换成发光、流光或描边材质，否则会破坏批处理并增加维护成本。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>通常不需要单独创建 Shader，直接使用 Unity 默认 UI 材质；如项目需要统一管理，可创建 Mat_UI_Default 作为基准材质。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>Image、RawImage、Button 背景、Panel 底板、普通图标均可直接使用。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>优先通过 Image.color 控制轻量变色，不建议业务层频繁替换 Material。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>普通按钮 Prefab 使用默认材质；只有特殊状态才额外挂接灰度、描边、流光等材质。</span></div>
+                <div class="method-row"><b>验收标准</b><span>图片颜色与原始资源一致，遮罩正常，按钮点击态正常，未产生额外材质实例。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIDefaultColorSetter : MonoBehaviour
+{
+    [SerializeField] private Image targetImage;
+
+    private void Awake()
+    {
+        if (targetImage == null)
+            targetImage = GetComponent&lt;Image&gt;();
+    }
+
+    public void SetColor(Color color)
+    {
+        if (targetImage == null) return;
+
+        // 普通 UI 不需要自定义材质时，优先使用 Image.color。
+        // Material 保持为空时，会走 Unity 默认 UI 材质。
+        targetImage.color = color;
+    }
+
+    public void ResetColor()
+    {
+        SetColor(Color.white);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>在 Unity 中创建普通 UI 时，默认 Image/RawImage 就会使用 UI/Default 体系，不需要手动写 Shader。</li><li>如果项目需要统一材质管理，可以在 Assets/Game/Materials/UI/ 下创建 Mat_UI_Default。</li><li>选中 Image 组件，在 Material 字段保持 None，或拖入 Mat_UI_Default。</li><li>普通按钮的颜色变化优先使用 Button 的 Transition 或 Image.color，不要为了普通状态额外创建复杂材质。</li><li>当 UI 处于 Mask、ScrollView、弹窗层级中时，确认显示、点击和遮罩都正常。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/Default</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_Default</td></tr>
+                        <tr><th>挂载对象</th><td>Image、RawImage、Button 背景、Panel 底板</td></tr>
+                        <tr><th>主要参数</th><td>_MainTex、_Color、Stencil</td></tr>
+                        <tr><th>脚本控制</th><td>通常不需要专门脚本；轻量变色使用 Image.color。</td></tr>
+                        <tr><th>验收重点</th><td>颜色与原图一致；Mask 正常；不产生额外材质实例。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>确认该 UI 只是普通显示，不承担禁用、发光、冷却等特殊状态。</li><li>使用 Unity 默认 UI 材质或项目统一 Mat_UI_Default。</li><li>挂载到 Image/RawImage/Button 背景层。</li><li>由 Button Transition 或 Image.color 控制普通交互态。</li><li>保存为基础按钮、基础面板或基础图标 Prefab。</li><li>验收颜色、透明度、遮罩、点击区域和批处理表现。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/Default Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_DefaultExample.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/DefaultExample&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;DefaultExample&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.texcoord) * i.color;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-gray" data-shader="UI/Grayscale" data-name="ui/grayscale" data-level="必备">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/Grayscale</div>
+                <div class="demo-card-sub">图片置灰、按钮禁用、功能未解锁。</div>
+            </div>
+            <span class="badge must">必备</span>
+        </div>
+        <div class="demo-stage">
+            
+        <div style="display:flex;gap:24px;align-items:center;">
+            <div style="text-align:center;"><div class="reward-icon"></div><div style="margin-top:10px;font-weight:800;">可用</div></div>
+            <div style="text-align:center;"><div class="reward-icon gray"></div><div style="margin-top:10px;font-weight:800;color:#776d61;">未解锁</div></div>
+        </div>
+        
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>未解锁入口、不可穿戴装备、技能冷却、头像锁定。</span>
+            <b>接入建议</b><span>建议单独做材质，通过脚本切换材质或参数，不要直接改原图。</span>
+        </div>
+        <div class="param-list"><span class="param">_GrayAmount：灰度强度，0=原色，1=全灰</span><span class="param">_Alpha：整体透明度</span><span class="param">_Color：禁用态颜色叠加</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>功能未开放、按钮不可点击、道具不可使用、头像锁定、技能不可释放时使用。</p>
+            <ol>
+                <li>准备一个 Mat_UI_Grayscale 材质，挂到需要置灰的 Image 上。</li>
+                <li>运行时通过 _GrayAmount 控制灰度强度；0 表示原色，1 表示完全置灰。</li>
+                <li>按钮禁用时同时关闭 Button.interactable，并切换到灰度材质或修改灰度参数。</li>
+                <li>如果同一个图标需要频繁切换可用/不可用状态，优先用材质参数控制，不要替换 Sprite。</li>
+            </ol>
+            <p><b>参数建议：</b>_GrayAmount 建议默认 1；_Alpha 可用于弱化禁用态；_Color 可用于轻微压暗。</p>
+            <p class="warning-text"><b>注意：</b>不要直接导出灰色图片作为禁用态，否则会增加图集体积，并导致后续换色和皮肤适配成本升高。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Shader &quot;UI/Grayscale&quot;，再创建材质 Mat_UI_Grayscale，默认 _GrayAmount=1。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>挂到需要置灰的 Image、头像、道具图标、按钮图标上；按钮文字可单独降低透明度或使用 TMP 颜色控制。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>通过 material.SetFloat(&quot;_GrayAmount&quot;, value) 控制置灰强度；禁用状态建议同时设置 Button.interactable=false。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>按钮 Prefab 建议保留 NormalMaterial 和 GrayMaterial 两个引用，由状态脚本统一切换。</span></div>
+                <div class="method-row"><b>验收标准</b><span>禁用态明显但仍可识别原图；恢复可用时颜色正常；不会生成大量独立材质实例。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIGrayController : MonoBehaviour
+{
+    [Header(&quot;Target&quot;)]
+    [SerializeField] private Image targetImage;
+    [SerializeField] private Button targetButton;
+
+    [Header(&quot;Materials&quot;)]
+    [SerializeField] private Material normalMaterial;
+    [SerializeField] private Material grayMaterial;
+
+    private Material runtimeGrayMaterial;
+
+    private void Awake()
+    {
+        if (targetImage == null)
+            targetImage = GetComponent&lt;Image&gt;();
+
+        if (targetButton == null)
+            targetButton = GetComponent&lt;Button&gt;();
+
+        if (grayMaterial != null)
+        {
+            // 每个 UI 独立控制灰度时，必须实例化材质，避免影响其他 UI。
+            runtimeGrayMaterial = Instantiate(grayMaterial);
+            runtimeGrayMaterial.SetFloat(&quot;_GrayAmount&quot;, 1f);
+        }
+    }
+
+    public void SetDisabled(bool disabled)
+    {
+        if (targetButton != null)
+            targetButton.interactable = !disabled;
+
+        if (targetImage != null)
+            targetImage.material = disabled ? runtimeGrayMaterial : normalMaterial;
+
+        if (runtimeGrayMaterial != null)
+            runtimeGrayMaterial.SetFloat(&quot;_GrayAmount&quot;, disabled ? 1f : 0f);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeGrayMaterial != null)
+            Destroy(runtimeGrayMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>在 Assets/Game/Shaders/UI/ 下创建 UI_Grayscale.shader，并写入灰度 Shader 代码。</li><li>在 Assets/Game/Materials/UI/ 下创建 Mat_UI_Grayscale，Shader 选择 UI/Grayscale。</li><li>选中需要置灰的 Image，把 Mat_UI_Grayscale 拖到 Image 组件的 Material 字段。</li><li>在 Inspector 中调 Gray Amount：0 为原色，1 为完全置灰。</li><li>按钮禁用时，脚本同时处理视觉和交互：Image 切换灰度材质，Button.interactable=false。</li><li>如果每个按钮灰度参数不同，运行时 Instantiate 材质实例，不要直接改共享材质资源。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/Grayscale</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_Grayscale</td></tr>
+                        <tr><th>挂载对象</th><td>禁用按钮图标、未解锁入口、不可用道具、锁定头像</td></tr>
+                        <tr><th>主要参数</th><td>_GrayAmount、_Alpha</td></tr>
+                        <tr><th>脚本控制</th><td>SetFloat(&quot;_GrayAmount&quot;, 0~1)，同时设置 Button.interactable。</td></tr>
+                        <tr><th>验收重点</th><td>禁用态清晰；恢复后颜色正常；多个 UI 不互相串参数。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义禁用条件，例如等级不足、资源不足、功能未开放。</li><li>创建 UI/Grayscale Shader 和 Mat_UI_Grayscale 材质。</li><li>挂载到按钮图标层、道具图标层或头像图片层。</li><li>脚本根据状态切换 normalMaterial / grayMaterial。</li><li>保存为带禁用态的按钮或道具格 Prefab。</li><li>验收禁用态、恢复态、点击禁用和材质实例是否正确。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/Grayscale 灰度 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_Grayscale.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/Grayscale&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _GrayAmount (&quot;Gray Amount&quot;, Range(0,1)) = 1
+        _Alpha (&quot;Alpha&quot;, Range(0,1)) = 1
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;Grayscale&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            float _GrayAmount;
+            float _Alpha;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float gray = dot(col.rgb, float3(0.299, 0.587, 0.114));
+                col.rgb = lerp(col.rgb, gray.xxx, _GrayAmount);
+                col.a *= _Alpha;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-outline" data-shader="UI/Outline" data-name="ui/outline" data-level="常用">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/Outline</div>
+                <div class="demo-card-sub">图标描边、选中描边、品质框强化。</div>
+            </div>
+            <span class="badge common">常用</span>
+        </div>
+        <div class="demo-stage">
+            <div class="reward-icon"></div>
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>奖励图标、角色头像、装备格、选中状态。</span>
+            <b>接入建议</b><span>描边采样次数会增加性能开销，移动端避免过厚描边。</span>
+        </div>
+        <div class="param-list"><span class="param">_OutlineColor：描边颜色</span><span class="param">_OutlineWidth：描边宽度</span><span class="param">_AlphaThreshold：透明边缘阈值</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>需要表达选中、可交互、高品质、当前目标、装备格聚焦时使用。</p>
+            <ol>
+                <li>给奖励图标、装备格、头像框等少量关键元素使用描边材质。</li>
+                <li>通过 _OutlineColor 统一配置品质色或选中色。</li>
+                <li>通过 _OutlineWidth 控制描边厚度，移动端建议使用较小宽度。</li>
+                <li>列表中大量图标需要描边时，优先考虑美术出图或九宫格边框，不要全部实时 Shader 描边。</li>
+            </ol>
+            <p><b>参数建议：</b>_OutlineColor 控制描边颜色；_OutlineWidth 控制描边宽度；_AlphaThreshold 用于处理透明边缘。</p>
+            <p class="warning-text"><b>注意：</b>不要在同屏大量元素上使用高采样描边，尤其是背包、邮件、排行榜等密集列表。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 UI 描边 Shader 与 Mat_UI_Outline，暴露 _OutlineColor 和 _OutlineWidth。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>适合挂在装备图标、奖励图标、头像框、当前选中格上，不建议全列表常驻。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>选中状态开启描边材质，未选中恢复普通材质；品质色可按道具品质传入 _OutlineColor。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>装备格 Prefab 可拆成 IconImage、FrameImage、SelectOutline 三层，描边优先挂在独立选中层。</span></div>
+                <div class="method-row"><b>验收标准</b><span>描边不吞透明边缘，不遮挡图标主体；同屏大量图标时性能稳定。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIOutlineState : MonoBehaviour
+{
+    [Header(&quot;Outline Layer&quot;)]
+    [SerializeField] private Image outlineImage;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material outlineMaterial;
+
+    private Material runtimeOutlineMaterial;
+
+    private void Awake()
+    {
+        if (outlineMaterial != null)
+            runtimeOutlineMaterial = Instantiate(outlineMaterial);
+
+        if (outlineImage != null)
+        {
+            outlineImage.material = runtimeOutlineMaterial;
+            outlineImage.enabled = false;
+        }
+    }
+
+    public void SetSelected(bool selected)
+    {
+        if (outlineImage == null) return;
+        outlineImage.enabled = selected;
+    }
+
+    public void SetOutlineColor(Color color)
+    {
+        if (runtimeOutlineMaterial != null)
+            runtimeOutlineMaterial.SetColor(&quot;_OutlineColor&quot;, color);
+    }
+
+    public void SetOutlineWidth(float width)
+    {
+        if (runtimeOutlineMaterial != null)
+            runtimeOutlineMaterial.SetFloat(&quot;_OutlineWidth&quot;, width);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeOutlineMaterial != null)
+            Destroy(runtimeOutlineMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_Outline.shader，并暴露描边颜色和描边宽度参数。</li><li>创建 Mat_UI_Outline，设置默认描边颜色，例如黄色、紫色或品质色。</li><li>不要直接把描边挂到整个按钮根节点，优先挂到 Icon、Frame 或 SelectOutline 独立层。</li><li>选中状态下启用 SelectOutline 节点，未选中时隐藏该节点或恢复普通材质。</li><li>背包、排行榜、邮件等密集列表不要每个格子都实时高采样描边。</li><li>品质框如果是固定表现，优先考虑美术出图；只有动态变色时再用 Shader 描边。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/Outline</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_Outline</td></tr>
+                        <tr><th>挂载对象</th><td>装备格、奖励图标、头像框、当前选中层</td></tr>
+                        <tr><th>主要参数</th><td>_OutlineColor、_OutlineWidth、_AlphaThreshold</td></tr>
+                        <tr><th>脚本控制</th><td>选中时显示描边层或切换 Outline 材质；取消选中后恢复。</td></tr>
+                        <tr><th>验收重点</th><td>描边不吞图标；不遮挡数量文字；列表性能稳定。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义描边用途：选中、高品质、可交互或当前目标。</li><li>创建 UI/Outline Shader 和 Mat_UI_Outline 材质。</li><li>在 Prefab 中增加 SelectOutline 或 QualityOutline 层。</li><li>脚本根据 selected、quality、focus 状态设置颜色或显隐。</li><li>保存为装备格、奖励格、头像格 Prefab。</li><li>验收描边边缘、透明区域、密集列表性能和文本遮挡。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/Outline 描边 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_Outline.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/Outline&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _OutlineColor (&quot;Outline Color&quot;, Color) = (1,0.85,0.2,1)
+        _OutlineWidth (&quot;Outline Width&quot;, Range(0,8)) = 2
+        _AlphaThreshold (&quot;Alpha Threshold&quot;, Range(0,1)) = 0.1
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;Outline&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
+            fixed4 _Color;
+            fixed4 _OutlineColor;
+            float _OutlineWidth;
+            float _AlphaThreshold;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 baseCol = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float2 offset = _MainTex_TexelSize.xy * _OutlineWidth;
+
+                float outlineAlpha = 0;
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(offset.x, 0)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(-offset.x, 0)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(0, offset.y)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(0, -offset.y)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(offset.x, offset.y)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(-offset.x, offset.y)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(offset.x, -offset.y)).a);
+                outlineAlpha = max(outlineAlpha, tex2D(_MainTex, i.texcoord + float2(-offset.x, -offset.y)).a);
+
+                float isInner = step(_AlphaThreshold, baseCol.a);
+                float isOutline = saturate(outlineAlpha - baseCol.a);
+
+                fixed4 col = lerp(_OutlineColor, baseCol, isInner);
+                col.a = max(baseCol.a, isOutline * _OutlineColor.a);
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-glow" data-shader="UI/Glow" data-name="ui/glow" data-level="常用">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/Glow</div>
+                <div class="demo-card-sub">外发光、高亮、可领取提示。</div>
+            </div>
+            <span class="badge common">常用</span>
+        </div>
+        <div class="demo-stage">
+            <div class="reward-icon"></div>
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>领取按钮、暴击奖励、稀有道具、活动入口。</span>
+            <b>接入建议</b><span>适合配合闪烁动画使用，避免全屏大面积叠加。</span>
+        </div>
+        <div class="param-list"><span class="param">_GlowColor：发光颜色</span><span class="param">_GlowIntensity：发光强度</span><span class="param">_PulseSpeed：呼吸速度</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>可领取、稀有奖励、活动入口、限时提示、暴击反馈等需要吸引注意力的 UI 使用。</p>
+            <ol>
+                <li>只给关键入口或关键奖励使用，不作为普通按钮常态材质。</li>
+                <li>通过 _GlowIntensity 控制亮度，避免过曝。</li>
+                <li>通过 _PulseSpeed 配合呼吸动画，表达可领取或高价值状态。</li>
+                <li>当 UI 被遮罩或处于 ScrollView 中时，需要确认发光范围是否会被裁剪。</li>
+            </ol>
+            <p><b>参数建议：</b>_GlowColor 控制发光颜色；_GlowIntensity 控制强度；_PulseSpeed 控制呼吸速度。</p>
+            <p class="warning-text"><b>注意：</b>不要把 Glow 当作通用高亮方案。过多发光会导致画面噪音增加，重点反而不清晰。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Mat_UI_Glow，暴露 _GlowColor、_GlowIntensity、_PulseSpeed。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>用于可领取奖励、稀有道具、活动入口、主线引导按钮等强提示元素。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>可领取时开启 Glow；领取完成、入口关闭或条件不满足时关闭 Glow。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>建议发光层独立于按钮主体，例如 ButtonRoot/GlowImage，避免影响按钮主体批处理。</span></div>
+                <div class="method-row"><b>验收标准</b><span>发光范围不被异常裁切；不会影响文本可读性；同屏发光数量可控。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIGlowController : MonoBehaviour
+{
+    [Header(&quot;Glow Layer&quot;)]
+    [SerializeField] private Image glowImage;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material glowMaterial;
+
+    private Material runtimeGlowMaterial;
+
+    private void Awake()
+    {
+        if (glowMaterial != null)
+            runtimeGlowMaterial = Instantiate(glowMaterial);
+
+        if (glowImage != null)
+        {
+            glowImage.material = runtimeGlowMaterial;
+            glowImage.enabled = false;
+        }
+    }
+
+    public void SetGlow(bool active, float intensity = 1.2f)
+    {
+        if (glowImage != null)
+            glowImage.enabled = active;
+
+        if (runtimeGlowMaterial != null)
+            runtimeGlowMaterial.SetFloat(&quot;_GlowIntensity&quot;, active ? intensity : 0f);
+    }
+
+    public void SetGlowColor(Color color)
+    {
+        if (runtimeGlowMaterial != null)
+            runtimeGlowMaterial.SetColor(&quot;_GlowColor&quot;, color);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeGlowMaterial != null)
+            Destroy(runtimeGlowMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_Glow.shader，并暴露发光颜色、强度和呼吸速度。</li><li>创建 Mat_UI_Glow，设置默认发光颜色和强度。</li><li>在按钮或奖励格下新增 GlowImage 独立节点，不建议直接污染按钮主体材质。</li><li>把 Mat_UI_Glow 挂到 GlowImage 的 Image 组件上。</li><li>默认隐藏 GlowImage；可领取、稀有奖励或强提示状态时显示。</li><li>在 ScrollView 和 Mask 中测试发光范围是否被正确裁剪。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/Glow</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_Glow</td></tr>
+                        <tr><th>挂载对象</th><td>可领取奖励、活动入口、稀有道具、高亮按钮</td></tr>
+                        <tr><th>主要参数</th><td>_GlowColor、_GlowIntensity、_PulseSpeed</td></tr>
+                        <tr><th>脚本控制</th><td>按 canClaim、highlight、rare 状态开关 GlowImage。</td></tr>
+                        <tr><th>验收重点</th><td>发光不过曝；不影响文字阅读；Mask 裁剪符合预期。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义高亮条件，例如可领取、限时、稀有、主线强引导。</li><li>创建 UI/Glow Shader 和 Mat_UI_Glow 材质。</li><li>在 UI Prefab 中增加 GlowImage 独立层。</li><li>脚本根据状态控制 GlowImage 显隐和 GlowIntensity。</li><li>领取完成或条件消失后关闭发光。</li><li>验收发光范围、强度、文本可读性和同屏数量。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/Glow 发光 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_Glow.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/Glow&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _GlowColor (&quot;Glow Color&quot;, Color) = (1,0.8,0.2,1)
+        _GlowIntensity (&quot;Glow Intensity&quot;, Range(0,5)) = 1.2
+        _GlowWidth (&quot;Glow Width&quot;, Range(0,8)) = 3
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;Glow&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
+            fixed4 _Color;
+            fixed4 _GlowColor;
+            float _GlowIntensity;
+            float _GlowWidth;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 baseCol = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float2 offset = _MainTex_TexelSize.xy * _GlowWidth;
+                float glowAlpha = 0;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(offset.x, 0)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(-offset.x, 0)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(0, offset.y)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(0, -offset.y)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(offset.x, offset.y)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(-offset.x, offset.y)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(offset.x, -offset.y)).a;
+                glowAlpha += tex2D(_MainTex, i.texcoord + float2(-offset.x, -offset.y)).a;
+                glowAlpha = saturate(glowAlpha / 8.0);
+
+                fixed4 glow = _GlowColor * glowAlpha * _GlowIntensity;
+                fixed4 col = baseCol + glow * (1 - baseCol.a);
+                col.a = max(baseCol.a, glowAlpha * _GlowColor.a);
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-flow" data-shader="UI/FlowLight" data-name="ui/flowlight" data-level="常用">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/FlowLight</div>
+                <div class="demo-card-sub">流光扫过、品质框流动高光。</div>
+            </div>
+            <span class="badge common">常用</span>
+        </div>
+        <div class="demo-stage">
+            <div class="flow-button"><span>领取奖励</span></div>
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>高级装备、宝箱、充值入口、抽奖按钮。</span>
+            <b>接入建议</b><span>建议用参数控制速度、宽度、角度，方便策划和美术调试。</span>
+        </div>
+        <div class="param-list"><span class="param">_FlowColor：流光颜色</span><span class="param">_FlowSpeed：流光速度</span><span class="param">_FlowWidth：流光宽度</span><span class="param">_FlowAngle：流光角度</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>高级品质框、领取按钮、抽奖按钮、活动入口、充值入口等需要动态扫光时使用。</p>
+            <ol>
+                <li>材质中暴露流光速度、宽度、角度和颜色参数。</li>
+                <li>默认关闭或低频播放，只在可领取、推荐点击、限时活动等状态下开启。</li>
+                <li>按钮按下或领取完成后应停止流光，避免状态反馈混乱。</li>
+                <li>同屏多个流光按钮时建议错开动画相位，避免同步扫光造成视觉干扰。</li>
+            </ol>
+            <p><b>参数建议：</b>_FlowColor 控制流光颜色；_FlowSpeed 控制速度；_FlowWidth 控制宽度；_FlowAngle 控制扫光方向。</p>
+            <p class="warning-text"><b>注意：</b>不要在常驻主界面所有按钮上同时使用流光。流光应该代表“强引导”或“高价值”。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Mat_UI_FlowLight，暴露 _FlowSpeed、_FlowWidth、_FlowAngle、_FlowColor。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>适合领取按钮、抽奖按钮、高级品质框、限时活动入口，不适合普通常驻按钮。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>通过状态判断控制流光开关；推荐点击、可领取、限时活动时开启，点击后关闭。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>按钮主体和流光层分离，流光层可用一张透明斜光贴图或 Shader 程序生成。</span></div>
+                <div class="method-row"><b>验收标准</b><span>扫光方向稳定，速度不过快，不遮挡按钮文字；多个按钮不会同步闪烁造成干扰。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIFlowLightController : MonoBehaviour
+{
+    [Header(&quot;Flow Light Layer&quot;)]
+    [SerializeField] private Image flowImage;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material flowMaterial;
+
+    private Material runtimeFlowMaterial;
+    private float defaultSpeed = 1f;
+
+    private void Awake()
+    {
+        if (flowMaterial != null)
+        {
+            runtimeFlowMaterial = Instantiate(flowMaterial);
+
+            if (runtimeFlowMaterial.HasProperty(&quot;_FlowSpeed&quot;))
+                defaultSpeed = runtimeFlowMaterial.GetFloat(&quot;_FlowSpeed&quot;);
+        }
+
+        if (flowImage != null)
+        {
+            flowImage.material = runtimeFlowMaterial;
+            flowImage.enabled = false;
+        }
+    }
+
+    public void SetFlowActive(bool active)
+    {
+        if (flowImage != null)
+            flowImage.enabled = active;
+
+        if (runtimeFlowMaterial != null)
+            runtimeFlowMaterial.SetFloat(&quot;_FlowSpeed&quot;, active ? defaultSpeed : 0f);
+    }
+
+    public void SetFlowSpeed(float speed)
+    {
+        defaultSpeed = speed;
+
+        if (runtimeFlowMaterial != null &amp;&amp; flowImage != null &amp;&amp; flowImage.enabled)
+            runtimeFlowMaterial.SetFloat(&quot;_FlowSpeed&quot;, speed);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeFlowMaterial != null)
+            Destroy(runtimeFlowMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_FlowLight.shader，并暴露流光速度、宽度、角度和颜色。</li><li>创建 Mat_UI_FlowLight，设置默认速度和流光宽度。</li><li>在按钮上方新增 FlowLight Image 层，层级位于按钮底图之上、文字之下或之上按需求决定。</li><li>把 Mat_UI_FlowLight 挂到 FlowLight 层，不要挂到所有普通按钮上。</li><li>脚本只在可领取、推荐点击、限时活动等强引导状态开启流光。</li><li>多个按钮同时流光时，建议错开动画相位，避免同屏同步闪烁。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/FlowLight</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_FlowLight</td></tr>
+                        <tr><th>挂载对象</th><td>领取按钮、抽奖按钮、高级品质框、活动入口</td></tr>
+                        <tr><th>主要参数</th><td>_FlowSpeed、_FlowWidth、_FlowAngle、_FlowColor</td></tr>
+                        <tr><th>脚本控制</th><td>强引导状态开启流光；点击或领取后关闭。</td></tr>
+                        <tr><th>验收重点</th><td>扫光方向稳定；不遮挡文字；多个流光不同步干扰。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义流光出现条件：可领取、推荐、限时、高价值。</li><li>创建 UI/FlowLight Shader 和 Mat_UI_FlowLight 材质。</li><li>在按钮或品质框 Prefab 中增加 FlowLight 独立层。</li><li>脚本根据状态开启 FlowLight，并设置速度、宽度、角度。</li><li>点击、领取或状态结束后关闭流光。</li><li>验收扫光节奏、文字可读性、层级遮挡和同屏干扰。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/FlowLight 流光 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_FlowLight.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/FlowLight&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _FlowColor (&quot;Flow Color&quot;, Color) = (1,1,1,1)
+        _FlowSpeed (&quot;Flow Speed&quot;, Float) = 1
+        _FlowWidth (&quot;Flow Width&quot;, Range(0.01,1)) = 0.18
+        _FlowSoftness (&quot;Flow Softness&quot;, Range(0.001,1)) = 0.08
+        _FlowAngle (&quot;Flow Angle&quot;, Range(-3.14,3.14)) = 0.6
+        _FlowIntensity (&quot;Flow Intensity&quot;, Range(0,5)) = 1.2
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;FlowLight&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            fixed4 _FlowColor;
+            float _FlowSpeed;
+            float _FlowWidth;
+            float _FlowSoftness;
+            float _FlowAngle;
+            float _FlowIntensity;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float2 uv = i.texcoord - 0.5;
+                float s = sin(_FlowAngle);
+                float c = cos(_FlowAngle);
+                float rotatedX = uv.x * c - uv.y * s;
+
+                float pos = frac(_Time.y * _FlowSpeed);
+                float center = lerp(-0.75, 0.75, pos);
+
+                float dist = abs(rotatedX - center);
+                float band = 1.0 - smoothstep(_FlowWidth, _FlowWidth + _FlowSoftness, dist);
+
+                fixed3 flowRgb = _FlowColor.rgb * band * _FlowIntensity;
+                col.rgb += flowRgb * col.a;
+                col.a = saturate(col.a);
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-cooldown" data-shader="UI/CooldownMask" data-name="ui/cooldownmask" data-level="常用">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/CooldownMask</div>
+                <div class="demo-card-sub">扇形冷却、技能 CD 遮罩。</div>
+            </div>
+            <span class="badge common">常用</span>
+        </div>
+        <div class="demo-stage">
+            <div class="cooldown-wrap"></div>
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>技能按钮、道具冷却、自动战斗技能槽。</span>
+            <b>接入建议</b><span>比用多张图序列更省资源，适合高频刷新 UI。</span>
+        </div>
+        <div class="param-list"><span class="param">_Cooldown：冷却进度，0=可用，1=全遮罩</span><span class="param">_MaskColor：遮罩颜色</span><span class="param">_Clockwise：顺/逆时针</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>技能冷却、道具冷却、自动战斗技能槽、活动倒计时图标可用。</p>
+            <ol>
+                <li>将 _Cooldown 作为主参数，由脚本按剩余时间 / 总时间实时设置。</li>
+                <li>冷却中叠加深色遮罩，并保留底图识别度。</li>
+                <li>冷却完成时将 _Cooldown 归零，可配合 Glow 或轻微缩放反馈。</li>
+                <li>需要倒计时数字时，建议由 TextMeshPro 独立显示，不要写死在 Shader 中。</li>
+            </ol>
+            <p><b>参数建议：</b>_Cooldown 取值 0~1；_MaskColor 控制遮罩颜色；_Clockwise 控制顺/逆时针。</p>
+            <p class="warning-text"><b>注意：</b>不要用序列帧图片模拟技能冷却。高频技能和多技能槽会导致资源体积和维护成本过高。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Mat_UI_CooldownMask，核心参数为 _Cooldown，取值 0~1。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>挂在技能图标上方的遮罩 Image，建议与技能底图分层，而不是直接替换底图材质。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>每帧或按固定频率设置 _Cooldown = remainTime / totalTime；冷却结束后隐藏遮罩层。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>技能按钮建议拆成 Icon、CooldownMask、CooldownText、ReadyGlow 四层。</span></div>
+                <div class="method-row"><b>验收标准</b><span>冷却方向符合设计；倒计时与遮罩同步；冷却完成有明确反馈。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UICooldownMask : MonoBehaviour
+{
+    [Header(&quot;Cooldown Mask Layer&quot;)]
+    [SerializeField] private Image cooldownMask;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material cooldownMaterial;
+
+    private Material runtimeCooldownMaterial;
+
+    private void Awake()
+    {
+        if (cooldownMask == null)
+            cooldownMask = GetComponent&lt;Image&gt;();
+
+        if (cooldownMaterial != null)
+            runtimeCooldownMaterial = Instantiate(cooldownMaterial);
+
+        if (cooldownMask != null)
+        {
+            cooldownMask.material = runtimeCooldownMaterial;
+            cooldownMask.enabled = false;
+        }
+    }
+
+    public void SetCooldown(float remainTime, float totalTime)
+    {
+        float value = totalTime &lt;= 0f ? 0f : Mathf.Clamp01(remainTime / totalTime);
+        SetCooldown01(value);
+    }
+
+    public void SetCooldown01(float value)
+    {
+        value = Mathf.Clamp01(value);
+
+        if (cooldownMask != null)
+            cooldownMask.enabled = value &gt; 0f;
+
+        if (runtimeCooldownMaterial != null)
+            runtimeCooldownMaterial.SetFloat(&quot;_Cooldown&quot;, value);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeCooldownMaterial != null)
+            Destroy(runtimeCooldownMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_CooldownMask.shader，核心参数为 _Cooldown，取值 0~1。</li><li>创建 Mat_UI_CooldownMask，设置遮罩颜色，例如半透明黑色。</li><li>技能按钮 Prefab 建议拆成 Icon、CooldownMask、CooldownText、ReadyGlow。</li><li>把 Mat_UI_CooldownMask 挂到 CooldownMask 的 Image 上，而不是直接挂到 Icon 上。</li><li>脚本每帧或固定频率设置 _Cooldown = 剩余时间 / 总冷却时间。</li><li>冷却完成时隐藏 CooldownMask，显示 ReadyGlow 或播放轻微缩放反馈。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/CooldownMask</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_CooldownMask</td></tr>
+                        <tr><th>挂载对象</th><td>技能图标上方 CooldownMask 层、道具冷却层</td></tr>
+                        <tr><th>主要参数</th><td>_Cooldown、_MaskColor、_Clockwise</td></tr>
+                        <tr><th>脚本控制</th><td>_Cooldown = remainTime / totalTime，冷却结束隐藏遮罩。</td></tr>
+                        <tr><th>验收重点</th><td>遮罩方向正确；倒计时同步；冷却完成反馈明确。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义冷却来源：技能、道具、活动次数或自动战斗技能槽。</li><li>创建 UI/CooldownMask Shader 和 Mat_UI_CooldownMask 材质。</li><li>在技能按钮 Prefab 中增加 CooldownMask 和 CooldownText 层。</li><li>脚本按 remainTime / totalTime 更新 _Cooldown。</li><li>冷却完成后关闭遮罩并触发可用反馈。</li><li>验收遮罩方向、倒计时同步、点击锁定和冷却结束反馈。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/CooldownMask 冷却遮罩 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_CooldownMask.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/CooldownMask&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _Cooldown (&quot;Cooldown&quot;, Range(0,1)) = 0
+        _MaskColor (&quot;Mask Color&quot;, Color) = (0,0,0,0.65)
+        _Clockwise (&quot;Clockwise&quot;, Range(0,1)) = 1
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;CooldownMask&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            float _Cooldown;
+            fixed4 _MaskColor;
+            float _Clockwise;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 baseCol = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float2 uv = i.texcoord - 0.5;
+                float angle = atan2(uv.x, uv.y);
+                float normalized = angle / 6.2831853 + 0.5;
+
+                float progress = lerp(1.0 - normalized, normalized, _Clockwise);
+                float mask = step(progress, _Cooldown);
+
+                fixed4 col = lerp(baseCol, _MaskColor, mask * _MaskColor.a);
+                col.a = baseCol.a;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-progress" data-shader="UI/ProgressFill" data-name="ui/progressfill" data-level="常用">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/ProgressFill</div>
+                <div class="demo-card-sub">血条、经验条、能量条、进度遮罩。</div>
+            </div>
+            <span class="badge common">常用</span>
+        </div>
+        <div class="demo-stage">
+            
+        <div class="progress-box">
+            <div>
+                <div style="font-weight:900;margin-bottom:6px;">Boss HP</div>
+                <div class="bar hp"><div class="fill"></div></div>
+            </div>
+            <div>
+                <div style="font-weight:900;margin-bottom:6px;">能量值</div>
+                <div class="bar"><div class="fill"></div></div>
+            </div>
+            <div class="round-progress">70%</div>
+        </div>
+        
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>Boss 血条、角色经验、任务进度、活动进度。</span>
+            <b>接入建议</b><span>可支持横向、纵向、径向填充；优先参数化。</span>
+        </div>
+        <div class="param-list"><span class="param">_FillAmount：填充比例</span><span class="param">_FillColor：填充颜色</span><span class="param">_BackColor：底色</span><span class="param">_Direction：填充方向</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>血条、经验条、能量条、任务进度、活动进度、Boss 护盾条等使用。</p>
+            <ol>
+                <li>将 _FillAmount 作为核心参数，由脚本按当前值 / 最大值设置。</li>
+                <li>横向条、纵向条、径向条建议共用一套参数结构，减少材质类型。</li>
+                <li>血条变化可以用缓动层表现扣血延迟，不必全部放进 Shader。</li>
+                <li>Boss 血条、护盾条、能量条应通过颜色和图标区分，不要只靠长度区分。</li>
+            </ol>
+            <p><b>参数建议：</b>_FillAmount 控制进度；_FillColor 控制前景色；_BackColor 控制底色；_Direction 控制填充方向。</p>
+            <p class="warning-text"><b>注意：</b>不要为每一种进度条都写一套独立 Shader。优先做一个可参数化的通用进度 Shader。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Mat_UI_ProgressFill，核心参数为 _FillAmount，取值 0~1。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>血条、经验条、能量条、任务进度条、活动进度条的 Fill 层使用。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>业务层只传当前值和最大值，由 UI 控制脚本统一换算 FillAmount。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>进度条建议拆成 Bg、Fill、DelayFill、Text 四层；扣血延迟可由 DelayFill 表现。</span></div>
+                <div class="method-row"><b>验收标准</b><span>进度值准确；低值和满值显示稳定；横向/纵向/径向方向符合配置。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIProgressFill : MonoBehaviour
+{
+    [Header(&quot;Fill Layer&quot;)]
+    [SerializeField] private Image fillImage;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material fillMaterial;
+
+    [Header(&quot;Options&quot;)]
+    [SerializeField] private bool useUnityImageFillAmount = true;
+
+    private Material runtimeFillMaterial;
+
+    private void Awake()
+    {
+        if (fillImage == null)
+            fillImage = GetComponent&lt;Image&gt;();
+
+        if (fillMaterial != null)
+            runtimeFillMaterial = Instantiate(fillMaterial);
+
+        if (fillImage != null)
+        {
+            fillImage.material = runtimeFillMaterial;
+
+            // 只有使用 Unity 自带 fillAmount 时，才需要 Image.Type.Filled。
+            if (useUnityImageFillAmount)
+                fillImage.type = Image.Type.Filled;
+        }
+    }
+
+    public void SetValue(float current, float max)
+    {
+        float value = max &lt;= 0f ? 0f : Mathf.Clamp01(current / max);
+        SetValue01(value);
+    }
+
+    public void SetValue01(float value)
+    {
+        value = Mathf.Clamp01(value);
+
+        if (fillImage != null &amp;&amp; useUnityImageFillAmount)
+            fillImage.fillAmount = value;
+
+        if (runtimeFillMaterial != null)
+            runtimeFillMaterial.SetFloat(&quot;_FillAmount&quot;, value);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeFillMaterial != null)
+            Destroy(runtimeFillMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_ProgressFill.shader，核心参数为 _FillAmount，取值 0~1。</li><li>创建 Mat_UI_ProgressFill，配置填充颜色和方向。</li><li>进度条 Prefab 建议拆成 Bg、Fill、DelayFill、Text 四层。</li><li>把 Mat_UI_ProgressFill 挂到 Fill 层的 Image 上。</li><li>脚本只传 current 和 max，由 UI 组件换算 FillAmount。</li><li>如果需要扣血延迟，不要全部写在 Shader 中，可用 DelayFill 层做缓动表现。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/ProgressFill</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_ProgressFill</td></tr>
+                        <tr><th>挂载对象</th><td>血条 Fill、经验条 Fill、任务进度 Fill、能量条 Fill</td></tr>
+                        <tr><th>主要参数</th><td>_FillAmount、_FillColor、_BackColor、_Direction</td></tr>
+                        <tr><th>脚本控制</th><td>_FillAmount = current / max，文本独立显示。</td></tr>
+                        <tr><th>验收重点</th><td>进度准确；0/满值稳定；方向与配置一致。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义进度含义：HP、EXP、能量、任务、活动。</li><li>创建 UI/ProgressFill Shader 和 Mat_UI_ProgressFill 材质。</li><li>在 ProgressBar Prefab 中拆分 Bg、Fill、Text。</li><li>脚本根据 current/max 设置 _FillAmount 或 Image.fillAmount。</li><li>根据类型设置颜色、方向和文本。</li><li>验收数值准确性、边界值、方向、动画和不同分辨率适配。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/ProgressFill 进度填充 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_ProgressFill.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/ProgressFill&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _FillAmount (&quot;Fill Amount&quot;, Range(0,1)) = 1
+        _FillColor (&quot;Fill Color&quot;, Color) = (0.2,1,0.4,1)
+        _BackColor (&quot;Back Color&quot;, Color) = (0.2,0.12,0.08,1)
+        _Direction (&quot;Direction 0=LeftToRight 1=RightToLeft 2=BottomToTop 3=TopToBottom&quot;, Range(0,3)) = 0
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;ProgressFill&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            float _FillAmount;
+            fixed4 _FillColor;
+            fixed4 _BackColor;
+            float _Direction;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 texCol = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float axis = i.texcoord.x;
+
+                if (_Direction &gt;= 0.5 &amp;&amp; _Direction &lt; 1.5)
+                    axis = 1.0 - i.texcoord.x;
+                else if (_Direction &gt;= 1.5 &amp;&amp; _Direction &lt; 2.5)
+                    axis = i.texcoord.y;
+                else if (_Direction &gt;= 2.5)
+                    axis = 1.0 - i.texcoord.y;
+
+                float fillMask = step(axis, _FillAmount);
+                fixed4 colorPart = lerp(_BackColor, _FillColor, fillMask);
+
+                fixed4 col = texCol * colorPart;
+                col.a = texCol.a * colorPart.a;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+    <article class="demo-card demo-rounded" data-shader="UI/RoundedClip" data-name="ui/roundedclip" data-level="可选">
+        <div class="demo-card-head">
+            <div>
+                <div class="demo-card-title">UI/RoundedClip</div>
+                <div class="demo-card-sub">圆角裁剪、头像圆形显示。</div>
+            </div>
+            <span class="badge optional">可选</span>
+        </div>
+        <div class="demo-stage">
+            
+        <div class="rounded-chat">
+            <div class="avatar"></div>
+            <div class="bubble">圆角头像与聊天气泡，适合社交/聊天/排行榜。</div>
+        </div>
+        
+        </div>
+        <div class="demo-foot">
+            <b>适用控件</b><span>头像、聊天气泡、列表卡片、排行榜头像。</span>
+            <b>接入建议</b><span>如果大量头像使用，建议评估 Mask 与 Shader 裁剪的性能差异。</span>
+        </div>
+        <div class="param-list"><span class="param">_Radius：圆角半径</span><span class="param">_Softness：边缘柔化</span><span class="param">_ClipRect：裁剪区域</span></div>
+        <div class="usage-guide">
+            <h4>使用说明</h4>
+            <p><b>适用时机：</b>头像、聊天气泡、排行榜头像、卡片圆角、弹窗内局部圆角裁剪时使用。</p>
+            <ol>
+                <li>头像圆形显示可以使用圆角/圆形裁剪 Shader，减少额外 Mask 组件。</li>
+                <li>聊天气泡、卡片圆角可通过 _Radius 控制半径，便于适配不同尺寸。</li>
+                <li>大量列表中使用时，需要测试与 Mask、ScrollView、动态批处理的兼容性。</li>
+                <li>如果只是静态圆角底板，优先考虑九宫格图片；如果图片内容动态变化，再考虑 Shader 裁剪。</li>
+            </ol>
+            <p><b>参数建议：</b>_Radius 控制圆角半径；_Softness 控制边缘柔化；_ClipRect 控制裁剪区域。</p>
+            <p class="warning-text"><b>注意：</b>不要把 RoundedClip 用在所有矩形 UI 上。静态资源能用九宫格解决时，Shader 裁剪不是优先方案。</p>
+        </div>
+        <div class="method-guide">
+            <h4>使用方法</h4>
+            <div class="method-rows">
+                <div class="method-row"><b>创建方式</b><span>创建 Mat_UI_RoundedClip，暴露 _Radius、_Softness、_ClipRect。</span></div>
+                <div class="method-row"><b>挂载位置</b><span>用于动态头像、聊天气泡、排行榜头像、动态加载图片卡片。</span></div>
+                <div class="method-row"><b>脚本调用</b><span>根据 RectTransform 尺寸设置圆角半径，必要时根据分辨率做比例修正。</span></div>
+                <div class="method-row"><b>Prefab 规范</b><span>头像建议拆成 AvatarImage、AvatarFrame、StateIcon；圆角裁剪只作用于 AvatarImage。</span></div>
+                <div class="method-row"><b>验收标准</b><span>圆角边缘无锯齿，图片不变形；ScrollView 中裁剪正常；遮罩嵌套无异常。</span></div>
+            </div>
+            <details class="method-code">
+                <summary>脚本调用示例（已检查修正）</summary>
+                <pre>using UnityEngine;
+using UnityEngine.UI;
+
+public class UIRoundedClipController : MonoBehaviour
+{
+    [Header(&quot;Target&quot;)]
+    [SerializeField] private Image targetImage;
+
+    [Header(&quot;Material&quot;)]
+    [SerializeField] private Material roundedMaterial;
+
+    [Header(&quot;Default&quot;)]
+    [SerializeField] private float defaultRadius = 16f;
+    [SerializeField] private float defaultSoftness = 1f;
+
+    private Material runtimeRoundedMaterial;
+
+    private void Awake()
+    {
+        if (targetImage == null)
+            targetImage = GetComponent&lt;Image&gt;();
+
+        if (roundedMaterial != null)
+            runtimeRoundedMaterial = Instantiate(roundedMaterial);
+
+        if (targetImage != null)
+            targetImage.material = runtimeRoundedMaterial;
+
+        Apply(defaultRadius, defaultSoftness);
+    }
+
+    public void SetRadius(float radius)
+    {
+        defaultRadius = radius;
+        Apply(defaultRadius, defaultSoftness);
+    }
+
+    public void SetSoftness(float softness)
+    {
+        defaultSoftness = softness;
+        Apply(defaultRadius, defaultSoftness);
+    }
+
+    private void Apply(float radius, float softness)
+    {
+        if (runtimeRoundedMaterial == null) return;
+
+        runtimeRoundedMaterial.SetFloat(&quot;_Radius&quot;, radius);
+        runtimeRoundedMaterial.SetFloat(&quot;_Softness&quot;, softness);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeRoundedMaterial != null)
+            Destroy(runtimeRoundedMaterial);
+    }
+}</pre>
+            </details>
+        </div>
+
+
+        <div class="example-deep-guide">
+            <h4>Unity 使用详解</h4>
+            <ol><li>创建 UI_RoundedClip.shader，并暴露圆角半径和边缘柔化参数。</li><li>创建 Mat_UI_RoundedClip，设置默认 Radius 和 Softness。</li><li>头像 Prefab 建议拆成 AvatarImage、AvatarFrame、StateIcon；只把材质挂到 AvatarImage。</li><li>聊天气泡或动态图片需要圆角时，挂到内容图片层，不要影响边框和角标。</li><li>如果只是静态圆角底板，优先用九宫格图片；动态图片再考虑 Shader 裁剪。</li><li>在 ScrollView、Mask、RectMask2D 中测试边缘裁剪和锯齿。</li></ol>
+        </div>
+
+        <div class="example-method-table">
+            <h4>UI 方法总表</h4>
+            <div class="table-wrap mini-table">
+                <table>
+                    <tbody>
+                        <tr><th>Shader</th><td>UI/RoundedClip</td></tr>
+                        <tr><th>推荐材质</th><td>Mat_UI_RoundedClip</td></tr>
+                        <tr><th>挂载对象</th><td>AvatarImage、动态图片、聊天气泡内容图、排行榜头像</td></tr>
+                        <tr><th>主要参数</th><td>_Radius、_Softness、_ClipRect</td></tr>
+                        <tr><th>脚本控制</th><td>按 RectTransform 尺寸设置 Radius；必要时适配分辨率。</td></tr>
+                        <tr><th>验收重点</th><td>圆角平滑；图片不变形；Mask/ScrollView 嵌套正常。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="example-flow-guide">
+            <h4>UI 接入流程</h4>
+            <ol><li>定义圆角对象：头像、动态图片、聊天气泡或卡片内容。</li><li>创建 UI/RoundedClip Shader 和 Mat_UI_RoundedClip 材质。</li><li>挂载到需要被裁剪的 Image 本体，不挂到外框和角标。</li><li>脚本或配置设置 Radius、Softness。</li><li>保存为头像、聊天气泡、排行榜条目 Prefab。</li><li>验收圆角边缘、图片比例、遮罩嵌套和滚动列表表现。</li></ol>
+        </div>
+
+        <div class="shader-script-guide">
+            <h4>UI/RoundedClip 圆角裁剪 Shader 脚本示例</h4>
+            <p>将下面代码保存为 <code>UI_RoundedClip.shader</code>，然后创建对应材质并挂到该示例说明的 UI Image 层。</p>
+            <details class="method-code shader-code-block">
+                <summary>展开 Shader 脚本</summary>
+                <pre>// 说明：以下 Shader 为 UGUI 示例版，适合 Built-in 管线或兼容 CGPROGRAM 的项目参考。
+// 如果项目使用 URP，可先验证兼容性；正式项目建议由 TA 根据项目管线统一改造。
+Shader &quot;UI/RoundedClip&quot;
+{
+    Properties
+    {
+        [PerRendererData] _MainTex (&quot;Sprite Texture&quot;, 2D) = &quot;white&quot; {}
+        _Color (&quot;Tint&quot;, Color) = (1,1,1,1)
+        _Radius (&quot;Radius&quot;, Range(0,0.5)) = 0.12
+        _Softness (&quot;Softness&quot;, Range(0.001,0.2)) = 0.02
+
+        _StencilComp (&quot;Stencil Comparison&quot;, Float) = 8
+        _Stencil (&quot;Stencil ID&quot;, Float) = 0
+        _StencilOp (&quot;Stencil Operation&quot;, Float) = 0
+        _StencilWriteMask (&quot;Stencil Write Mask&quot;, Float) = 255
+        _StencilReadMask (&quot;Stencil Read Mask&quot;, Float) = 255
+        _ColorMask (&quot;Color Mask&quot;, Float) = 15
+        [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip (&quot;Use Alpha Clip&quot;, Float) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask [_ColorMask]
+
+        Pass
+        {
+            Name &quot;RoundedClip&quot;
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
+
+            #include &quot;UnityCG.cginc&quot;
+            #include &quot;UnityUI.cginc&quot;
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            float _Radius;
+            float _Softness;
+            float4 _ClipRect;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+            };
+
+            float RoundedBoxMask(float2 uv, float radius, float softness)
+            {
+                float2 p = abs(uv - 0.5);
+                float2 halfSize = float2(0.5 - radius, 0.5 - radius);
+                float2 q = p - halfSize;
+                float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+                return 1.0 - smoothstep(0.0, softness, dist);
+            }
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = v.texcoord;
+                o.color = v.color * _Color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.texcoord) * i.color;
+
+                float mask = RoundedBoxMask(i.texcoord, _Radius, _Softness);
+                col.a *= mask;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                col.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+                clip(col.a - 0.001);
+                #endif
+
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+            </details>
+        </div>
+
+    </article>
+    
+        </div>
+    </section>
+
+    <section class="panel" id="ui-combined">
+        <h2>UI 组合示例：任务弹窗与技能栏</h2>
+        <p class="section-desc">单个界面通常不会只使用一种 Shader。常见组合是：默认材质承载基础 UI，置灰表达禁用，流光表达可领取，描边表达选中，冷却遮罩表达技能 CD，进度填充表达任务/血量/能量。</p>
+        <div style="display:flex;justify-content:center;">
+            <div class="phone-demo">
+                <div class="phone-top">
+                    <div class="res-pill">金币 12.5K</div>
+                    <div class="res-pill">钻石 320</div>
+                </div>
+                <div class="quest-panel">
+                    <div class="quest-title">每日任务</div>
+                    <div class="quest-row">
+                        <div class="small-icon"></div>
+                        <div class="quest-info">
+                            <div class="quest-name">击败 20 个敌人</div>
+                            <div class="quest-bar"><span></span></div>
+                        </div>
+                    </div>
+                    <div class="quest-row disabled-row">
+                        <div class="small-icon"></div>
+                        <div class="quest-info">
+                            <div class="quest-name">等级 10 解锁</div>
+                            <div class="quest-bar"><span style="width:18%;"></span></div>
+                        </div>
+                    </div>
+                    <button class="claim-btn">可领取奖励</button>
+                </div>
+                <div class="skill-row">
+                    <div class="skill-slot selected"></div>
+                    <div class="skill-slot cd"></div>
+                    <div class="skill-slot glow"></div>
+                    <div class="skill-slot"></div>
+                </div>
+            </div>
+        </div>
+        <div class="note-box">
+            <strong>组合说明：</strong>弹窗底板使用 UI/Default；未解锁任务行使用 UI/Grayscale；领取按钮使用 UI/FlowLight；当前技能使用 UI/Outline；冷却技能使用 UI/CooldownMask；可释放技能使用 UI/Glow；任务进度使用 UI/ProgressFill。
+        </div>
+    </section>
+
+    <section class="panel" id="ui-usage">
+        <h2>UI Shader 使用矩阵</h2>
+        <p class="section-desc">该表用于研发排期和美术需求拆分。性能风险为相对评估，实际仍需通过目标机 Profile 验证。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>UI 需求</th>
+                        <th>推荐 Shader</th>
+                        <th>表现目标</th>
+                        <th>性能风险</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>普通按钮</td><td><strong>UI/Default</strong></td><td>保持原色、默认交互态</td><td>低</td></tr><tr><td>禁用按钮</td><td><strong>UI/Grayscale</strong></td><td>灰度 + 透明度降低</td><td>低</td></tr><tr><td>选中装备格</td><td><strong>UI/Outline</strong></td><td>外描边 + 角标提示</td><td>中</td></tr><tr><td>可领取奖励</td><td><strong>UI/Glow</strong></td><td>外发光 + 呼吸动画</td><td>中</td></tr><tr><td>高级品质框</td><td><strong>UI/FlowLight</strong></td><td>斜向流光扫过</td><td>中</td></tr><tr><td>技能冷却</td><td><strong>UI/CooldownMask</strong></td><td>扇形遮罩 + 倒计时</td><td>低</td></tr><tr><td>血条 / 能量条</td><td><strong>UI/ProgressFill</strong></td><td>横向/径向进度</td><td>低</td></tr><tr><td>头像 / 聊天气泡</td><td><strong>UI/RoundedClip</strong></td><td>圆角裁剪</td><td>低~中</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    
+    <section class="panel shader-section" id="section-1">
+        <h2>一、UI 类 Shader</h2>
+        <p class="section-desc">用于 UGUI、按钮、图标、面板、品质框、文本辅助表现。移动端项目中使用频率最高。</p>
+        <div class="cards">
+            
+        <article class="shader-card" data-name="ui/default" data-level="必备" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/Default</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>普通 Image、Button、Panel、RawImage。</dd>
+                <dt>场景</dt><dd>主界面、弹窗、导航栏、资源栏、普通按钮。</dd>
+                <dt>建议</dt><dd>保持默认即可，适合绝大多数静态 UI。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/grayscale" data-level="必备" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/Grayscale</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>图片置灰、按钮禁用、功能未解锁。</dd>
+                <dt>场景</dt><dd>未解锁入口、不可穿戴装备、技能冷却、头像锁定。</dd>
+                <dt>建议</dt><dd>建议单独做材质，通过脚本切换材质或参数，不要直接改原图。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/outline" data-level="常用" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/Outline</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>图标描边、选中描边、品质框强化。</dd>
+                <dt>场景</dt><dd>奖励图标、角色头像、装备格、选中状态。</dd>
+                <dt>建议</dt><dd>描边采样次数会增加性能开销，移动端避免过厚描边。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/glow" data-level="常用" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/Glow</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>外发光、高亮、可领取提示。</dd>
+                <dt>场景</dt><dd>领取按钮、暴击奖励、稀有道具、活动入口。</dd>
+                <dt>建议</dt><dd>适合配合闪烁动画使用，避免全屏大面积叠加。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/flowlight" data-level="常用" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/FlowLight</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>流光扫过、品质框流动高光。</dd>
+                <dt>场景</dt><dd>高级装备、宝箱、充值入口、抽奖按钮。</dd>
+                <dt>建议</dt><dd>建议用参数控制速度、宽度、角度，方便策划和美术调试。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/cooldownmask" data-level="常用" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/CooldownMask</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>扇形冷却、技能 CD 遮罩。</dd>
+                <dt>场景</dt><dd>技能按钮、道具冷却、自动战斗技能槽。</dd>
+                <dt>建议</dt><dd>比用多张图序列更省资源，适合高频刷新 UI。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/progressfill" data-level="常用" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/ProgressFill</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>血条、经验条、能量条、进度遮罩。</dd>
+                <dt>场景</dt><dd>Boss 血条、角色经验、任务进度、活动进度。</dd>
+                <dt>建议</dt><dd>可支持横向、纵向、径向填充；优先参数化。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="ui/roundedclip" data-level="可选" data-group="一、UI 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">UI/RoundedClip</div>
+                <span class="badge optional">可选</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>圆角裁剪、头像圆形显示。</dd>
+                <dt>场景</dt><dd>头像、聊天气泡、列表卡片、排行榜头像。</dd>
+                <dt>建议</dt><dd>如果大量头像使用，建议评估 Mask 与 Shader 裁剪的性能差异。</dd>
+            </dl>
+        </article>
+        
+        </div>
+    </section>
+    
+    <section class="panel shader-section" id="section-2">
+        <h2>二、Sprite / 2D 类 Shader</h2>
+        <p class="section-desc">用于 2D 角色、地图、背景、道具图层。适合卡通扁平、轻量化项目。</p>
+        <div class="cards">
+            
+        <article class="shader-card" data-name="sprite-unlit-default" data-level="必备" data-group="二、Sprite / 2D 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Sprite-Unlit-Default</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>不受光 Sprite，颜色稳定直出。</dd>
+                <dt>场景</dt><dd>2D 背景、图标、装饰、扁平场景元素。</dd>
+                <dt>建议</dt><dd>适合 UI 化场景和不需要光照变化的 2D 资源。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="sprite-lit-default" data-level="常用" data-group="二、Sprite / 2D 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Sprite-Lit-Default</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>可被 2D Light 影响的 Sprite。</dd>
+                <dt>场景</dt><dd>2D 角色、2D 地图、昼夜变化、局部灯光。</dd>
+                <dt>建议</dt><dd>需要 URP 2D Renderer 支持，注意光源数量。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="sprite/flashhit" data-level="常用" data-group="二、Sprite / 2D 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Sprite/FlashHit</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>受击闪白、闪红、选中反馈。</dd>
+                <dt>场景</dt><dd>怪物受击、角色受击、可点击物反馈。</dd>
+                <dt>建议</dt><dd>建议用一个颜色参数和强度参数控制，不要频繁替换贴图。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="sprite/colorreplace" data-level="可选" data-group="二、Sprite / 2D 类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Sprite/ColorReplace</div>
+                <span class="badge optional">可选</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>颜色替换、阵营染色、状态染色。</dd>
+                <dt>场景</dt><dd>队伍颜色、敌我阵营、品质状态、特殊活动皮肤。</dd>
+                <dt>建议</dt><dd>适合局部换色需求，复杂换色建议使用换图或调色板方案。</dd>
+            </dl>
+        </article>
+        
+        </div>
+    </section>
+    
+    <section class="panel shader-section" id="section-3">
+        <h2>三、URP / 3D 模型类 Shader</h2>
+        <p class="section-desc">用于角色、怪物、建筑、装备、场景物体。移动端优先选择轻量材质。</p>
+        <div class="cards">
+            
+        <article class="shader-card" data-name="urp/lit" data-level="必备" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">URP/Lit</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>标准 PBR 光照材质。</dd>
+                <dt>场景</dt><dd>角色、怪物、装备、建筑、主要 3D 场景物体。</dd>
+                <dt>建议</dt><dd>效果完整但成本高于 Simple Lit，核心物体使用。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="urp/simple lit" data-level="必备" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">URP/Simple Lit</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>轻量光照材质。</dd>
+                <dt>场景</dt><dd>移动端模型、低配机型、非核心场景物。</dd>
+                <dt>建议</dt><dd>推荐作为手游项目默认 3D Shader。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="urp/unlit" data-level="必备" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">URP/Unlit</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>不受光材质，贴图颜色直出。</dd>
+                <dt>场景</dt><dd>卡通模型、特效面片、场景装饰、远景物。</dd>
+                <dt>建议</dt><dd>性能较好，适合扁平风格和假光照贴图。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="model/outline" data-level="常用" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Model/Outline</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>模型描边、卡通轮廓、选中轮廓。</dd>
+                <dt>场景</dt><dd>角色、Boss、可交互物、当前目标。</dd>
+                <dt>建议</dt><dd>常见做法是反向法线外扩或屏幕后处理；移动端慎用全屏方案。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="model/rimlight" data-level="常用" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Model/RimLight</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>边缘光、高亮轮廓、受击强调。</dd>
+                <dt>场景</dt><dd>Boss 出场、目标锁定、角色强化状态。</dd>
+                <dt>建议</dt><dd>比复杂描边更轻，适合移动端表现角色层次。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="model/dissolve" data-level="常用" data-group="三、URP / 3D 模型类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Model/Dissolve</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>溶解、消失、传送、死亡表现。</dd>
+                <dt>场景</dt><dd>怪物死亡、物体销毁、宝箱开启、传送门。</dd>
+                <dt>建议</dt><dd>需要噪声图，建议开放溶解阈值和边缘颜色参数。</dd>
+            </dl>
+        </article>
+        
+        </div>
+    </section>
+    
+    <section class="panel shader-section" id="section-4">
+        <h2>四、Particle / 特效类 Shader</h2>
+        <p class="section-desc">用于粒子、技能、光效、奖励飞行、爆点和环境氛围。</p>
+        <div class="cards">
+            
+        <article class="shader-card" data-name="particles/standard unlit" data-level="必备" data-group="四、Particle / 特效类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Particles/Standard Unlit</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>标准粒子不受光渲染。</dd>
+                <dt>场景</dt><dd>金币飞行、星光、尘土、火花、普通技能特效。</dd>
+                <dt>建议</dt><dd>移动端常用基础特效材质。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="particles/additive" data-level="必备" data-group="四、Particle / 特效类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Particles/Additive</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>加法混合，叠加后更亮。</dd>
+                <dt>场景</dt><dd>爆点、暴击光、魔法光、能量闪光。</dd>
+                <dt>建议</dt><dd>适合亮光，但大面积叠加容易过曝和增加 Overdraw。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="particles/alpha blended" data-level="必备" data-group="四、Particle / 特效类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Particles/Alpha Blended</div>
+                <span class="badge must">必备</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>普通半透明粒子。</dd>
+                <dt>场景</dt><dd>烟雾、雾气、气流、沙尘、软光。</dd>
+                <dt>建议</dt><dd>半透明排序和 Overdraw 是主要性能风险。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="particles/softadditive" data-level="常用" data-group="四、Particle / 特效类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Particles/SoftAdditive</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>柔和加法光效。</dd>
+                <dt>场景</dt><dd>按钮高光、奖励光晕、温和技能特效。</dd>
+                <dt>建议</dt><dd>比强 Additive 更适合 UI 和卡通风格。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="particles/distortion" data-level="可选" data-group="四、Particle / 特效类 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Particles/Distortion</div>
+                <span class="badge optional">可选</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>热浪、冲击波、空间扭曲。</dd>
+                <dt>场景</dt><dd>爆炸冲击、Boss 技能、传送门、热浪。</dd>
+                <dt>建议</dt><dd>成本相对较高，建议只用于关键技能。</dd>
+            </dl>
+        </article>
+        
+        </div>
+    </section>
+    
+    <section class="panel shader-section" id="section-5">
+        <h2>五、场景与特殊用途 Shader</h2>
+        <p class="section-desc">用于场景环境、水体、天空、地形、遮罩和特殊演出。</p>
+        <div class="cards">
+            
+        <article class="shader-card" data-name="terrain/lit" data-level="常用" data-group="五、场景与特殊用途 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Terrain/Lit</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>地形贴图混合、基础地表光照。</dd>
+                <dt>场景</dt><dd>大地图、战斗地图、荒野地表、草地。</dd>
+                <dt>建议</dt><dd>贴图层数不要过多，移动端注意采样成本。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="water/simple" data-level="可选" data-group="五、场景与特殊用途 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Water/Simple</div>
+                <span class="badge optional">可选</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>简单水面、流动水纹。</dd>
+                <dt>场景</dt><dd>河流、湖面、水池、UI 水波背景。</dd>
+                <dt>建议</dt><dd>优先使用简单 UV 流动方案，避免复杂实时反射。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="skybox/procedural 或 cubemap" data-level="常用" data-group="五、场景与特殊用途 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Skybox/Procedural 或 Cubemap</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>天空盒、环境背景。</dd>
+                <dt>场景</dt><dd>战斗背景、营地、荒野远景、昼夜变化。</dd>
+                <dt>建议</dt><dd>移动端多用静态 Cubemap 或低成本渐变天空。</dd>
+            </dl>
+        </article>
+        
+        <article class="shader-card" data-name="stencil/mask" data-level="常用" data-group="五、场景与特殊用途 Shader">
+            <div class="shader-top">
+                <div class="shader-name">Stencil/Mask</div>
+                <span class="badge common">常用</span>
+            </div>
+            <dl>
+                <dt>用途</dt><dd>模板遮罩、局部显示、特殊裁剪。</dd>
+                <dt>场景</dt><dd>头像遮罩、窗口裁剪、局部特效限制。</dd>
+                <dt>建议</dt><dd>适合复杂 UI 裁剪，但要统一规范 Stencil Ref。</dd>
+            </dl>
+        </article>
+        
+        </div>
+    </section>
+    
+
+    <section class="panel" id="table">
+        <h2>Shader 总表</h2>
+        <p class="section-desc">该表适合复制到研发任务、资源规范或美术需求文档中。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Shader 名称</th>
+                        <th>优先级</th>
+                        <th>分类</th>
+                        <th>用途</th>
+                        <th>典型场景</th>
+                        <th>接入建议</th>
+                    </tr>
+                </thead>
+                <tbody id="shaderTableBody">
+                    
+        <tr data-name="ui/default" data-level="必备">
+            <td><strong>UI/Default</strong></td>
+            <td>必备</td>
+            <td>一、UI 类 Shader</td>
+            <td>普通 Image、Button、Panel、RawImage。</td>
+            <td>主界面、弹窗、导航栏、资源栏、普通按钮。</td>
+            <td>保持默认即可，适合绝大多数静态 UI。</td>
+        </tr>
+        
+        <tr data-name="ui/grayscale" data-level="必备">
+            <td><strong>UI/Grayscale</strong></td>
+            <td>必备</td>
+            <td>一、UI 类 Shader</td>
+            <td>图片置灰、按钮禁用、功能未解锁。</td>
+            <td>未解锁入口、不可穿戴装备、技能冷却、头像锁定。</td>
+            <td>建议单独做材质，通过脚本切换材质或参数，不要直接改原图。</td>
+        </tr>
+        
+        <tr data-name="ui/outline" data-level="常用">
+            <td><strong>UI/Outline</strong></td>
+            <td>常用</td>
+            <td>一、UI 类 Shader</td>
+            <td>图标描边、选中描边、品质框强化。</td>
+            <td>奖励图标、角色头像、装备格、选中状态。</td>
+            <td>描边采样次数会增加性能开销，移动端避免过厚描边。</td>
+        </tr>
+        
+        <tr data-name="ui/glow" data-level="常用">
+            <td><strong>UI/Glow</strong></td>
+            <td>常用</td>
+            <td>一、UI 类 Shader</td>
+            <td>外发光、高亮、可领取提示。</td>
+            <td>领取按钮、暴击奖励、稀有道具、活动入口。</td>
+            <td>适合配合闪烁动画使用，避免全屏大面积叠加。</td>
+        </tr>
+        
+        <tr data-name="ui/flowlight" data-level="常用">
+            <td><strong>UI/FlowLight</strong></td>
+            <td>常用</td>
+            <td>一、UI 类 Shader</td>
+            <td>流光扫过、品质框流动高光。</td>
+            <td>高级装备、宝箱、充值入口、抽奖按钮。</td>
+            <td>建议用参数控制速度、宽度、角度，方便策划和美术调试。</td>
+        </tr>
+        
+        <tr data-name="ui/cooldownmask" data-level="常用">
+            <td><strong>UI/CooldownMask</strong></td>
+            <td>常用</td>
+            <td>一、UI 类 Shader</td>
+            <td>扇形冷却、技能 CD 遮罩。</td>
+            <td>技能按钮、道具冷却、自动战斗技能槽。</td>
+            <td>比用多张图序列更省资源，适合高频刷新 UI。</td>
+        </tr>
+        
+        <tr data-name="ui/progressfill" data-level="常用">
+            <td><strong>UI/ProgressFill</strong></td>
+            <td>常用</td>
+            <td>一、UI 类 Shader</td>
+            <td>血条、经验条、能量条、进度遮罩。</td>
+            <td>Boss 血条、角色经验、任务进度、活动进度。</td>
+            <td>可支持横向、纵向、径向填充；优先参数化。</td>
+        </tr>
+        
+        <tr data-name="ui/roundedclip" data-level="可选">
+            <td><strong>UI/RoundedClip</strong></td>
+            <td>可选</td>
+            <td>一、UI 类 Shader</td>
+            <td>圆角裁剪、头像圆形显示。</td>
+            <td>头像、聊天气泡、列表卡片、排行榜头像。</td>
+            <td>如果大量头像使用，建议评估 Mask 与 Shader 裁剪的性能差异。</td>
+        </tr>
+        
+        <tr data-name="sprite-unlit-default" data-level="必备">
+            <td><strong>Sprite-Unlit-Default</strong></td>
+            <td>必备</td>
+            <td>二、Sprite / 2D 类 Shader</td>
+            <td>不受光 Sprite，颜色稳定直出。</td>
+            <td>2D 背景、图标、装饰、扁平场景元素。</td>
+            <td>适合 UI 化场景和不需要光照变化的 2D 资源。</td>
+        </tr>
+        
+        <tr data-name="sprite-lit-default" data-level="常用">
+            <td><strong>Sprite-Lit-Default</strong></td>
+            <td>常用</td>
+            <td>二、Sprite / 2D 类 Shader</td>
+            <td>可被 2D Light 影响的 Sprite。</td>
+            <td>2D 角色、2D 地图、昼夜变化、局部灯光。</td>
+            <td>需要 URP 2D Renderer 支持，注意光源数量。</td>
+        </tr>
+        
+        <tr data-name="sprite/flashhit" data-level="常用">
+            <td><strong>Sprite/FlashHit</strong></td>
+            <td>常用</td>
+            <td>二、Sprite / 2D 类 Shader</td>
+            <td>受击闪白、闪红、选中反馈。</td>
+            <td>怪物受击、角色受击、可点击物反馈。</td>
+            <td>建议用一个颜色参数和强度参数控制，不要频繁替换贴图。</td>
+        </tr>
+        
+        <tr data-name="sprite/colorreplace" data-level="可选">
+            <td><strong>Sprite/ColorReplace</strong></td>
+            <td>可选</td>
+            <td>二、Sprite / 2D 类 Shader</td>
+            <td>颜色替换、阵营染色、状态染色。</td>
+            <td>队伍颜色、敌我阵营、品质状态、特殊活动皮肤。</td>
+            <td>适合局部换色需求，复杂换色建议使用换图或调色板方案。</td>
+        </tr>
+        
+        <tr data-name="urp/lit" data-level="必备">
+            <td><strong>URP/Lit</strong></td>
+            <td>必备</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>标准 PBR 光照材质。</td>
+            <td>角色、怪物、装备、建筑、主要 3D 场景物体。</td>
+            <td>效果完整但成本高于 Simple Lit，核心物体使用。</td>
+        </tr>
+        
+        <tr data-name="urp/simple lit" data-level="必备">
+            <td><strong>URP/Simple Lit</strong></td>
+            <td>必备</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>轻量光照材质。</td>
+            <td>移动端模型、低配机型、非核心场景物。</td>
+            <td>推荐作为手游项目默认 3D Shader。</td>
+        </tr>
+        
+        <tr data-name="urp/unlit" data-level="必备">
+            <td><strong>URP/Unlit</strong></td>
+            <td>必备</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>不受光材质，贴图颜色直出。</td>
+            <td>卡通模型、特效面片、场景装饰、远景物。</td>
+            <td>性能较好，适合扁平风格和假光照贴图。</td>
+        </tr>
+        
+        <tr data-name="model/outline" data-level="常用">
+            <td><strong>Model/Outline</strong></td>
+            <td>常用</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>模型描边、卡通轮廓、选中轮廓。</td>
+            <td>角色、Boss、可交互物、当前目标。</td>
+            <td>常见做法是反向法线外扩或屏幕后处理；移动端慎用全屏方案。</td>
+        </tr>
+        
+        <tr data-name="model/rimlight" data-level="常用">
+            <td><strong>Model/RimLight</strong></td>
+            <td>常用</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>边缘光、高亮轮廓、受击强调。</td>
+            <td>Boss 出场、目标锁定、角色强化状态。</td>
+            <td>比复杂描边更轻，适合移动端表现角色层次。</td>
+        </tr>
+        
+        <tr data-name="model/dissolve" data-level="常用">
+            <td><strong>Model/Dissolve</strong></td>
+            <td>常用</td>
+            <td>三、URP / 3D 模型类 Shader</td>
+            <td>溶解、消失、传送、死亡表现。</td>
+            <td>怪物死亡、物体销毁、宝箱开启、传送门。</td>
+            <td>需要噪声图，建议开放溶解阈值和边缘颜色参数。</td>
+        </tr>
+        
+        <tr data-name="particles/standard unlit" data-level="必备">
+            <td><strong>Particles/Standard Unlit</strong></td>
+            <td>必备</td>
+            <td>四、Particle / 特效类 Shader</td>
+            <td>标准粒子不受光渲染。</td>
+            <td>金币飞行、星光、尘土、火花、普通技能特效。</td>
+            <td>移动端常用基础特效材质。</td>
+        </tr>
+        
+        <tr data-name="particles/additive" data-level="必备">
+            <td><strong>Particles/Additive</strong></td>
+            <td>必备</td>
+            <td>四、Particle / 特效类 Shader</td>
+            <td>加法混合，叠加后更亮。</td>
+            <td>爆点、暴击光、魔法光、能量闪光。</td>
+            <td>适合亮光，但大面积叠加容易过曝和增加 Overdraw。</td>
+        </tr>
+        
+        <tr data-name="particles/alpha blended" data-level="必备">
+            <td><strong>Particles/Alpha Blended</strong></td>
+            <td>必备</td>
+            <td>四、Particle / 特效类 Shader</td>
+            <td>普通半透明粒子。</td>
+            <td>烟雾、雾气、气流、沙尘、软光。</td>
+            <td>半透明排序和 Overdraw 是主要性能风险。</td>
+        </tr>
+        
+        <tr data-name="particles/softadditive" data-level="常用">
+            <td><strong>Particles/SoftAdditive</strong></td>
+            <td>常用</td>
+            <td>四、Particle / 特效类 Shader</td>
+            <td>柔和加法光效。</td>
+            <td>按钮高光、奖励光晕、温和技能特效。</td>
+            <td>比强 Additive 更适合 UI 和卡通风格。</td>
+        </tr>
+        
+        <tr data-name="particles/distortion" data-level="可选">
+            <td><strong>Particles/Distortion</strong></td>
+            <td>可选</td>
+            <td>四、Particle / 特效类 Shader</td>
+            <td>热浪、冲击波、空间扭曲。</td>
+            <td>爆炸冲击、Boss 技能、传送门、热浪。</td>
+            <td>成本相对较高，建议只用于关键技能。</td>
+        </tr>
+        
+        <tr data-name="terrain/lit" data-level="常用">
+            <td><strong>Terrain/Lit</strong></td>
+            <td>常用</td>
+            <td>五、场景与特殊用途 Shader</td>
+            <td>地形贴图混合、基础地表光照。</td>
+            <td>大地图、战斗地图、荒野地表、草地。</td>
+            <td>贴图层数不要过多，移动端注意采样成本。</td>
+        </tr>
+        
+        <tr data-name="water/simple" data-level="可选">
+            <td><strong>Water/Simple</strong></td>
+            <td>可选</td>
+            <td>五、场景与特殊用途 Shader</td>
+            <td>简单水面、流动水纹。</td>
+            <td>河流、湖面、水池、UI 水波背景。</td>
+            <td>优先使用简单 UV 流动方案，避免复杂实时反射。</td>
+        </tr>
+        
+        <tr data-name="skybox/procedural 或 cubemap" data-level="常用">
+            <td><strong>Skybox/Procedural 或 Cubemap</strong></td>
+            <td>常用</td>
+            <td>五、场景与特殊用途 Shader</td>
+            <td>天空盒、环境背景。</td>
+            <td>战斗背景、营地、荒野远景、昼夜变化。</td>
+            <td>移动端多用静态 Cubemap 或低成本渐变天空。</td>
+        </tr>
+        
+        <tr data-name="stencil/mask" data-level="常用">
+            <td><strong>Stencil/Mask</strong></td>
+            <td>常用</td>
+            <td>五、场景与特殊用途 Shader</td>
+            <td>模板遮罩、局部显示、特殊裁剪。</td>
+            <td>头像遮罩、窗口裁剪、局部特效限制。</td>
+            <td>适合复杂 UI 裁剪，但要统一规范 Stencil Ref。</td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel" id="rules">
+        <h2>项目接入规范建议</h2>
+        <ul class="checklist">
+            <li>Shader 命名建议使用统一前缀，例如 UI/、Sprite/、Model/、Particles/、Scene/。</li>
+            <li>材质命名建议采用 Mat_模块_用途_状态，例如 Mat_UI_Button_Gray。</li>
+            <li>UI 置灰、流光、冷却遮罩应通过材质参数控制，避免运行时频繁替换图片。</li>
+            <li>移动端慎用大面积半透明、复杂描边、多层发光和全屏后处理。</li>
+            <li>粒子类 Shader 需要重点关注 Overdraw，尤其是烟雾、光晕和全屏爆闪。</li>
+            <li>核心角色可使用 URP/Lit，普通模型优先使用 URP/Simple Lit 或 URP/Unlit。</li>
+            <li>可配置参数应暴露给材质面板，例如灰度强度、流光速度、溶解阈值、边缘颜色。</li>
+            <li>所有自定义 Shader 应准备默认材质、示例 Prefab 和测试场景，方便美术验收。</li>
+            <li>UI 自定义 Shader 要检查是否兼容 Mask、RectMask2D、CanvasRenderer、SpriteAtlas、图集 Alpha 通道。</li>
+            <li>同屏大量 UI 元素尽量复用材质实例，避免为每个控件独立创建 Material 导致批处理被打断。</li>
+        </ul>
+    </section>
+
+    <section class="panel" id="sample">
+        <div class="code-head">
+            <h2>UI 灰度 Shader 示例</h2>
+            <button onclick="copyCode()">复制代码</button>
+        </div>
+        <p class="section-desc">该示例适合 UGUI Image 置灰。正式项目中建议结合项目管线、Mask、RectMask2D、SpriteAtlas、批处理规则再做适配。</p>
+        <pre id="shaderCode">Shader &quot;UI/Grayscale&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture&quot;, 2D) = &quot;white&quot; {}
+        _GrayAmount (&quot;Gray Amount&quot;, Range(0,1)) = 1
+        _Alpha (&quot;Alpha&quot;, Range(0,1)) = 1
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;Queue&quot;=&quot;Transparent&quot;
+            &quot;IgnoreProjector&quot;=&quot;True&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;PreviewType&quot;=&quot;Plane&quot;
+            &quot;CanUseSpriteAtlas&quot;=&quot;True&quot;
+        }
+
+        Cull Off
+        Lighting Off
+        ZWrite Off
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
+
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include &quot;UnityCG.cginc&quot;
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float _GrayAmount;
+            float _Alpha;
+
+            struct appdata_t
+            {
+                float4 vertex : POSITION;
+                float4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            v2f vert(appdata_t v)
+            {
+                v2f o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+                o.color = v.color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.texcoord) * i.color;
+                float gray = dot(col.rgb, float3(0.299, 0.587, 0.114));
+                col.rgb = lerp(col.rgb, gray.xxx, _GrayAmount);
+                col.a *= _Alpha;
+                return col;
+            }
+            ENDCG
+        }
+    }
+}</pre>
+    </section>
+</main>
+
+<footer>
+    <p>使用建议：先建立基础材质库，再按系统逐步扩展。不要在项目早期一次性接入过多特殊 Shader，否则会增加材质维护、批处理、性能排查和美术规范成本。</p>
+</footer>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const levelFilter = document.getElementById('levelFilter');
+
+function applyFilter(){
+    const q = searchInput.value.trim().toLowerCase();
+    const level = levelFilter.value;
+    const cards = document.querySelectorAll('.shader-card, .demo-card');
+    const rows = document.querySelectorAll('#shaderTableBody tr');
+
+    cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        const matchQ = !q || text.includes(q);
+        const matchLevel = level === 'all' || card.dataset.level === level;
+        card.style.display = matchQ && matchLevel ? '' : 'none';
+    });
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const matchQ = !q || text.includes(q);
+        const matchLevel = level === 'all' || row.dataset.level === level;
+        row.style.display = matchQ && matchLevel ? '' : 'none';
+    });
+}
+
+function resetFilter(){
+    searchInput.value = '';
+    levelFilter.value = 'all';
+    applyFilter();
+}
+
+function copyCode(){
+    const code = document.getElementById('shaderCode').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+        alert('Shader 代码已复制');
+    }).catch(() => {
+        alert('复制失败，请手动选择代码复制');
+    });
+}
+
+searchInput.addEventListener('input', applyFilter);
+levelFilter.addEventListener('change', applyFilter);
+</script>
+
+<script>
+(function(){
+    document.addEventListener("click", function(e){
+        var a = e.target.closest ? e.target.closest(".nav-inner a") : null;
+        if(!a) return;
+        var href = a.getAttribute("href") || "";
+        if(href.charAt(0) !== "#") return;
+        var target = document.getElementById(href.substring(1));
+        if(!target) return;
+        e.preventDefault();
+        var nav = document.querySelector("nav");
+        var offset = nav ? nav.offsetHeight + 12 : 12;
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        if(history && history.replaceState) history.replaceState(null, "", href);
+    });
+})();
+</script>
+
+
+<script>
+(function(){
+    function qs(sel, root){ return (root || document).querySelector(sel); }
+    function qsa(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+    function initCodeCopy(){
+        qsa("pre").forEach(function(pre, index){
+            if(pre.parentElement && pre.parentElement.classList.contains("code-wrap")) return;
+
+            var wrap = document.createElement("div");
+            wrap.className = "code-wrap";
+            pre.parentNode.insertBefore(wrap, pre);
+            wrap.appendChild(pre);
+
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "copy-code-btn";
+            btn.textContent = "复制";
+            btn.addEventListener("click", function(){
+                var text = pre.innerText || pre.textContent || "";
+                if(navigator.clipboard && navigator.clipboard.writeText){
+                    navigator.clipboard.writeText(text).then(function(){
+                        btn.textContent = "已复制";
+                        btn.classList.add("copied");
+                        setTimeout(function(){
+                            btn.textContent = "复制";
+                            btn.classList.remove("copied");
+                        }, 1200);
+                    });
+                }else{
+                    var range = document.createRange();
+                    range.selectNodeContents(pre);
+                    var selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    document.execCommand("copy");
+                    selection.removeAllRanges();
+                    btn.textContent = "已复制";
+                    setTimeout(function(){ btn.textContent = "复制"; }, 1200);
+                }
+            });
+            wrap.appendChild(btn);
+        });
+    }
+
+    function setAllCode(open){
+        qsa("details.method-code").forEach(function(d){
+            d.open = !!open;
+        });
+    }
+
+    function filterExamples(){
+        var search = (qs("#exampleSearch") ? qs("#exampleSearch").value : "").trim().toLowerCase();
+        var type = qs("#exampleTypeFilter") ? qs("#exampleTypeFilter").value : "all";
+        var cards = qsa("#ui-examples .demo-card");
+        var count = 0;
+
+        cards.forEach(function(card){
+            var text = card.innerText.toLowerCase();
+            var shader = card.getAttribute("data-shader") || "";
+            var matchSearch = !search || text.indexOf(search) !== -1;
+            var matchType = type === "all" || shader === type;
+            var visible = matchSearch && matchType;
+            card.classList.toggle("is-hidden", !visible);
+            if(visible) count++;
+        });
+
+        var result = qs("#exampleResult");
+        if(result) result.textContent = "当前显示 " + count + " 个 UI 示例";
+    }
+
+    function scrollToId(id){
+        var target = document.getElementById(id);
+        if(!target) return;
+        var nav = qs("nav");
+        var offset = nav ? nav.offsetHeight + 14 : 14;
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({top: Math.max(0, top), behavior: "smooth"});
+        if(history && history.replaceState) history.replaceState(null, "", "#" + id);
+    }
+
+    function updateProgress(){
+        var doc = document.documentElement;
+        var scrollTop = window.pageYOffset || doc.scrollTop;
+        var max = doc.scrollHeight - window.innerHeight;
+        var progress = max <= 0 ? 0 : (scrollTop / max) * 100;
+        var bar = qs("#readProgress");
+        if(bar) bar.style.width = progress + "%";
+    }
+
+    function updateActiveNav(){
+        var sections = qsa("section[id]");
+        var currentId = "";
+        var y = window.pageYOffset + 120;
+        sections.forEach(function(sec){
+            if(sec.offsetTop <= y) currentId = sec.id;
+        });
+
+        qsa(".nav-inner a, .quick-toc a").forEach(function(a){
+            var href = a.getAttribute("href") || "";
+            a.classList.toggle("nav-active", href === "#" + currentId);
+            a.classList.toggle("active", href === "#" + currentId);
+        });
+    }
+
+    document.addEventListener("click", function(e){
+        var link = e.target.closest ? e.target.closest(".nav-inner a, .quick-toc a, .ux-card") : null;
+        if(link){
+            var href = link.getAttribute("href") || "";
+            if(href.charAt(0) === "#"){
+                var id = href.substring(1);
+                if(document.getElementById(id)){
+                    e.preventDefault();
+                    scrollToId(id);
+                    return;
+                }
+            }
+        }
+    });
+
+    window.addEventListener("scroll", function(){
+        updateProgress();
+        updateActiveNav();
+    }, {passive:true});
+
+    document.addEventListener("DOMContentLoaded", function(){
+        initCodeCopy();
+
+        var expandAll = qs("#expandAllCode");
+        var collapseAll = qs("#collapseAllCode");
+        var floatExpand = qs("#floatExpand");
+        var floatCollapse = qs("#floatCollapse");
+        var backToTop = qs("#backToTop");
+        var reset = qs("#resetExampleFilter");
+        var search = qs("#exampleSearch");
+        var type = qs("#exampleTypeFilter");
+
+        if(expandAll) expandAll.addEventListener("click", function(){ setAllCode(true); });
+        if(collapseAll) collapseAll.addEventListener("click", function(){ setAllCode(false); });
+        if(floatExpand) floatExpand.addEventListener("click", function(){ setAllCode(true); });
+        if(floatCollapse) floatCollapse.addEventListener("click", function(){ setAllCode(false); });
+        if(backToTop) backToTop.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+
+        if(search) search.addEventListener("input", filterExamples);
+        if(type) type.addEventListener("change", filterExamples);
+        if(reset) reset.addEventListener("click", function(){
+            if(search) search.value = "";
+            if(type) type.value = "all";
+            filterExamples();
+        });
+
+        // 默认收起代码，减少首次阅读压力；保留用户手动展开。
+        setAllCode(false);
+        filterExamples();
+        updateProgress();
+        updateActiveNav();
+
+        if(location.hash && document.getElementById(location.hash.substring(1))){
+            setTimeout(function(){ scrollToId(location.hash.substring(1)); }, 80);
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
