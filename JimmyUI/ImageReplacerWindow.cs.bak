@@ -1,0 +1,230 @@
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.UI;
+using System.Collections.Generic;
+using System.Linq;
+
+public class ImageReplacerWindow : EditorWindow
+{
+    private Sprite targetSprite;
+    private Sprite replacementSprite;
+    private Vector2 scrollPosition;
+
+    // 用于存储每个 Prefab 中具体的引用细节
+    private class ReferenceInfo
+    {
+        public GameObject Prefab;
+        public string PrefabPath;
+        public List<ComponentDetail> Details = new List<ComponentDetail>();
+        public bool IsExpanded = true; // 控制 UI 上的折叠状态
+    }
+
+    private class ComponentDetail
+    {
+        public string HierarchyPath;
+        public string ComponentName;
+    }
+
+    private List<ReferenceInfo> referenceInfos = new List<ReferenceInfo>();
+
+    [MenuItem("Tools/荒野大赌客/UI与本地化/图片引用替换")]
+    public static void ShowWindow()
+    {
+        GetWindow<ImageReplacerWindow>("图片替换工具");
+    }
+
+    private void OnGUI()
+    {
+        GUILayout.Label("1. 选择要查找的旧图片", EditorStyles.boldLabel);
+        targetSprite = (Sprite)EditorGUILayout.ObjectField("目标图片 (旧)", targetSprite, typeof(Sprite), false);
+
+        if (GUILayout.Button("精确查找引用细节"))
+        {
+            FindDetailedReferences();
+        }
+
+        GUILayout.Space(10);
+        GUILayout.Label($"受影响的 Prefab 数量: {referenceInfos.Count}", EditorStyles.boldLabel);
+        
+        // 显示详细的树状列表
+        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, "box", GUILayout.Height(250));
+        foreach (var info in referenceInfos)
+        {
+            EditorGUILayout.BeginVertical("helpbox");
+            
+            // Prefab 标题行带折叠开关
+            info.IsExpanded = EditorGUILayout.Foldout(info.IsExpanded, $"Prefab: {info.Prefab.name} ({info.Details.Count} 处引用)", true, EditorStyles.foldoutHeader);
+            
+            if (info.IsExpanded)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.ObjectField("资产文件", info.Prefab, typeof(GameObject), false);
+                
+                // 列出该 Prefab 内所有引用此图的完整路径和组件名
+                foreach (var detail in info.Details)
+                {
+                    EditorGUILayout.LabelField($"[{detail.ComponentName}]", detail.HierarchyPath, EditorStyles.wordWrappedMiniLabel);
+                }
+                EditorGUI.indentLevel--;
+            }
+            EditorGUILayout.EndVertical();
+        }
+        EditorGUILayout.EndScrollView();
+
+        GUILayout.Space(10);
+        GUILayout.Label("2. 选择新图片并执行替换", EditorStyles.boldLabel);
+        replacementSprite = (Sprite)EditorGUILayout.ObjectField("替换图片 (新)", replacementSprite, typeof(Sprite), false);
+
+        GUI.enabled = referenceInfos.Count > 0 && replacementSprite != null;
+        if (GUILayout.Button("一键替换所有列出的引用", GUILayout.Height(30)))
+        {
+            ReplaceImages();
+        }
+        GUI.enabled = true;
+    }
+
+    private void FindDetailedReferences()
+    {
+        referenceInfos.Clear();
+
+        if (targetSprite == null)
+        {
+            TEngine.Log.Warning("[ImageReplacer] 替换被阻止，请先选择目标图片。");
+            return;
+        }
+
+        string targetPath = AssetDatabase.GetAssetPath(targetSprite);
+        string[] allPrefabGuids = AssetDatabase.FindAssets("t:Prefab");
+
+        // 显示进度条
+        int total = allPrefabGuids.Length;
+        int current = 0;
+
+        try
+        {
+            foreach (string guid in allPrefabGuids)
+            {
+                current++;
+                string prefabPath = AssetDatabase.GUIDToAssetPath(guid);
+                
+                // 1. 先用 GetDependencies 快速过滤，排除完全不相关的 Prefab
+                string[] dependencies = AssetDatabase.GetDependencies(prefabPath, false);
+                if (!dependencies.Contains(targetPath)) continue;
+
+                EditorUtility.DisplayProgressBar("深度查找中", $"正在分析: {prefabPath}", (float)current / total);
+
+                // 2. 加载确认为依赖此图的 Prefab 内容，进行深度遍历
+                GameObject contents = PrefabUtility.LoadPrefabContents(prefabPath);
+                ReferenceInfo newInfo = new ReferenceInfo
+                {
+                    Prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath),
+                    PrefabPath = prefabPath
+                };
+
+                // 检查 UI Image
+                Image[] uiImages = contents.GetComponentsInChildren<Image>(true);
+                foreach (Image img in uiImages)
+                {
+                    if (img.sprite == targetSprite)
+                    {
+                        newInfo.Details.Add(new ComponentDetail
+                        {
+                            HierarchyPath = GetGameObjectPath(img.transform),
+                            ComponentName = "Image (UGUI)"
+                        });
+                    }
+                }
+
+                // 检查 SpriteRenderer
+                SpriteRenderer[] spriteRenderers = contents.GetComponentsInChildren<SpriteRenderer>(true);
+                foreach (SpriteRenderer sr in spriteRenderers)
+                {
+                    if (sr.sprite == targetSprite)
+                    {
+                        newInfo.Details.Add(new ComponentDetail
+                        {
+                            HierarchyPath = GetGameObjectPath(sr.transform),
+                            ComponentName = "SpriteRenderer"
+                        });
+                    }
+                }
+
+                // 如果确实在组件中找到了（防止只是材质或其他间接引用），则添加到列表
+                if (newInfo.Details.Count > 0)
+                {
+                    referenceInfos.Add(newInfo);
+                }
+
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+
+        if (referenceInfos.Count == 0)
+        {
+            TEngine.Log.Info("[ImageReplacer] 未找到直接引用该 Sprite 的 UI Image 或 SpriteRenderer 控件。");
+        }
+    }
+
+    private void ReplaceImages()
+    {
+        int totalReplaced = 0;
+
+        foreach (var info in referenceInfos)
+        {
+            GameObject contents = PrefabUtility.LoadPrefabContents(info.PrefabPath);
+            bool isModified = false;
+
+            Image[] uiImages = contents.GetComponentsInChildren<Image>(true);
+            foreach (Image img in uiImages)
+            {
+                if (img.sprite == targetSprite)
+                {
+                    img.sprite = replacementSprite;
+                    isModified = true;
+                    totalReplaced++;
+                }
+            }
+
+            SpriteRenderer[] spriteRenderers = contents.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (SpriteRenderer sr in spriteRenderers)
+            {
+                if (sr.sprite == targetSprite)
+                {
+                    sr.sprite = replacementSprite;
+                    isModified = true;
+                    totalReplaced++;
+                }
+            }
+
+            if (isModified)
+            {
+                PrefabUtility.SaveAsPrefabAsset(contents, info.PrefabPath);
+            }
+
+            PrefabUtility.UnloadPrefabContents(contents);
+        }
+
+        TEngine.Log.Info($"[ImageReplacer] 替换完成。Prefab数量={referenceInfos.Count}，控件引用数量={totalReplaced}");
+        
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        referenceInfos.Clear();
+    }
+
+    // 辅助方法：获取节点在 Prefab 中的相对路径
+    private string GetGameObjectPath(Transform transform)
+    {
+        string path = transform.name;
+        while (transform.parent != null)
+        {
+            transform = transform.parent;
+            path = transform.name + "/" + path;
+        }
+        // 移除最外层 Root 节点的 "(Clone)" 后缀以保证显示的美观性
+        return path.Replace("(Clone)", "");
+    }
+}

@@ -1,0 +1,182 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7830738dd71460943b3bdc1dd7f0a76d, type: 3}
+  m_Name: UIJuiceSettings
+  m_EditorClassIdentifier: 
+  tagGroups:
+  - groupName: "\u6309\u94AE\u52A8\u753B"
+    tags:
+    - name: "\u57FA\u7840\u6309\u94AE\u4EA4\u4E92"
+      isSelected: 1
+      savedSettings:
+        toolMode: 0
+        effect_enableScale: 1
+        effect_scaleDuration: 0.5
+        effect_scaleEase: 27
+        effect_startScale: {x: 0, y: 0, z: 0}
+        effect_endScale: {x: 1, y: 1, z: 1}
+        effect_enableMove: 1
+        effect_moveDuration: 0.5
+        effect_moveEase: 27
+        effect_startOffset: {x: 0, y: -50}
+        effect_endOffset: {x: 0, y: 0}
+        effect_enableFade: 1
+        effect_fadeDuration: 0.5
+        effect_fadeEase: 1
+        effect_startAlpha: 0
+        effect_endAlpha: 1
+        effect_enablePunch: 1
+        effect_punchAmount: 0.2
+        effect_punchVibrato: 10
+        pro_enterDuration: 0.4
+        pro_enterEase: 27
+        pro_hoverScale: 1.05
+        pro_hoverDuration: 0.2
+        pro_pressedScale: 0.9
+        pro_clickDuration: 0.05
+        pro_upScale: 1
+        pro_upDuration: 0.3
+        pro_disabledShakeAmount: 5
+        pro_disabledShakeDuration: 0.3
+        file_animController: {fileID: 0}
+  - groupName: "\u5F39\u7A97\u4E0E\u9762\u677F"
+    tags:
+    - name: "\u4E2D\u592E\u5F39\u7A97\u51FA\u73B0"
+      isSelected: 0
+      savedSettings:
+        toolMode: 2
+        effect_enableScale: 1
+        effect_scaleDuration: 0.3
+        effect_scaleEase: 27
+        effect_startScale: {x: 0.7, y: 0.7, z: 1}
+        effect_endScale: {x: 1, y: 1, z: 1}
+        effect_enableMove: 0
+        effect_moveDuration: 0.5
+        effect_moveEase: 27
+        effect_startOffset: {x: 0, y: -50}
+        effect_endOffset: {x: 0, y: 0}
+        effect_enableFade: 1
+        effect_fadeDuration: 0.5
+        effect_fadeEase: 27
+        effect_startAlpha: 0
+        effect_endAlpha: 1
+        effect_enablePunch: 0
+        effect_punchAmount: 0.2
+        effect_punchVibrato: 10
+        pro_enterDuration: 0.4
+        pro_enterEase: 27
+        pro_hoverScale: 1.05
+        pro_hoverDuration: 0.2
+        pro_pressedScale: 0.92
+        pro_clickDuration: 0.1
+        pro_upScale: 1
+        pro_upDuration: 0.2
+        pro_disabledShakeAmount: 15
+        pro_disabledShakeDuration: 0.3
+        file_animController: {fileID: 0}
+    - name: "\u4E2D\u592E\u5F39\u7A97\u6D88\u5931"
+      isSelected: 0
+      savedSettings:
+        toolMode: 2
+        effect_enableScale: 1
+        effect_scaleDuration: 0.3
+        effect_scaleEase: 3
+        effect_startScale: {x: 1, y: 1, z: 1}
+        effect_endScale: {x: 0.8, y: 0.8, z: 1}
+        effect_enableMove: 0
+        effect_moveDuration: 0.5
+        effect_moveEase: 27
+        effect_startOffset: {x: 0, y: -50}
+        effect_endOffset: {x: 0, y: 0}
+        effect_enableFade: 1
+        effect_fadeDuration: 0.5
+        effect_fadeEase: 3
+        effect_startAlpha: 1
+        effect_endAlpha: 0
+        effect_enablePunch: 0
+        effect_punchAmount: 0.2
+        effect_punchVibrato: 10
+        pro_enterDuration: 0.4
+        pro_enterEase: 27
+        pro_hoverScale: 1.05
+        pro_hoverDuration: 0.2
+        pro_pressedScale: 0.92
+        pro_clickDuration: 0.1
+        pro_upScale: 1
+        pro_upDuration: 0.2
+        pro_disabledShakeAmount: 15
+        pro_disabledShakeDuration: 0.3
+        file_animController: {fileID: 0}
+    - name: "\u5E95\u90E8\u9762\u677F"
+      isSelected: 0
+      savedSettings:
+        toolMode: 2
+        effect_enableScale: 0
+        effect_scaleDuration: 0.5
+        effect_scaleEase: 27
+        effect_startScale: {x: 0, y: 0, z: 0}
+        effect_endScale: {x: 1, y: 1, z: 1}
+        effect_enableMove: 1
+        effect_moveDuration: 0.35
+        effect_moveEase: 6
+        effect_startOffset: {x: 0, y: -100}
+        effect_endOffset: {x: 0, y: 0}
+        effect_enableFade: 1
+        effect_fadeDuration: 0.5
+        effect_fadeEase: 1
+        effect_startAlpha: 0
+        effect_endAlpha: 1
+        effect_enablePunch: 0
+        effect_punchAmount: 0.2
+        effect_punchVibrato: 10
+        pro_enterDuration: 0.4
+        pro_enterEase: 27
+        pro_hoverScale: 1.05
+        pro_hoverDuration: 0.2
+        pro_pressedScale: 0.92
+        pro_clickDuration: 0.1
+        pro_upScale: 1
+        pro_upDuration: 0.2
+        pro_disabledShakeAmount: 15
+        pro_disabledShakeDuration: 0.3
+        file_animController: {fileID: 0}
+  buttonTags: []
+  popupTags: []
+  effect_enableScale: 1
+  effect_scaleDuration: 0.5
+  effect_scaleEase: 27
+  effect_startScale: {x: 0, y: 0, z: 0}
+  effect_endScale: {x: 1, y: 1, z: 1}
+  effect_enableMove: 1
+  effect_moveDuration: 0.5
+  effect_moveEase: 27
+  effect_startOffset: {x: 0, y: -50}
+  effect_endOffset: {x: 0, y: 0}
+  effect_enableFade: 1
+  effect_fadeDuration: 0.5
+  effect_fadeEase: 1
+  effect_startAlpha: 0
+  effect_endAlpha: 1
+  effect_enablePunch: 1
+  effect_punchAmount: 0.2
+  effect_punchVibrato: 10
+  pro_enterDuration: 0.4
+  pro_enterEase: 27
+  pro_hoverScale: 1.05
+  pro_hoverDuration: 0.2
+  pro_pressedScale: 0.9
+  pro_clickDuration: 0.05
+  pro_upScale: 1
+  pro_upDuration: 0.3
+  pro_disabledShakeAmount: 5
+  pro_disabledShakeDuration: 0.3
+  file_animController: {fileID: 0}
