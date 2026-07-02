@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>荒野蛇影：Snake Roguelike H5</title>
+<style>
+  :root{
+    --bg:#15100d;--panel:#2b1b13;--panel2:#3a2418;--line:#6a3d22;--gold:#f5c35b;--red:#ef6b55;--green:#72d67b;--blue:#7dd3fc;--cream:#ffe8b6;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 20%,#3a2418 0%,#17100d 52%,#080604 100%);font-family:"Microsoft YaHei",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--cream)}
+  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:10px}
+  #frame{position:relative;width:min(100vw,56.25vh);height:min(177.777vw,100vh);max-width:540px;max-height:960px;border:3px solid #5f371d;border-radius:22px;overflow:hidden;background:#110b08;box-shadow:0 18px 60px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,214,122,.12)}
+  canvas{width:100%;height:100%;display:block;background:#1a130e}
+  .ui{position:absolute;inset:0;pointer-events:none}
+  .topbar{position:absolute;left:12px;right:12px;top:10px;height:78px;padding:8px 10px;border:2px solid rgba(245,195,91,.35);border-radius:14px;background:linear-gradient(180deg,rgba(64,39,23,.92),rgba(38,24,17,.86));box-shadow:0 8px 24px rgba(0,0,0,.28);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .title{font-size:16px;font-weight:900;color:#ffe2a2;letter-spacing:.5px;text-shadow:0 2px 0 #4b2414}.stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.pill{font-size:11px;line-height:18px;padding:0 7px;border:1px solid rgba(255,232,182,.2);border-radius:999px;background:rgba(17,10,7,.42);color:#ffe8b6}.hpbar,.xpbar{height:8px;background:rgba(0,0,0,.35);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.08);margin-top:5px}.hpbar>i,.xpbar>i{display:block;height:100%;width:50%;background:linear-gradient(90deg,#db4636,#ff9d58)}.xpbar>i{background:linear-gradient(90deg,#3cc1ff,#a7f3d0)}
+  .btnSmall{pointer-events:auto;border:0;color:#2a1609;font-weight:900;background:linear-gradient(180deg,#ffe08b,#d88d2f);border-radius:11px;padding:8px 10px;box-shadow:0 3px 0 #6b3516;font-size:13px}.btnSmall:active{transform:translateY(2px);box-shadow:0 1px 0 #6b3516}
+  .log{position:absolute;left:12px;right:12px;top:96px;font-size:12px;color:#ffe8b6;text-shadow:0 2px 4px #000;opacity:.9;line-height:18px;min-height:18px;text-align:center;transition:opacity .2s}
+  .controls{position:absolute;left:0;right:0;bottom:16px;height:170px;pointer-events:none}.pad{position:absolute;left:18px;bottom:0;width:145px;height:145px;pointer-events:auto}.dkey{position:absolute;width:48px;height:48px;border:2px solid rgba(255,232,182,.22);border-radius:14px;background:linear-gradient(180deg,rgba(76,45,27,.9),rgba(38,24,17,.9));color:#ffe8b6;font-size:23px;font-weight:900;box-shadow:0 5px 0 rgba(0,0,0,.35)}.dkey:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.35)}.up{left:48px;top:0}.down{left:48px;bottom:0}.left{left:0;top:48px}.right{right:0;top:48px}
+  .skillBtns{position:absolute;right:18px;bottom:10px;width:142px;display:grid;gap:10px;pointer-events:auto}.skillBtn{height:52px;border:2px solid rgba(255,232,182,.24);border-radius:15px;background:linear-gradient(180deg,rgba(127,69,35,.92),rgba(61,34,22,.92));color:#ffe8b6;font-weight:900;font-size:13px;box-shadow:0 5px 0 rgba(0,0,0,.35)}.skillBtn:active{transform:translateY(2px)}.skillBtn[disabled]{opacity:.45;filter:grayscale(1)}
+  .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,11,8,.7),rgba(8,5,4,.92));backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:22px;pointer-events:auto}.overlay.show{display:flex}.panel{width:100%;border:3px solid #7b4824;border-radius:24px;background:linear-gradient(180deg,#4b2b18,#27150e);box-shadow:0 14px 50px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,226,162,.1);padding:20px 16px;text-align:center;position:relative}.panel:before{content:"";position:absolute;left:18px;right:18px;top:9px;height:4px;border-radius:999px;background:linear-gradient(90deg,transparent,#f5c35b,transparent);opacity:.55}.logo{font-size:29px;line-height:36px;font-weight:1000;color:#ffe29d;text-shadow:0 4px 0 #562713,0 0 22px rgba(245,195,91,.28);margin:12px 0 8px}.subtitle{font-size:13px;line-height:22px;color:#e3c49a;margin:0 auto 16px;max-width:360px}.mainBtn{width:100%;height:50px;border:0;border-radius:15px;background:linear-gradient(180deg,#ffe08b,#d98d2c);color:#2b1608;font-weight:1000;font-size:16px;box-shadow:0 5px 0 #743a18;margin-top:10px}.mainBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #743a18}.ghostBtn{background:linear-gradient(180deg,#89613a,#4d2f1e);color:#ffe8b6;box-shadow:0 5px 0 #26140d;border:1px solid rgba(255,232,182,.2)}
+  .cards{display:grid;gap:10px;margin-top:12px}.card{border:2px solid rgba(245,195,91,.45);border-radius:16px;background:linear-gradient(180deg,#5c351f,#2b190f);padding:12px;text-align:left;cursor:pointer;transition:.12s}.card:hover{transform:translateY(-2px);filter:brightness(1.08)}.card .name{font-weight:1000;color:#ffe08b;font-size:15px}.card .desc{font-size:12px;color:#f4d9ac;line-height:18px;margin-top:5px}.card .tag{float:right;font-size:11px;color:#2a1609;background:#f5c35b;border-radius:999px;padding:2px 7px;font-weight:900}.shopGrid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}.shopItem{border:2px solid rgba(255,232,182,.2);background:rgba(0,0,0,.22);border-radius:14px;padding:12px;text-align:left}.shopItem b{color:#ffe08b}.shopItem p{margin:5px 0 9px;font-size:12px;line-height:18px;color:#f4d9ac}.shopItem button{width:100%;height:38px;border-radius:11px;border:0;background:#f5c35b;color:#2b1608;font-weight:900}.shopItem button[disabled]{opacity:.45;background:#67513a;color:#d7c2a1}
+  .hint{font-size:11px;color:#c9a57b;line-height:17px;margin-top:12px}.badgeRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}.badge{font-size:11px;border:1px solid rgba(245,195,91,.35);border-radius:999px;padding:4px 8px;background:rgba(0,0,0,.22)}
+  @media (max-height:700px){.controls{bottom:8px;transform:scale(.86);transform-origin:bottom center}.topbar{height:72px}.log{top:90px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="frame">
+    <canvas id="game" width="720" height="1280"></canvas>
+    <div class="ui">
+      <div class="topbar">
+        <div>
+          <div class="title">荒野蛇影 · Snake Roguelike</div>
+          <div class="stats">
+            <span class="pill" id="waveText">波次 1</span><span class="pill" id="levelText">Lv.1</span><span class="pill" id="coinText">金币 0</span><span class="pill" id="killText">击杀 0/8</span>
+          </div>
+          <div class="hpbar"><i id="hpFill"></i></div><div class="xpbar"><i id="xpFill"></i></div>
+        </div>
+        <button class="btnSmall" id="pauseBtn">暂停</button>
+      </div>
+      <div class="log" id="logText"></div>
+      <div class="controls">
+        <div class="pad">
+          <button class="dkey up" data-dir="up">▲</button><button class="dkey down" data-dir="down">▼</button><button class="dkey left" data-dir="left">◀</button><button class="dkey right" data-dir="right">▶</button>
+        </div>
+        <div class="skillBtns">
+          <button class="skillBtn" id="dashBtn">冲刺</button>
+          <button class="skillBtn" id="bombBtn">蛇雷</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay show" id="startScreen">
+      <div class="panel">
+        <div class="logo">荒野蛇影</div>
+        <p class="subtitle">贪吃蛇 + 肉鸽 H5 原型。吃下补给壮大蛇身，自动射击通缉怪物，升级三选一，穿过 5 波荒野悬赏并击败 Boss。</p>
+        <div class="badgeRow"><span class="badge">键盘 / 滑动 / 虚拟摇杆</span><span class="badge">升级三选一</span><span class="badge">Boss 战</span></div>
+        <button class="mainBtn" id="startBtn">开始悬赏</button>
+        <button class="mainBtn ghostBtn" id="howBtn">玩法说明</button>
+        <p class="hint">移动时避免撞墙、撞自己和贴脸撞怪。蛇头会按移动方向自动发射子弹。</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="helpScreen">
+      <div class="panel">
+        <div class="logo" style="font-size:24px">玩法说明</div>
+        <p class="subtitle" style="text-align:left">1. 吃绿色补给增加长度、经验和金币。<br>2. 击败敌人获得经验，满经验后暂停并出现 3 个随机成长。<br>3. 每波击杀目标达成后进入下一波，部分波次触发商店。<br>4. 第 5 波出现 Boss，击败即可通关。<br>5. 冲刺可短暂无敌，蛇雷可清屏伤害。</p>
+        <button class="mainBtn" id="backStartBtn">返回</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="levelScreen"><div class="panel"><div class="logo" style="font-size:24px">选择一项强化</div><p class="subtitle" id="levelSub">蛇身发生异变。</p><div class="cards" id="upgradeCards"></div></div></div>
+    <div class="overlay" id="shopScreen"><div class="panel"><div class="logo" style="font-size:24px">荒野补给站</div><p class="subtitle" id="shopSub">用金币买一次临时补给。</p><div class="shopGrid" id="shopGrid"></div><button class="mainBtn ghostBtn" id="leaveShopBtn">离开补给站</button></div></div>
+    <div class="overlay" id="pauseScreen"><div class="panel"><div class="logo" style="font-size:24px">已暂停</div><p class="subtitle">当前进度会保留，继续后立即回到战斗。</p><button class="mainBtn" id="resumeBtn">继续</button><button class="mainBtn ghostBtn" id="restartBtn1">重新开始</button></div></div>
+    <div class="overlay" id="gameOverScreen"><div class="panel"><div class="logo" id="endTitle">悬赏失败</div><p class="subtitle" id="endInfo"></p><button class="mainBtn" id="restartBtn2">再来一局</button></div></div>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const HUD_H = 120, CTRL_H = 210;
+  const board = {x:50, y:135, w:620, h:890, cols:31, rows:44};
+  const cell = board.w / board.cols;
+  const rng = (a,b)=>Math.random()*(b-a)+a;
+  const irng = (a,b)=>Math.floor(rng(a,b+1));
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const overlays = {
+    start:document.getElementById('startScreen'), help:document.getElementById('helpScreen'), level:document.getElementById('levelScreen'), shop:document.getElementById('shopScreen'), pause:document.getElementById('pauseScreen'), over:document.getElementById('gameOverScreen')
+  };
+  const ui = {
+    wave:document.getElementById('waveText'), level:document.getElementById('levelText'), coin:document.getElementById('coinText'), kill:document.getElementById('killText'), hp:document.getElementById('hpFill'), xp:document.getElementById('xpFill'), log:document.getElementById('logText'), cards:document.getElementById('upgradeCards'), shop:document.getElementById('shopGrid'), endTitle:document.getElementById('endTitle'), endInfo:document.getElementById('endInfo'), dash:document.getElementById('dashBtn'), bomb:document.getElementById('bombBtn')
+  };
+  const DIR = {up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
+  const opposite = {up:'down',down:'up',left:'right',right:'left'};
+  const state = {
+    mode:'start', t:0, last:0, accumulator:0, logTimer:0,
+    snake:[], dir:'right', nextDir:'right', moveMs:145, stepCount:0,
+    hp:5,maxHp:5,level:1,xp:0,xpNeed:8,coins:0,wave:1,kills:0,killNeed:8,foods:0,
+    food:null, chests:[], enemies:[], bullets:[], particles:[], floaters:[], hazards:[],
+    fireTimer:0, spawnTimer:0, dashCd:0,bombCd:0,invuln:0, magnet:0, bulletDamage:1, bulletCount:1, bulletPierce:0,
+    poison:false, coinBonus:0, regenEvery:0, luck:0, shield:0, bossSpawned:false, bossKilled:false,
+    relics:[], score:0, shopSeen:false
+  };
+
+  const upgrades = [
+    {id:'fang',name:'响尾蛇子弹',tag:'攻击',desc:'子弹伤害 +1。',apply(){state.bulletDamage++;log('子弹伤害提升。')}},
+    {id:'split',name:'双头射击',tag:'攻击',desc:'每次额外发射 1 枚偏移子弹，最多 +3。',apply(){state.bulletCount=Math.min(4,state.bulletCount+1);log('射击数量提升。')}},
+    {id:'rapid',name:'疾风蛇鳞',tag:'速度',desc:'移动速度提升，但不会低于安全阈值。',apply(){state.moveMs=Math.max(85,state.moveMs-13);log('移动速度提升。')}},
+    {id:'hp',name:'硬皮蛇甲',tag:'生存',desc:'最大生命 +1，并回复 1 点生命。',apply(){state.maxHp++;heal(1);log('最大生命提升。')}},
+    {id:'heal',name:'仙人掌汁',tag:'回复',desc:'立即回复 2 点生命。',apply(){heal(2);log('生命回复。')}},
+    {id:'magnet',name:'淘金磁环',tag:'经济',desc:'补给和金币会被蛇头轻微吸附。',apply(){state.magnet+=90;log('获得吸附能力。')}},
+    {id:'coin',name:'幸运马刺',tag:'经济',desc:'获得金币时额外 +1。',apply(){state.coinBonus++;log('金币收益提升。')}},
+    {id:'pierce',name:'穿甲毒牙',tag:'攻击',desc:'子弹穿透 +1。',apply(){state.bulletPierce++;log('子弹穿透提升。')}},
+    {id:'poison',name:'毒雾尾迹',tag:'范围',desc:'蛇身经过处留下毒雾，对敌人造成持续伤害。',apply(){state.poison=true;log('尾迹会留下毒雾。')}},
+    {id:'regen',name:'荒野自愈',tag:'回复',desc:'每吃 6 个补给回复 1 点生命。',apply(){state.regenEvery = Math.max(1,state.regenEvery||6);log('获得进食回复。')}},
+    {id:'shield',name:'警长护符',tag:'生存',desc:'获得 1 层护盾，受到伤害时优先抵消。',apply(){state.shield++;log('获得护盾。')}},
+    {id:'luck',name:'赌徒骰子',tag:'肉鸽',desc:'后续升级选择更容易出现高价值强化。',apply(){state.luck++;state.coins+=5;log('骰子落下，金币 +5。')}}
+  ];
+
+  function reset(){
+    hideAll();
+    Object.assign(state,{mode:'running',t:0,last:performance.now(),accumulator:0,logTimer:0,
+      snake:[],dir:'right',nextDir:'right',moveMs:145,stepCount:0,
+      hp:5,maxHp:5,level:1,xp:0,xpNeed:8,coins:0,wave:1,kills:0,killNeed:8,foods:0,
+      food:null,chests:[],enemies:[],bullets:[],particles:[],floaters:[],hazards:[],
+      fireTimer:0,spawnTimer:1200,dashCd:0,bombCd:0,invuln:0,magnet:0,bulletDamage:1,bulletCount:1,bulletPierce:0,
+      poison:false,coinBonus:0,regenEvery:0,luck:0,shield:0,bossSpawned:false,bossKilled:false,relics:[],score:0,shopSeen:false});
+    const sx=8, sy=22; for(let i=0;i<5;i++) state.snake.push({x:sx-i,y:sy});
+    spawnFood();
+    for(let i=0;i<3;i++) spawnEnemy(false);
+    log('悬赏开始：吃补给，击败通缉怪。');
+    updateUI(); requestAnimationFrame(loop);
+  }
+  function hideAll(){Object.values(overlays).forEach(o=>o.classList.remove('show'));}
+  function show(which){hideAll();overlays[which].classList.add('show');}
+  function log(text){ui.log.textContent=text;state.logTimer=2400;ui.log.style.opacity=1;}
+  function cellToPx(c){return {x:board.x+c.x*cell+cell/2,y:board.y+c.y*cell+cell/2};}
+  function pxToCell(x,y){return {x:Math.floor((x-board.x)/cell),y:Math.floor((y-board.y)/cell)};}
+  function inBoard(c){return c.x>=0&&c.y>=0&&c.x<board.cols&&c.y<board.rows;}
+  function snakeHas(x,y){return state.snake.some(s=>s.x===x&&s.y===y);}
+  function enemyCellBlocked(x,y){return state.enemies.some(e=>Math.floor(e.x)===x&&Math.floor(e.y)===y);}
+  function freeCell(){let c, tries=0; do{c={x:irng(1,board.cols-2),y:irng(2,board.rows-3)};tries++;}while((snakeHas(c.x,c.y)||enemyCellBlocked(c.x,c.y))&&tries<200); return c;}
+  function spawnFood(){state.food={...freeCell(), pulse:0, type:Math.random()<.15?'gold':'food'};}
+  function spawnEnemy(elite=false,boss=false){
+    let edge=irng(0,3), c;
+    if(edge===0)c={x:irng(0,board.cols-1),y:1}; if(edge===1)c={x:irng(0,board.cols-1),y:board.rows-2}; if(edge===2)c={x:1,y:irng(2,board.rows-3)}; if(edge===3)c={x:board.cols-2,y:irng(2,board.rows-3)};
+    const wave=state.wave;
+    let hp=boss?30+wave*8:elite?5+wave*2:2+Math.floor(wave*0.9);
+    let sp=boss?.55:elite?.75:.55+rng(0,.2)+wave*.035;
+    let size=boss?1.45:elite?1.12:1;
+    state.enemies.push({x:c.x,y:c.y,hp,maxHp:hp,sp,size,elite,boss,hit:0,moveTimer:rng(0,300),attackTimer:rng(900,1800),kind:boss?'boss':elite?'elite':'grunt'});
+    if(boss) log('Boss“金牙响尾”出现。');
+  }
+  function addXP(n){state.xp+=n;state.score+=n*8;while(state.xp>=state.xpNeed){state.xp-=state.xpNeed;state.level++;state.xpNeed=Math.floor(state.xpNeed*1.28+5);openLevelUp();break;}}
+  function addCoins(n){const gain=n+state.coinBonus;state.coins+=gain;state.score+=gain*5;floatText('+'+gain+' 金币',cellToPx(state.snake[0]).x,cellToPx(state.snake[0]).y-20,'#f5c35b');}
+  function heal(n){const old=state.hp;state.hp=clamp(state.hp+n,0,state.maxHp);if(state.hp>old) floatText('+'+(state.hp-old)+' HP',cellToPx(state.snake[0]).x,cellToPx(state.snake[0]).y-18,'#72d67b');}
+  function damage(n,reason='受伤'){
+    if(state.invuln>0)return;
+    if(state.shield>0){state.shield--;state.invuln=650;log('护盾抵消了一次伤害。');burst(cellToPx(state.snake[0]).x,cellToPx(state.snake[0]).y,'#7dd3fc',16);updateUI();return;}
+    state.hp=Math.max(0,state.hp-n);state.invuln=850;shake=10;log(reason+'，生命 -'+n+'。');burst(cellToPx(state.snake[0]).x,cellToPx(state.snake[0]).y,'#ef6b55',20);
+    if(state.hp<=0) end(false); updateUI();
+  }
+
+  function openLevelUp(){
+    state.mode='level'; updateUI(); show('level');
+    document.getElementById('levelSub').textContent = `等级 ${state.level}，选择一个本局生效的异变。`;
+    ui.cards.innerHTML='';
+    let pool=[...upgrades];
+    const count=3;
+    for(let i=0;i<count;i++){
+      const idx=irng(0,pool.length-1); const up=pool.splice(idx,1)[0];
+      const el=document.createElement('div'); el.className='card';
+      el.innerHTML=`<span class="tag">${up.tag}</span><div class="name">${up.name}</div><div class="desc">${up.desc}</div>`;
+      el.onclick=()=>{up.apply();hideAll();state.mode='running';updateUI();requestAnimationFrame(loop);};
+      ui.cards.appendChild(el);
+    }
+  }
+  function openShop(){
+    state.mode='shop'; updateUI(); show('shop');
+    document.getElementById('shopSub').textContent=`当前金币 ${state.coins}。购买后继续下一波。`;
+    const items=[
+      {name:'急救绷带',cost:8,desc:'回复 2 点生命。',buy(){heal(2)}},
+      {name:'临时护盾',cost:12,desc:'获得 1 层护盾。',buy(){state.shield++}},
+      {name:'蛇雷补给',cost:10,desc:'立即重置蛇雷冷却。',buy(){state.bombCd=0}},
+      {name:'赏金训练',cost:15,desc:'获得 6 点经验。',buy(){addXP(6)}}
+    ];
+    ui.shop.innerHTML='';
+    items.forEach(it=>{
+      const div=document.createElement('div');div.className='shopItem';
+      div.innerHTML=`<b>${it.name}</b><p>${it.desc}</p><button ${state.coins<it.cost?'disabled':''}>${it.cost} 金币购买</button>`;
+      div.querySelector('button').onclick=()=>{if(state.coins>=it.cost){state.coins-=it.cost;it.buy();openShop();updateUI();}};
+      ui.shop.appendChild(div);
+    });
+  }
+
+  function changeDir(d){ if(state.mode!=='running')return; if(opposite[d]!==state.dir) state.nextDir=d; }
+  function snakeStep(){
+    state.dir=state.nextDir; const v=DIR[state.dir]; const head={...state.snake[0]}; const next={x:head.x+v.x,y:head.y+v.y};
+    if(!inBoard(next)){damage(999,'撞到荒野边界');return;}
+    const tail=state.snake[state.snake.length-1];
+    if(state.snake.some((s,i)=>i<state.snake.length-1&&s.x===next.x&&s.y===next.y)){damage(999,'撞到自己的蛇身');return;}
+    state.snake.unshift(next); state.stepCount++;
+    let ate=false;
+    if(state.food&&state.food.x===next.x&&state.food.y===next.y){
+      ate=true; const eatenType=state.food.type; state.food=null; state.foods++; addXP(state.foods%5===0?3:2); addCoins(eatenType==='gold'?4:(Math.random()<.28?2:1));
+      burst(cellToPx(next).x,cellToPx(next).y,'#72d67b',14); spawnFood();
+      if(state.regenEvery&&state.foods%state.regenEvery===0) heal(1);
+    }
+    const hitEnemy=state.enemies.find(e=>Math.floor(e.x)===next.x&&Math.floor(e.y)===next.y);
+    if(hitEnemy){
+      hitEnemy.hp-=1+Math.floor(state.bulletDamage/2); hitEnemy.hit=160; burst(cellToPx(next).x,cellToPx(next).y,'#ffe08b',8); damage(hitEnemy.boss?2:1,'贴脸撞上通缉怪');
+    }
+    if(state.poison){const p=cellToPx(tail);state.hazards.push({x:p.x,y:p.y,r:cell*.52,life:1200,max:1200,dps:.016});}
+    if(!ate) state.snake.pop();
+  }
+  function fire(){
+    const h=state.snake[0]; const p=cellToPx(h); const v=DIR[state.dir]; const perp={x:-v.y,y:v.x};
+    const count=state.bulletCount; const spacing=cell*.35;
+    for(let i=0;i<count;i++){
+      const off=(i-(count-1)/2)*spacing;
+      state.bullets.push({x:p.x+perp.x*off,y:p.y+perp.y*off,vx:v.x*430,vy:v.y*430,life:900,damage:state.bulletDamage,pierce:state.bulletPierce,r:5});
+    }
+  }
+  function update(dt){
+    state.t+=dt; state.accumulator+=dt; state.fireTimer-=dt; state.spawnTimer-=dt; state.dashCd=Math.max(0,state.dashCd-dt); state.bombCd=Math.max(0,state.bombCd-dt); state.invuln=Math.max(0,state.invuln-dt);
+    if(state.logTimer>0){state.logTimer-=dt;if(state.logTimer<=0)ui.log.style.opacity=.15;}
+    if(state.accumulator>=state.moveMs){state.accumulator-=state.moveMs; snakeStep();}
+    if(state.fireTimer<=0){fire(); state.fireTimer=Math.max(360,880-state.level*18-state.wave*18);}
+    if(state.spawnTimer<=0 && state.mode==='running'){
+      if(state.wave===5 && !state.bossSpawned){spawnEnemy(false,true);state.bossSpawned=true;}
+      else if(state.enemies.length<5+state.wave){spawnEnemy(Math.random()<.15+state.wave*.025,false);}
+      state.spawnTimer=Math.max(650,1700-state.wave*140);
+    }
+    magnetize(dt); updateBullets(dt); updateEnemies(dt); updateHazards(dt); updateParticles(dt); checkWaveClear(); updateUI();
+  }
+  function magnetize(dt){
+    if(!state.magnet||!state.food)return; const h=cellToPx(state.snake[0]); const f=cellToPx(state.food); const dx=h.x-f.x,dy=h.y-f.y,d=Math.hypot(dx,dy);
+    if(d<state.magnet && d>1){ const c=pxToCell(f.x+dx/d*dt*.05,f.y+dy/d*dt*.05); if(inBoard(c)&&!snakeHas(c.x,c.y)) Object.assign(state.food,c); }
+  }
+  function updateBullets(dt){
+    for(let i=state.bullets.length-1;i>=0;i--){
+      const b=state.bullets[i]; b.x+=b.vx*dt/1000; b.y+=b.vy*dt/1000; b.life-=dt;
+      if(b.life<=0||b.x<board.x||b.x>board.x+board.w||b.y<board.y||b.y>board.y+board.h){state.bullets.splice(i,1);continue;}
+      for(let j=state.enemies.length-1;j>=0;j--){const e=state.enemies[j]; const ep=cellToPx(e); const d=Math.hypot(b.x-ep.x,b.y-ep.y); if(d<cell*.55*e.size+8){
+        e.hp-=b.damage; e.hit=150; burst(b.x,b.y,'#ffe08b',5); if(b.pierce>0)b.pierce--;else {state.bullets.splice(i,1);i--;}
+        if(e.hp<=0) killEnemy(j,e); break;
+      }}
+    }
+  }
+  function updateEnemies(dt){
+    const h=state.snake[0];
+    for(let i=state.enemies.length-1;i>=0;i--){
+      const e=state.enemies[i]; e.hit=Math.max(0,e.hit-dt); e.moveTimer-=dt; e.attackTimer-=dt;
+      if(e.moveTimer<=0){
+        const dx=h.x-e.x,dy=h.y-e.y; const dist=Math.hypot(dx,dy)||1; const flee=dist<2.2&&!e.boss;
+        const step=e.sp*(dt/1000)*(flee?-1:1);
+        e.x+=dx/dist*step*5; e.y+=dy/dist*step*5; e.x=clamp(e.x,.5,board.cols-1.5); e.y=clamp(e.y,1.5,board.rows-1.5); e.moveTimer=80;
+      }
+      for(const z of state.hazards){const ep=cellToPx(e); if(Math.hypot(ep.x-z.x,ep.y-z.y)<z.r+cell*.42){e.hp-=z.dps*dt; if(e.hp<=0){killEnemy(i,e);break;}}}
+      const hx=Math.floor(e.x),hy=Math.floor(e.y); if(hx===h.x&&hy===h.y) damage(e.boss?2:1,e.boss?'Boss 撞击':'被通缉怪撕咬');
+      if(e.attackTimer<=0&&e.boss){bossSpray(e);e.attackTimer=1300;}
+    }
+  }
+  function bossSpray(e){
+    const ep=cellToPx(e); const h=cellToPx(state.snake[0]); const base=Math.atan2(h.y-ep.y,h.x-ep.x);
+    for(let k=-2;k<=2;k++){const a=base+k*.22;state.hazards.push({x:ep.x,y:ep.y,vx:Math.cos(a)*250,vy:Math.sin(a)*250,r:9,life:1600,max:1600,enemyShot:true});}
+  }
+  function updateHazards(dt){
+    for(let i=state.hazards.length-1;i>=0;i--){const z=state.hazards[i];z.life-=dt;if(z.enemyShot){z.x+=z.vx*dt/1000;z.y+=z.vy*dt/1000;const h=cellToPx(state.snake[0]);if(Math.hypot(z.x-h.x,z.y-h.y)<z.r+cell*.35){state.hazards.splice(i,1);damage(1,'被 Boss 毒弹命中');continue;}} if(z.life<=0)state.hazards.splice(i,1);}
+  }
+  function killEnemy(idx,e){
+    const ep=cellToPx(e); state.enemies.splice(idx,1); state.kills++; state.score+=e.boss?500:e.elite?80:35; addXP(e.boss?12:e.elite?4:2); addCoins(e.boss?18:e.elite?4:1); burst(ep.x,ep.y,e.boss?'#ef6b55':'#f5c35b',e.boss?38:16); floatText(e.boss?'Boss 击破':'击杀',ep.x,ep.y,'#ffe08b'); if(e.boss){state.bossKilled=true;end(true);} }
+  function checkWaveClear(){
+    if(state.mode!=='running')return;
+    if(state.wave<5&&state.kills>=state.killNeed){
+      state.wave++; state.kills=0; state.killNeed=8+state.wave*4; state.enemies.length=0; state.bullets.length=0; state.hazards.length=0; state.bossSpawned=false; heal(1);
+      log('完成悬赏，进入第 '+state.wave+' 波。');
+      for(let i=0;i<Math.min(4+state.wave,8);i++) spawnEnemy(i===0&&state.wave>=3);
+      if(state.wave===3||state.wave===5){setTimeout(()=>{if(state.mode==='running')openShop();},250);}
+      else if(state.wave===2||state.wave===4){setTimeout(()=>{if(state.mode==='running')openLevelUp();},250);}
+    }
+  }
+  function burst(x,y,color,n){for(let i=0;i<n;i++)state.particles.push({x,y,vx:rng(-120,120),vy:rng(-160,80),life:rng(280,650),max:650,r:rng(2,6),color});}
+  function floatText(text,x,y,color){state.floaters.push({text,x,y,vy:-28,life:900,max:900,color});}
+  function updateParticles(dt){
+    for(let i=state.particles.length-1;i>=0;i--){const p=state.particles[i];p.x+=p.vx*dt/1000;p.y+=p.vy*dt/1000;p.vy+=180*dt/1000;p.life-=dt;if(p.life<=0)state.particles.splice(i,1);}
+    for(let i=state.floaters.length-1;i>=0;i--){const f=state.floaters[i];f.y+=f.vy*dt/1000;f.life-=dt;if(f.life<=0)state.floaters.splice(i,1);}
+  }
+
+  let shake=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save(); if(shake>0){ctx.translate(rng(-shake,shake),rng(-shake,shake));shake*=.86;if(shake<.5)shake=0;}
+    drawBg(); drawBoard(); drawFood(); drawHazards(); drawSnake(); drawEnemies(); drawBullets(); drawParticles(); drawVignette(); ctx.restore();
+  }
+  function drawBg(){
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a1a11');g.addColorStop(.55,'#16100c');g.addColorStop(1,'#090604');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=.18; ctx.fillStyle='#f5c35b'; for(let i=0;i<50;i++){const x=(i*173+state.t*.01)%W; const y=(i*91)%H; ctx.beginPath();ctx.arc(x,y,1.2+(i%3),0,Math.PI*2);ctx.fill();} ctx.globalAlpha=1;
+  }
+  function drawBoard(){
+    roundRect(board.x-12,board.y-12,board.w+24,board.h+24,24,'#412617','#7b4824',4);
+    ctx.fillStyle='#21150f';ctx.fillRect(board.x,board.y,board.w,board.h);
+    ctx.save();ctx.beginPath();ctx.rect(board.x,board.y,board.w,board.h);ctx.clip();
+    ctx.fillStyle='#251810'; for(let y=0;y<board.rows;y++){for(let x=0;x<board.cols;x++){if((x+y)%2===0)ctx.fillRect(board.x+x*cell,board.y+y*cell,cell,cell);}}
+    ctx.strokeStyle='rgba(255,232,182,.035)';ctx.lineWidth=1;for(let x=0;x<=board.cols;x++){ctx.beginPath();ctx.moveTo(board.x+x*cell,board.y);ctx.lineTo(board.x+x*cell,board.y+board.h);ctx.stroke();}for(let y=0;y<=board.rows;y++){ctx.beginPath();ctx.moveTo(board.x,board.y+y*cell);ctx.lineTo(board.x+board.w,board.y+y*cell);ctx.stroke();}
+    ctx.restore();
+  }
+  function drawFood(){if(!state.food)return;const p=cellToPx(state.food);const pulse=Math.sin(state.t*.007)*2;ctx.save();ctx.shadowBlur=18;ctx.shadowColor=state.food.type==='gold'?'#f5c35b':'#72d67b';ctx.fillStyle=state.food.type==='gold'?'#f5c35b':'#72d67b';ctx.beginPath();ctx.arc(p.x,p.y,cell*.35+pulse,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.arc(p.x-4,p.y-5,3,0,Math.PI*2);ctx.fill();ctx.restore();}
+  function drawSnake(){
+    for(let i=state.snake.length-1;i>=0;i--){const s=state.snake[i],p=cellToPx(s);const head=i===0;const inv=head&&state.invuln>0&&Math.floor(state.t/90)%2===0;ctx.save();ctx.globalAlpha=inv?.55:1;ctx.shadowBlur=head?18:0;ctx.shadowColor='#72d67b';ctx.fillStyle=head?'#7ee787':`hsl(${115-i*1.2},55%,${48-i*.15}%)`;roundRect(p.x-cell*.42,p.y-cell*.42,cell*.84,cell*.84,head?8:6,null,null,0);ctx.fill();ctx.strokeStyle='rgba(10,40,14,.5)';ctx.lineWidth=2;ctx.stroke();if(head){ctx.fillStyle='#13210f';const v=DIR[state.dir];const px=-v.y*5,py=v.x*5;ctx.beginPath();ctx.arc(p.x+v.x*5+px,p.y+v.y*5+py,2.2,0,Math.PI*2);ctx.arc(p.x+v.x*5-px,p.y+v.y*5-py,2.2,0,Math.PI*2);ctx.fill(); if(state.shield>0){ctx.strokeStyle='rgba(125,211,252,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,cell*.58+Math.sin(state.t*.008)*3,0,Math.PI*2);ctx.stroke();}}ctx.restore();}
+  }
+  function drawEnemies(){
+    state.enemies.forEach(e=>{const p=cellToPx(e);const r=cell*.42*e.size;ctx.save();ctx.shadowBlur=e.boss?25:12;ctx.shadowColor=e.boss?'#ef6b55':e.elite?'#f5c35b':'#d66a45';ctx.fillStyle=e.hit>0?'#ffe8b6':e.boss?'#9b1f1f':e.elite?'#9b5a22':'#c75034';ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#180a06';ctx.beginPath();ctx.arc(p.x-r*.28,p.y-r*.15,2.4*e.size,0,Math.PI*2);ctx.arc(p.x+r*.28,p.y-r*.15,2.4*e.size,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(p.x-r,p.y-r-10,r*2,5);ctx.fillStyle=e.boss?'#ef6b55':'#f5c35b';ctx.fillRect(p.x-r,p.y-r-10,r*2*(e.hp/e.maxHp),5);ctx.restore();});
+  }
+  function drawBullets(){state.bullets.forEach(b=>{if(b.enemy)return;ctx.save();ctx.shadowBlur=12;ctx.shadowColor='#ffe08b';ctx.fillStyle='#ffe08b';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.restore();});}
+  function drawHazards(){state.hazards.forEach(z=>{const a=clamp(z.life/z.max,0,1);ctx.save();ctx.globalAlpha=z.enemyShot?0.85:a*.35;ctx.fillStyle=z.enemyShot?'#ef6b55':'#72d67b';ctx.shadowBlur=12;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(z.x,z.y,z.enemyShot?z.r:z.r*(1+.2*(1-a)),0,Math.PI*2);ctx.fill();ctx.restore();});}
+  function drawParticles(){state.particles.forEach(p=>{ctx.save();ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.restore();});state.floaters.forEach(f=>{ctx.save();ctx.globalAlpha=clamp(f.life/f.max,0,1);ctx.fillStyle=f.color;ctx.font='bold 20px Microsoft YaHei';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);ctx.restore();});}
+  function drawVignette(){const g=ctx.createRadialGradient(W/2,H/2,180,W/2,H/2,760);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+  function roundRect(x,y,w,h,r,fill,stroke,lw){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||1;ctx.stroke();}}
+  function updateUI(){
+    ui.wave.textContent='波次 '+state.wave+'/5'; ui.level.textContent='Lv.'+state.level; ui.coin.textContent='金币 '+state.coins; ui.kill.textContent=state.wave===5?(state.bossKilled?'Boss 已击破':'Boss 战'):`击杀 ${state.kills}/${state.killNeed}`; ui.hp.style.width=(100*state.hp/state.maxHp)+'%'; ui.xp.style.width=(100*state.xp/state.xpNeed)+'%'; ui.dash.textContent=state.dashCd>0?'冲刺 '+Math.ceil(state.dashCd/1000)+'s':'冲刺'; ui.bomb.textContent=state.bombCd>0?'蛇雷 '+Math.ceil(state.bombCd/1000)+'s':'蛇雷'; ui.dash.disabled=state.dashCd>0||state.mode!=='running'; ui.bomb.disabled=state.bombCd>0||state.mode!=='running';
+  }
+  function loop(now){if(state.mode!=='running')return;const dt=Math.min(40,now-state.last);state.last=now;update(dt);draw();requestAnimationFrame(loop);}
+  function end(win){state.mode='over';show('over');ui.endTitle.textContent=win?'悬赏成功':'悬赏失败';ui.endInfo.innerHTML=`最终波次：${state.wave}/5<br>等级：${state.level}<br>击杀：${state.kills}　金币：${state.coins}<br>评分：${state.score}`;draw();}
+  function dash(){if(state.mode!=='running'||state.dashCd>0)return;state.dashCd=5200;state.invuln=900;state.accumulator+=state.moveMs*2.2;burst(cellToPx(state.snake[0]).x,cellToPx(state.snake[0]).y,'#7dd3fc',18);log('冲刺：短暂无敌并快速前进。');}
+  function bomb(){if(state.mode!=='running'||state.bombCd>0)return;state.bombCd=9000;const h=cellToPx(state.snake[0]);burst(h.x,h.y,'#f5c35b',42);state.enemies.forEach(e=>{const ep=cellToPx(e);const d=Math.hypot(ep.x-h.x,ep.y-h.y);if(d<260)e.hp-=8;});for(let i=state.enemies.length-1;i>=0;i--)if(state.enemies[i].hp<=0)killEnemy(i,state.enemies[i]);log('蛇雷爆发：对周围敌人造成大量伤害。');}
+
+  document.getElementById('startBtn').onclick=reset;
+  document.getElementById('howBtn').onclick=()=>show('help');
+  document.getElementById('backStartBtn').onclick=()=>show('start');
+  document.getElementById('pauseBtn').onclick=()=>{if(state.mode==='running'){state.mode='pause';show('pause');draw();}};
+  document.getElementById('resumeBtn').onclick=()=>{hideAll();state.mode='running';state.last=performance.now();requestAnimationFrame(loop);};
+  document.getElementById('restartBtn1').onclick=reset; document.getElementById('restartBtn2').onclick=reset;
+  document.getElementById('leaveShopBtn').onclick=()=>{hideAll();state.mode='running';state.last=performance.now();requestAnimationFrame(loop);};
+  document.querySelectorAll('.dkey').forEach(b=>b.addEventListener('pointerdown',()=>changeDir(b.dataset.dir)));
+  ui.dash.onclick=dash; ui.bomb.onclick=bomb;
+  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='arrowup'||k==='w')changeDir('up');if(k==='arrowdown'||k==='s')changeDir('down');if(k==='arrowleft'||k==='a')changeDir('left');if(k==='arrowright'||k==='d')changeDir('right');if(k===' ')dash();if(k==='e')bomb();});
+  let sx=0,sy=0,st=0;canvas.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;st=performance.now();});canvas.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<18)return;if(Math.abs(dx)>Math.abs(dy))changeDir(dx>0?'right':'left');else changeDir(dy>0?'down':'up');});
+  draw();
+})();
+</script>
+</body>
+</html>

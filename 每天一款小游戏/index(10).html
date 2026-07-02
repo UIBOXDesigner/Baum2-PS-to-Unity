@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>动物下落消除 H5 Demo</title>
+  <style>
+    :root { color-scheme: light; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #8cd3ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+    #wrap {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(255,255,255,.45), transparent 18%),
+        radial-gradient(circle at 85% 22%, rgba(255,255,255,.35), transparent 20%),
+        linear-gradient(180deg, #74c9ff 0%, #ccefff 54%, #9cd56f 100%);
+    }
+    canvas {
+      display: block;
+      width: min(100vw, calc(100vh * 9 / 16));
+      height: min(100vh, calc(100vw * 16 / 9));
+      background: transparent;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(32, 74, 96, .26), 0 0 0 1px rgba(255,255,255,.35) inset;
+    }
+    .tip {
+      position: fixed;
+      left: 50%;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      padding: 6px 11px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      line-height: 1;
+      background: rgba(25, 56, 72, .38);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap"><canvas id="game" width="360" height="640"></canvas></div>
+  <div class="tip">点击动物下落；上方动物有实体碰撞；只有洞口内相同动物才会消除</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const LOGICAL_W = 360;
+  const LOGICAL_H = 640;
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  canvas.width = LOGICAL_W * DPR;
+  canvas.height = LOGICAL_H * DPR;
+  ctx.scale(DPR, DPR);
+
+  const W = LOGICAL_W;
+  const H = LOGICAL_H;
+
+  const TYPES = ['chick','frog','pig','panda','cat','fox','koala','bear'];
+  const TYPE_LABEL = {
+    chick:'小鸡', frog:'青蛙', pig:'小猪', panda:'熊猫', cat:'小猫', fox:'狐狸', koala:'考拉', bear:'小熊'
+  };
+
+  const GRAVITY = 0.36;
+  const FRICTION = 0.992;
+  const RESTITUTION = 0.34;
+  const STATIC_BOUNCE = 0.20;
+  const COLLIDER_PADDING = 1.2;
+  const MAX_VY = 11;
+  const HOLE_CENTER = 180;
+  const HOLE_WIDTH = 44;
+  const HOLE_LEFT = HOLE_CENTER - HOLE_WIDTH / 2;
+  const HOLE_RIGHT = HOLE_CENTER + HOLE_WIDTH / 2;
+  const HOLE_TOP = 528;
+  const HOLE_BOTTOM_Y = 608;
+  const HOLE_SLOT_GAP = 32;
+  const MAX_HOLE_ANIMALS = 4;
+
+  const ui = {
+    topH: 76,
+    fieldTop: 82,
+    fieldBottom: 503,
+    dockY: 581,
+    btnR: 28,
+    replay: {x: 20, y: 24, r: 17},
+    pause: {x: 336, y: 24, r: 17},
+    shuffleTop: {x: 298, y: 24, r: 17},
+    clearTool: {x: 84, y: 598, r: 30},
+    shuffleTool: {x: 276, y: 598, r: 30}
+  };
+
+  const state = {
+    animals: [],
+    particles: [],
+    ripples: [],
+    level: 1,
+    score: 0,
+    moves: 180,
+    total: 0,
+    cleared: 0,
+    paused: false,
+    win: false,
+    failed: false,
+    failReason: '',
+    hintTime: 3.8,
+    selected: null,
+    shake: 0,
+    toast: '',
+    toastTimer: 0,
+    startedAt: performance.now(),
+    pressPulse: 0,
+  };
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function pill(x, y, w, h, fill = 'rgba(255,255,255,.75)') {
+    ctx.fillStyle = fill;
+    roundRect(x, y, w, h, h / 2);
+    ctx.fill();
+  }
+
+  function strokeText(text, x, y, font, fill = '#fff', stroke = 'rgba(32,60,78,.55)', lw = 4, align = 'center') {
+    ctx.save();
+    ctx.font = font;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = stroke;
+    ctx.fillStyle = fill;
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function makeAnimal(type, x, y, r = 16) {
+    return {
+      id: Math.random().toString(36).slice(2),
+      type, x, y, r,
+      vx: 0, vy: 0,
+      fixed: true,
+      dead: false,
+      rot: rand(-0.25, 0.25),
+      spin: rand(-0.03, 0.03),
+      age: 0,
+      settle: 0,
+      pulse: rand(0, Math.PI * 2),
+      cooldown: 0,
+      inHole: false,
+      holeSlot: -1,
+      tx: 0,
+      ty: 0,
+      shuffleT: 0
+    };
+  }
+
+  function buildLevel() {
+    state.animals.length = 0;
+    state.particles.length = 0;
+    state.ripples.length = 0;
+    state.score = 0;
+    state.moves = 180;
+    state.cleared = 0;
+    state.win = false;
+    state.failed = false;
+    state.failReason = '';
+    state.paused = false;
+    state.hintTime = 3.8;
+    state.toast = '';
+    state.toastTimer = 0;
+    state.selected = null;
+    state.shake = 0;
+    state.startedAt = performance.now();
+
+    const rows = [
+      { y: 104, xs: [88,132,176,220,264] },
+      { y: 134, xs: [68,112,156,200,244,288] },
+      { y: 164, xs: [88,132,176,220,264] },
+      { y: 194, xs: [68,112,156,200,244,288] },
+      { y: 224, xs: [88,132,176,220,264] },
+      { y: 254, xs: [68,112,156,200,244,288] },
+      { y: 284, xs: [92,136,180,224,268] },
+      { y: 314, xs: [70,114,158,202,246,290] },
+      { y: 344, xs: [94,138,182,226,270] },
+    ];
+
+    const positions = [];
+    rows.forEach(row => row.xs.forEach(x => positions.push({ x, y: row.y })));
+    if (positions.length % 2 !== 0) positions.pop();
+
+    const bag = [];
+    const pairsPerType = Math.floor((positions.length / 2) / TYPES.length);
+    TYPES.forEach(type => {
+      for (let i = 0; i < pairsPerType; i++) bag.push(type, type);
+    });
+    while (bag.length < positions.length) {
+      const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+      bag.push(type, type);
+    }
+    bag.length = positions.length;
+    bag.sort(() => Math.random() - 0.5);
+
+    positions.forEach((pos, i) => {
+      const t = bag[i];
+      const r = t === 'chick' ? 15 : 16;
+      state.animals.push(makeAnimal(t, pos.x + rand(-4, 4), pos.y + rand(-2, 2), r));
+    });
+    state.total = state.animals.length;
+  }
+
+  function toast(text) {
+    state.toast = text;
+    state.toastTimer = 1.15;
+  }
+
+  function getHoleStack(exclude = null) {
+    return state.animals
+      .filter(a => !a.dead && a.inHole && a !== exclude)
+      .sort((a, b) => a.holeSlot - b.holeSlot);
+  }
+
+  function compactHoleStack() {
+    const stack = getHoleStack();
+    stack.forEach((a, i) => {
+      a.holeSlot = i;
+      a.x += (HOLE_CENTER - a.x) * 0.38;
+      a.y += (HOLE_BOTTOM_Y - i * HOLE_SLOT_GAP - a.y) * 0.38;
+      a.vx = 0;
+      a.vy = 0;
+      a.spin = 0;
+    });
+  }
+
+  function failByHoleOverflow() {
+    if (state.failed || state.win) return;
+    state.failed = true;
+    state.failReason = '洞口堵满';
+    state.shake = 7;
+    toast('洞口超过4个，失败');
+  }
+
+  function popPair(a, b) {
+    a.dead = true;
+    b.dead = true;
+    state.cleared += 2;
+    state.score += 100;
+    state.shake = 4;
+    const cx = (a.x + b.x) / 2;
+    const cy = (a.y + b.y) / 2;
+    for (let i = 0; i < 22; i++) {
+      state.particles.push({
+        x: cx + rand(-4, 4), y: cy + rand(-4, 4),
+        vx: rand(-2.7, 2.7), vy: rand(-3.7, 0.8),
+        r: rand(2, 4.8), a: 1,
+        color: animalColor(a.type), life: rand(.45, .82)
+      });
+    }
+    state.ripples.push({ x: cx, y: cy, r: 8, a: 1 });
+    toast(`${TYPE_LABEL[a.type]} ×2 消除 +100`);
+  }
+
+  function captureAnimalInHole(a) {
+    if (a.dead || a.inHole) return;
+    const stack = getHoleStack(a);
+    const top = stack[stack.length - 1];
+    if (top && top.type === a.type && !a.cooldown && !top.cooldown) {
+      a.inHole = true;
+      a.holeSlot = stack.length;
+      a.x = HOLE_CENTER;
+      a.y = top.y - HOLE_SLOT_GAP;
+      a.vx = 0;
+      a.vy = 0;
+      popPair(a, top);
+      return;
+    }
+
+    a.inHole = true;
+    a.fixed = false;
+    a.holeSlot = stack.length;
+    a.x = HOLE_CENTER;
+    a.y = HOLE_BOTTOM_Y - a.holeSlot * HOLE_SLOT_GAP;
+    a.vx = 0;
+    a.vy = 0;
+    a.spin = 0;
+    a.rot *= 0.35;
+    a.cooldown = 0.05;
+    makeDust(a.x, a.y + a.r, 5);
+
+    if (getHoleStack().length > MAX_HOLE_ANIMALS) failByHoleOverflow();
+    else toast(`洞口 ${getHoleStack().length}/${MAX_HOLE_ANIMALS}`);
+  }
+
+  function maybeCaptureInHole(a) {
+    if (a.dead || a.fixed || a.inHole) return;
+    if (a.x < HOLE_LEFT + a.r || a.x > HOLE_RIGHT - a.r) return;
+    const stack = getHoleStack(a);
+    const capY = stack.length ? stack[stack.length - 1].y - stack[stack.length - 1].r : HOLE_BOTTOM_Y;
+    const catchY = Math.min(HOLE_TOP, capY);
+    if (a.y + a.r < catchY - 2) return;
+    if (a.y + a.r >= capY - 2 || a.y + a.r >= HOLE_BOTTOM_Y) captureAnimalInHole(a);
+  }
+
+  function terrainHeightAt(x) {
+    if (x < HOLE_LEFT) return 494 + (x / HOLE_LEFT) * 34;
+    if (x > HOLE_RIGHT) return 528 - ((x - HOLE_RIGHT) / (W - HOLE_RIGHT)) * 34;
+    return H + 80;
+  }
+
+  function collideTerrain(a) {
+    if (a.inHole) return;
+
+    if (a.x - a.r < 17) { a.x = 17 + a.r; a.vx *= -RESTITUTION; }
+    if (a.x + a.r > W - 17) { a.x = W - 17 - a.r; a.vx *= -RESTITUTION; }
+
+    const stack = getHoleStack(a);
+    const stackCatchY = stack.length ? stack[stack.length - 1].y - stack[stack.length - 1].r : HOLE_TOP;
+    const mouthCatchY = Math.min(HOLE_TOP - 8, stackCatchY - 4);
+    const inMouth = a.y + a.r > mouthCatchY && a.x > HOLE_LEFT - a.r && a.x < HOLE_RIGHT + a.r;
+
+    if (inMouth) {
+      a.vx += (HOLE_CENTER - a.x) * 0.012;
+      const minX = HOLE_LEFT + a.r;
+      const maxX = HOLE_RIGHT - a.r;
+      if (minX <= maxX && a.y + a.r > HOLE_TOP + 4) {
+        if (a.x < minX) { a.x = minX; a.vx = Math.abs(a.vx) * 0.28; }
+        if (a.x > maxX) { a.x = maxX; a.vx = -Math.abs(a.vx) * 0.28; }
+      }
+      maybeCaptureInHole(a);
+      return;
+    }
+
+    const ground = terrainHeightAt(a.x) - a.r;
+    if (a.y > ground) {
+      a.y = ground;
+      if (Math.abs(a.vy) > 1.8) makeDust(a.x, a.y + a.r - 2, 4);
+      a.vy *= -RESTITUTION;
+      const slopeDir = a.x < HOLE_CENTER ? 1 : -1;
+      a.vx += slopeDir * 0.055;
+      a.vx *= 0.94;
+      if (Math.abs(a.vy) < 0.65) a.vy = 0;
+    }
+
+    if (a.y + a.r > HOLE_TOP - 6 && a.x > HOLE_LEFT - 18 && a.x < HOLE_CENTER) a.vx += 0.08;
+    if (a.y + a.r > HOLE_TOP - 6 && a.x < HOLE_RIGHT + 18 && a.x > HOLE_CENTER) a.vx -= 0.08;
+  }
+
+  function resolvePair(a, b) {
+    if (a.dead || b.dead) return;
+    if (a.inHole || b.inHole) return;
+
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const min = a.r + b.r + COLLIDER_PADDING;
+    const dSq = dx * dx + dy * dy;
+    if (dSq <= 0 || dSq > min * min) return;
+    const d = Math.sqrt(dSq);
+    const nx = dx / d;
+    const ny = dy / d;
+    const overlap = min - d;
+
+    // 上方未点击的动物也是实体碰撞体：
+    // 1）固定动物之间保持静态队列，不相互挤开；
+    // 2）下落动物撞到固定动物时，会被完整推出并产生轻微反弹，不再穿透；
+    // 3）上方区域只碰撞不消除，消除仍只发生在底部洞口。
+    if (a.fixed && b.fixed) return;
+
+    if (a.fixed || b.fixed) {
+      const moving = a.fixed ? b : a;
+      const sign = a.fixed ? 1 : -1;
+      const mx = nx * sign;
+      const my = ny * sign;
+
+      moving.x += mx * overlap;
+      moving.y += my * overlap;
+
+      const vAlong = moving.vx * mx + moving.vy * my;
+      if (vAlong < 0) {
+        moving.vx -= (1 + STATIC_BOUNCE) * vAlong * mx;
+        moving.vy -= (1 + STATIC_BOUNCE) * vAlong * my;
+      }
+
+      // 切向摩擦，减少动物沿碰撞体无限抖动。
+      moving.vx *= 0.985;
+      moving.vy *= 0.985;
+      return;
+    }
+
+    a.x -= nx * overlap * 0.5;
+    a.y -= ny * overlap * 0.5;
+    b.x += nx * overlap * 0.5;
+    b.y += ny * overlap * 0.5;
+
+    const rvx = b.vx - a.vx;
+    const rvy = b.vy - a.vy;
+    const velAlongNormal = rvx * nx + rvy * ny;
+    if (velAlongNormal > 0) return;
+    const j = -(1 + 0.22) * velAlongNormal / 2;
+    a.vx -= j * nx;
+    a.vy -= j * ny;
+    b.vx += j * nx;
+    b.vy += j * ny;
+  }
+
+  function makeDust(x, y, n = 3) {
+    for (let i = 0; i < n; i++) {
+      state.particles.push({
+        x: x + rand(-8, 8), y: y + rand(-3, 3),
+        vx: rand(-0.7, 0.7), vy: rand(-1.2, -0.1),
+        r: rand(2, 4), a: .45, color: 'rgba(117,96,65,.55)', life: rand(.3, .55)
+      });
+    }
+  }
+
+  function animalColor(t) {
+    return {
+      chick:'#f5c73f', frog:'#68c858', pig:'#f49ab1', panda:'#d8d8d8',
+      cat:'#ef9f45', fox:'#ea6f2d', koala:'#bfc7d4', bear:'#8a5a3e'
+    }[t] || '#fff';
+  }
+
+  function clickAnimal(x, y) {
+    if (state.paused || state.win || state.failed) return;
+    let best = null;
+    let bestD = Infinity;
+    for (const a of state.animals) {
+      if (a.dead || !a.fixed) continue;
+      const dx = a.x - x;
+      const dy = a.y - y;
+      const d = dx * dx + dy * dy;
+      if (d < (a.r + 12) * (a.r + 12) && d < bestD) {
+        best = a;
+        bestD = d;
+      }
+    }
+    if (!best) return;
+    best.fixed = false;
+    best.vx = rand(-0.35, 0.35);
+    best.vy = rand(0.2, 1.0);
+    best.spin += rand(-0.04, 0.04);
+    best.cooldown = 0.12;
+    state.selected = best.id;
+    state.moves = Math.max(0, state.moves - 1);
+    state.ripples.push({ x: best.x, y: best.y, r: 8, a: 1 });
+  }
+
+  function useClearTool() {
+    if (state.paused || state.win || state.failed) return;
+    const fixed = state.animals.filter(a => !a.dead && a.fixed);
+    if (!fixed.length) return;
+    const target = fixed[Math.floor(Math.random() * fixed.length)];
+    const same = state.animals.filter(a => !a.dead && a.fixed && a.type === target.type).slice(0, 2);
+    same.forEach((a, i) => {
+      a.fixed = false;
+      a.vx = i === 0 ? -0.6 : 0.6;
+      a.vy = 1.2;
+      a.cooldown = 0.1;
+    });
+    state.moves = Math.max(0, state.moves - 2);
+    toast(`道具：${TYPE_LABEL[target.type]}下落`);
+  }
+
+  function shuffleFixed() {
+    if (state.paused || state.win || state.failed) return;
+    const fixed = state.animals.filter(a => !a.dead && a.fixed);
+    if (fixed.length < 2) return;
+    const positions = fixed.map(a => ({ x: a.x, y: a.y })).sort(() => Math.random() - 0.5);
+    fixed.forEach((a, i) => {
+      a.tx = positions[i].x;
+      a.ty = positions[i].y;
+      a.shuffleT = 0.28 + i * 0.004;
+    });
+    state.moves = Math.max(0, state.moves - 3);
+    toast('已打乱动物布局');
+  }
+
+  function canvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width * W,
+      y: (clientY - rect.top) / rect.height * H
+    };
+  }
+
+  function hitCircle(p, c) {
+    return Math.hypot(p.x - c.x, p.y - c.y) <= c.r;
+  }
+
+  function handlePointer(e) {
+    e.preventDefault();
+    const p = canvasPoint(e);
+    state.pressPulse = 0.2;
+
+    if (hitCircle(p, ui.replay)) { buildLevel(); return; }
+    if (hitCircle(p, ui.pause)) { state.paused = !state.paused; return; }
+    if (hitCircle(p, ui.shuffleTop)) { shuffleFixed(); return; }
+    if (hitCircle(p, ui.clearTool)) { useClearTool(); return; }
+    if (hitCircle(p, ui.shuffleTool)) { shuffleFixed(); return; }
+
+    clickAnimal(p.x, p.y);
+  }
+
+  if (window.PointerEvent) canvas.addEventListener('pointerdown', handlePointer, { passive: false });
+  else {
+    canvas.addEventListener('touchstart', handlePointer, { passive: false });
+    canvas.addEventListener('mousedown', handlePointer, { passive: false });
+  }
+
+  function update(dt) {
+    if (state.paused || state.win || state.failed) return;
+    state.hintTime = Math.max(0, state.hintTime - dt);
+    state.toastTimer = Math.max(0, state.toastTimer - dt);
+    state.shake = Math.max(0, state.shake - 18 * dt);
+    state.pressPulse = Math.max(0, state.pressPulse - dt);
+
+    for (const a of state.animals) {
+      if (a.dead) continue;
+      a.age += dt;
+      a.cooldown = Math.max(0, a.cooldown - dt);
+
+      if (a.shuffleT > 0) {
+        const t = Math.min(1, dt / a.shuffleT * 3);
+        a.x += (a.tx - a.x) * t;
+        a.y += (a.ty - a.y) * t;
+        a.shuffleT -= dt;
+        if (a.shuffleT <= 0) {
+          a.x = a.tx;
+          a.y = a.ty;
+          a.tx = 0;
+          a.ty = 0;
+        }
+      }
+
+      if (!a.fixed) {
+        if (a.inHole) {
+          a.x += (HOLE_CENTER - a.x) * 0.4;
+          a.y += (HOLE_BOTTOM_Y - a.holeSlot * HOLE_SLOT_GAP - a.y) * 0.4;
+          a.vx = 0;
+          a.vy = 0;
+          continue;
+        }
+        a.vy = Math.min(MAX_VY, a.vy + GRAVITY);
+        a.x += a.vx * 60 * dt;
+        a.y += a.vy * 60 * dt;
+        a.vx *= FRICTION;
+        a.rot += a.spin * 60 * dt;
+        collideTerrain(a);
+        if (Math.abs(a.vx) < 0.02) a.vx = 0;
+        if (a.vy === 0 && Math.abs(a.vx) < 0.08) a.settle += dt;
+        else a.settle = 0;
+      }
+    }
+
+    const alive = state.animals.filter(a => !a.dead);
+    for (let pass = 0; pass < 4; pass++) {
+      for (let i = 0; i < alive.length; i++) {
+        for (let j = i + 1; j < alive.length; j++) resolvePair(alive[i], alive[j]);
+      }
+    }
+
+    for (const p of state.particles) {
+      p.life -= dt;
+      p.x += p.vx * 60 * dt;
+      p.y += p.vy * 60 * dt;
+      p.vy += 0.08 * 60 * dt;
+      p.a = Math.max(0, p.life / .8);
+    }
+    state.particles = state.particles.filter(p => p.life > 0);
+
+    for (const r of state.ripples) {
+      r.r += 90 * dt;
+      r.a -= 1.8 * dt;
+    }
+    state.ripples = state.ripples.filter(r => r.a > 0);
+
+    state.animals = state.animals.filter(a => !a.dead);
+    compactHoleStack();
+    if (getHoleStack().length > MAX_HOLE_ANIMALS) failByHoleOverflow();
+
+    const nonFixed = state.animals.filter(a => !a.fixed && !a.inHole).length;
+    if (!state.failed && state.animals.length === 0) state.win = true;
+    if (!state.failed && state.moves <= 0 && nonFixed === 0 && state.animals.length > 0) {
+      state.failed = true;
+      state.failReason = '步数用尽';
+    }
+  }
+
+  function drawBackground() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#77caff');
+    g.addColorStop(.47, '#d3f3ff');
+    g.addColorStop(1, '#95cf62');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    drawCloud(48, 125, .75);
+    drawCloud(309, 112, .86);
+    drawCloud(42, 290, .58);
+    drawCloud(323, 306, .64);
+
+    ctx.save();
+    ctx.globalAlpha = .25;
+    ctx.fillStyle = '#6bad5a';
+    ctx.beginPath();
+    ctx.moveTo(0, 445);
+    ctx.quadraticCurveTo(75, 402, 150, 450);
+    ctx.quadraticCurveTo(245, 500, 360, 438);
+    ctx.lineTo(360, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    drawFieldFrame();
+    drawCliffLeft();
+    drawCliffRight();
+    drawHole();
+  }
+
+  function drawCloud(x, y, s) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(255,255,255,.58)';
+    ctx.beginPath();
+    ctx.arc(-22, 5, 14, 0, Math.PI * 2);
+    ctx.arc(-4, -2, 18, 0, Math.PI * 2);
+    ctx.arc(18, 5, 13, 0, Math.PI * 2);
+    ctx.rect(-36, 4, 68, 14);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFieldFrame() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,.20)';
+    roundRect(16, 78, 328, 420, 24);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.34)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([6, 8]);
+    ctx.strokeStyle = 'rgba(65,112,135,.16)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(32, 90); ctx.lineTo(32, 488);
+    ctx.moveTo(328, 90); ctx.lineTo(328, 488);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCliffLeft() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(0, 494);
+    ctx.lineTo(HOLE_LEFT, 528);
+    ctx.lineTo(HOLE_LEFT, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = '#b98250';
+    ctx.fill();
+
+    ctx.fillStyle = '#7cc45b';
+    ctx.beginPath();
+    ctx.moveTo(0, 470);
+    ctx.lineTo(HOLE_LEFT, 504);
+    ctx.quadraticCurveTo(HOLE_LEFT + 6, 510, HOLE_LEFT, 528);
+    ctx.lineTo(HOLE_LEFT - 18, 544);
+    ctx.lineTo(0, 514);
+    ctx.closePath();
+    ctx.fill();
+
+    drawGrassEdge(0, 493, HOLE_LEFT, 527);
+    drawBricks(0, 530, HOLE_LEFT - 2, 112);
+    ctx.restore();
+  }
+
+  function drawCliffRight() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(W, 494);
+    ctx.lineTo(HOLE_RIGHT, 528);
+    ctx.lineTo(HOLE_RIGHT, H);
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fillStyle = '#b98250';
+    ctx.fill();
+
+    ctx.fillStyle = '#7cc45b';
+    ctx.beginPath();
+    ctx.moveTo(W, 470);
+    ctx.lineTo(HOLE_RIGHT, 504);
+    ctx.quadraticCurveTo(HOLE_RIGHT - 6, 510, HOLE_RIGHT, 528);
+    ctx.lineTo(HOLE_RIGHT + 18, 544);
+    ctx.lineTo(W, 514);
+    ctx.closePath();
+    ctx.fill();
+
+    drawGrassEdge(HOLE_RIGHT, 527, W, 493);
+    drawBricks(HOLE_RIGHT + 2, 530, W - HOLE_RIGHT - 2, 112);
+    ctx.restore();
+  }
+
+  function drawGrassEdge(x1, y1, x2, y2) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(68,125,50,.44)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 13; i++) {
+      const t = i / 12;
+      const x = x1 + (x2 - x1) * t;
+      const y = y1 + (y2 - y1) * t + Math.sin(i) * 3;
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawBricks(x, y, w, h) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(96,62,38,.25)';
+    ctx.lineWidth = 2;
+    for (let row = 0; row < 6; row++) {
+      const yy = y + row * 20;
+      ctx.beginPath();
+      ctx.moveTo(x, yy);
+      ctx.lineTo(x + w, yy);
+      ctx.stroke();
+      const offset = row % 2 ? 22 : 0;
+      for (let bx = x + offset; bx < x + w; bx += 48) {
+        roundRect(bx, yy + 5, 38, 12, 5);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawHole() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(61,35,29,.35)';
+    ctx.beginPath();
+    ctx.ellipse(HOLE_CENTER, 532, 38, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const wood = ctx.createLinearGradient(HOLE_LEFT, HOLE_TOP, HOLE_RIGHT, HOLE_BOTTOM_Y);
+    wood.addColorStop(0, '#8f5d48');
+    wood.addColorStop(1, '#5e3b31');
+    ctx.fillStyle = wood;
+    roundRect(HOLE_LEFT - 5, HOLE_TOP + 3, HOLE_WIDTH + 10, 96, 8);
+    ctx.fill();
+
+    ctx.fillStyle = '#98654e';
+    roundRect(HOLE_LEFT + 2, HOLE_TOP + 10, HOLE_WIDTH - 4, 78, 6);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,229,189,.16)';
+    ctx.lineWidth = 2;
+    for (let y = HOLE_TOP + 18; y < 621; y += 18) {
+      ctx.beginPath();
+      ctx.moveTo(HOLE_LEFT + 5, y);
+      ctx.lineTo(HOLE_RIGHT - 5, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(48,29,23,.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(HOLE_LEFT - 3, HOLE_TOP + 8);
+    ctx.lineTo(HOLE_LEFT - 3, 625);
+    ctx.moveTo(HOLE_RIGHT + 3, HOLE_TOP + 8);
+    ctx.lineTo(HOLE_RIGHT + 3, 625);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ead08c';
+    ctx.beginPath();
+    ctx.ellipse(HOLE_CENTER, 628, 34, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(119,73,35,.4)';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawTopUI() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,.42)';
+    roundRect(10, 8, 340, 60, 22);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.52)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    drawCircleButton(ui.replay.x, ui.replay.y, ui.replay.r, '#ffd66c', '↻', '#6d4b18');
+    drawCircleButton(ui.shuffleTop.x, ui.shuffleTop.y, ui.shuffleTop.r, '#80dbff', '⇄', '#24566d');
+    drawCircleButton(ui.pause.x, ui.pause.y, ui.pause.r, '#ffb09f', state.paused ? '▶' : 'Ⅱ', '#713528');
+
+    ctx.fillStyle = '#ffffff';
+    roundRect(63, 13, 130, 33, 16);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(60,115,137,.14)';
+    ctx.stroke();
+    ctx.fillStyle = '#243d55';
+    ctx.font = '800 18px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`第 ${state.level} 关`, 77, 30);
+    ctx.fillStyle = '#6e8aa0';
+    ctx.font = '700 10px sans-serif';
+    ctx.fillText('动物洞口', 143, 31);
+
+    pill(204, 13, 76, 33, 'rgba(255,255,255,.86)');
+    ctx.fillStyle = '#ff9c34';
+    ctx.beginPath();
+    ctx.arc(220, 30, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#243d55';
+    ctx.font = '800 13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(String(state.score), 234, 30);
+
+    const pct = state.cleared / Math.max(1, state.total);
+    ctx.fillStyle = 'rgba(35,76,95,.16)';
+    roundRect(65, 51, 222, 8, 4);
+    ctx.fill();
+    const pg = ctx.createLinearGradient(65, 51, 287, 51);
+    pg.addColorStop(0, '#62d56c');
+    pg.addColorStop(1, '#ffd34a');
+    ctx.fillStyle = pg;
+    roundRect(65, 51, 222 * pct, 8, 4);
+    ctx.fill();
+    ctx.fillStyle = '#42677d';
+    ctx.font = '700 9px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.round(pct * 100)}%`, 317, 56);
+    ctx.restore();
+  }
+
+  function drawSideBadges() {
+    ctx.save();
+    const stackNum = getHoleStack().length;
+
+    drawBadge(13, 417, 58, 42, '剩余', String(state.animals.length), '#ffffff');
+    drawBadge(289, 417, 58, 42, '洞口', `${stackNum}/${MAX_HOLE_ANIMALS}`, stackNum >= 4 ? '#ffe0dc' : '#ffffff');
+
+    ctx.fillStyle = 'rgba(255,255,255,.74)';
+    roundRect(130, 470, 100, 26, 13);
+    ctx.fill();
+    ctx.fillStyle = '#486575';
+    ctx.font = '800 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`步数 ${state.moves}`, 180, 483);
+    ctx.restore();
+  }
+
+  function drawBadge(x, y, w, h, label, value, fill) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(34,74,94,.16)';
+    roundRect(x + 2, y + 3, w, h, 13);
+    ctx.fill();
+    ctx.fillStyle = fill;
+    roundRect(x, y, w, h, 13);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(80,120,140,.15)';
+    ctx.stroke();
+    ctx.fillStyle = '#6c8798';
+    ctx.font = '700 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, y + 13);
+    ctx.fillStyle = '#273f52';
+    ctx.font = '900 15px sans-serif';
+    ctx.fillText(value, x + w / 2, y + 30);
+    ctx.restore();
+  }
+
+  function drawBottomDock() {
+    ctx.save();
+
+    // 底部 UI 改为左右悬浮工具按钮，中间完全留空，避免遮挡洞口和洞口内动物堆叠。
+    drawSideToolPad(18, 558, 126, 70);
+    drawSideToolPad(216, 558, 126, 70);
+    drawToolButton(ui.clearTool.x, ui.clearTool.y, 'clear', '成对下落');
+    drawToolButton(ui.shuffleTool.x, ui.shuffleTool.y, 'shuffle', '打乱');
+
+    // 洞口容量提示移到洞口上方的小标签，不占用底部中心通道。
+    const stackNum = getHoleStack().length;
+    ctx.fillStyle = stackNum >= MAX_HOLE_ANIMALS ? 'rgba(255,224,220,.92)' : 'rgba(255,255,255,.78)';
+    roundRect(137, 500, 86, 23, 11);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(80,120,140,.16)';
+    ctx.stroke();
+    ctx.fillStyle = stackNum >= MAX_HOLE_ANIMALS ? '#9b392e' : '#486575';
+    ctx.font = '800 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`洞口 ${stackNum}/${MAX_HOLE_ANIMALS}`, 180, 512);
+
+    ctx.restore();
+  }
+
+  function drawSideToolPad(x, y, w, h) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,.32)';
+    roundRect(x, y, w, h, 22);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.42)';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCircleButton(x, y, r, fill, icon, color) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(28,57,73,.14)';
+    ctx.beginPath();
+    ctx.arc(x, y + 2, r + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.56)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = '900 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(icon, x, y + 1);
+    ctx.restore();
+  }
+
+  function drawToolButton(x, y, type, label) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(50,86,50,.20)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 12, 38, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const grad = ctx.createLinearGradient(x - 28, y - 28, x + 28, y + 28);
+    grad.addColorStop(0, type === 'clear' ? '#a7f081' : '#9eeaff');
+    grad.addColorStop(1, type === 'clear' ? '#42b654' : '#25aee2');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(x, y - 1, 30, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.62)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    if (type === 'clear') {
+      drawAnimalShape('frog', x - 8, y - 12, 9, -0.1);
+      drawAnimalShape('bear', x + 8, y - 11, 9, 0.12);
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 23px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⇄', x, y - 3);
+    }
+    ctx.lineWidth = 3;
+    ctx.font = '800 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(26,82,34,.75)';
+    ctx.fillStyle = '#fff';
+    ctx.strokeText(label, x, y + 22);
+    ctx.fillText(label, x, y + 22);
+    ctx.restore();
+  }
+
+  function drawStatusText() {
+    ctx.save();
+    if (state.hintTime > 0) {
+      ctx.globalAlpha = Math.min(1, state.hintTime);
+      ctx.fillStyle = 'rgba(30,68,88,.62)';
+      roundRect(34, 70, 292, 28, 14);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '800 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('上方动物有实体碰撞；只有洞口内相同动物会消除', 180, 84);
+    }
+    if (state.toastTimer > 0) {
+      const t = Math.min(1, state.toastTimer);
+      ctx.globalAlpha = t;
+      ctx.fillStyle = 'rgba(62,78,48,.76)';
+      roundRect(79, 102, 202, 30, 15);
+      ctx.fill();
+      ctx.fillStyle = '#fff8c8';
+      ctx.font = '900 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.toast, 180, 117);
+    }
+    ctx.restore();
+  }
+
+  function drawAnimalShape(type, x, y, r, rot = 0, alpha = 1, pulse = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+    const s = 1 + Math.sin(pulse) * 0.025;
+    ctx.scale(s, s);
+    ctx.shadowColor = 'rgba(0,0,0,.18)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+
+    const eye = (ex, ey, rr = 1.9) => {
+      ctx.fillStyle = '#1e2430';
+      ctx.beginPath(); ctx.arc(ex, ey, rr, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.beginPath(); ctx.arc(ex - 0.5, ey - 0.7, rr * .35, 0, Math.PI * 2); ctx.fill();
+    };
+    const blush = (bx, by) => {
+      ctx.fillStyle = 'rgba(255,158,176,.45)';
+      ctx.beginPath(); ctx.ellipse(bx, by, 3.5, 2.1, 0, 0, Math.PI * 2); ctx.fill();
+    };
+
+    if (type === 'chick') {
+      const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, r);
+      g.addColorStop(0, '#fff3a8'); g.addColorStop(1, '#f5c73f'); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f2a12b'; ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(-5, -1); ctx.lineTo(5, -1); ctx.closePath(); ctx.fill();
+      eye(-5, -3, 2); eye(5, -3, 2); blush(-8, 2); blush(8, 2);
+      ctx.strokeStyle = '#d08f23'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-4, -r + 2); ctx.lineTo(-1, -r - 2); ctx.moveTo(4, -r + 2); ctx.lineTo(2, -r - 3); ctx.stroke();
+    } else if (type === 'frog') {
+      ctx.fillStyle = '#68c858'; ctx.beginPath(); ctx.arc(0, 1, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#86df71'; ctx.beginPath(); ctx.arc(-6, -9, 5.8, 0, Math.PI * 2); ctx.arc(6, -9, 5.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f5f6ef'; ctx.beginPath(); ctx.arc(-6, -9, 3.2, 0, Math.PI * 2); ctx.arc(6, -9, 3.2, 0, Math.PI * 2); ctx.fill();
+      eye(-6, -9, 1.5); eye(6, -9, 1.5); ctx.strokeStyle = '#2d7b2c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 2, 6, .2, Math.PI - .2); ctx.stroke(); blush(-8, 5); blush(8, 5);
+    } else if (type === 'pig') {
+      const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, r);
+      g.addColorStop(0, '#ffd0dc'); g.addColorStop(1, '#f49ab1'); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f6afc0'; ctx.beginPath(); ctx.moveTo(-10, -7); ctx.lineTo(-6, -15); ctx.lineTo(-1, -9); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(10, -7); ctx.lineTo(6, -15); ctx.lineTo(1, -9); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f08ea7'; ctx.beginPath(); ctx.ellipse(0, 4, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#d86d8a'; ctx.beginPath(); ctx.arc(-2, 4, 1.3, 0, Math.PI * 2); ctx.arc(2, 4, 1.3, 0, Math.PI * 2); ctx.fill(); eye(-5, -3, 1.9); eye(5, -3, 1.9); blush(-9, 3); blush(9, 3);
+    } else if (type === 'panda') {
+      ctx.fillStyle = '#fcfcfc'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#2e2e33'; ctx.beginPath(); ctx.arc(-8, -10, 5, 0, Math.PI * 2); ctx.arc(8, -10, 5, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.ellipse(-6, -2, 4.5, 5.5, -0.2, 0, Math.PI * 2); ctx.ellipse(6, -2, 4.5, 5.5, 0.2, 0, Math.PI * 2); ctx.fill(); eye(-6, -2, 1.6); eye(6, -2, 1.6); ctx.fillStyle = '#2e2e33'; ctx.beginPath(); ctx.arc(0, 4, 2.2, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#2e2e33'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(0, 7, 4, .1, Math.PI - .1); ctx.stroke();
+    } else if (type === 'cat') {
+      const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, r); g.addColorStop(0, '#ffc98a'); g.addColorStop(1, '#ef9f45'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 1, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ef9f45'; ctx.beginPath(); ctx.moveTo(-10, -6); ctx.lineTo(-5, -16); ctx.lineTo(-1, -7); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(10, -6); ctx.lineTo(5, -16); ctx.lineTo(1, -7); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffd6b0'; ctx.beginPath(); ctx.ellipse(0, 5, 7, 5.5, 0, 0, Math.PI * 2); ctx.fill(); eye(-5, -2, 1.9); eye(5, -2, 1.9); ctx.fillStyle = '#e57f65'; ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(-2, 5); ctx.lineTo(2, 5); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#6d4a31'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-8, 4); ctx.lineTo(-14, 2); ctx.moveTo(-8, 7); ctx.lineTo(-14, 7); ctx.moveTo(8, 4); ctx.lineTo(14, 2); ctx.moveTo(8, 7); ctx.lineTo(14, 7); ctx.stroke();
+    } else if (type === 'fox') {
+      const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, r); g.addColorStop(0, '#ffb26b'); g.addColorStop(1, '#ea6f2d'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ea6f2d'; ctx.beginPath(); ctx.moveTo(-11, -6); ctx.lineTo(-5, -17); ctx.lineTo(-1, -7); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(11, -6); ctx.lineTo(5, -17); ctx.lineTo(1, -7); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#fff3e3'; ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(-10, 0); ctx.lineTo(10, 0); ctx.closePath(); ctx.fill(); eye(-5, -3, 1.8); eye(5, -3, 1.8); ctx.fillStyle = '#4b2f1d'; ctx.beginPath(); ctx.arc(0, 3, 2, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'koala') {
+      ctx.fillStyle = '#bfc7d4'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#aab3c1'; ctx.beginPath(); ctx.arc(-11, -4, 6, 0, Math.PI * 2); ctx.arc(11, -4, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#d4dbe4'; ctx.beginPath(); ctx.arc(-11, -4, 3, 0, Math.PI * 2); ctx.arc(11, -4, 3, 0, Math.PI * 2); ctx.fill(); eye(-5, -3, 1.8); eye(5, -3, 1.8); ctx.fillStyle = '#49515f'; ctx.beginPath(); ctx.ellipse(0, 3, 4.2, 5.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#6d7583'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, 8, 4, .1, Math.PI - .1); ctx.stroke();
+    } else if (type === 'bear') {
+      const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, r); g.addColorStop(0, '#b88967'); g.addColorStop(1, '#8a5a3e'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#8a5a3e'; ctx.beginPath(); ctx.arc(-8, -9, 4.6, 0, Math.PI * 2); ctx.arc(8, -9, 4.6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#d8b092'; ctx.beginPath(); ctx.ellipse(0, 4, 7, 5.5, 0, 0, Math.PI * 2); ctx.fill(); eye(-5, -2, 1.9); eye(5, -2, 1.9); ctx.fillStyle = '#5e3d28'; ctx.beginPath(); ctx.arc(0, 2, 2.2, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#5e3d28'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, 6, 3.8, .1, Math.PI - .1); ctx.stroke();
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.beginPath();
+    ctx.ellipse(-r * .35, -r * .42, r * .25, r * .12, -.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAnimals() {
+    const order = [...state.animals].sort((a, b) => (a.fixed === b.fixed ? a.y - b.y : a.fixed ? -1 : 1));
+    for (const a of order) {
+      const pulse = a.fixed ? a.age * 4 + a.pulse : 0;
+      drawAnimalShape(a.type, a.x, a.y, a.r, a.rot, 1, pulse);
+      if (a.id === state.selected && !a.fixed) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,.55)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawParticles() {
+    for (const r of state.ripples) {
+      ctx.save();
+      ctx.globalAlpha = r.a * .65;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const p of state.particles) {
+      ctx.save();
+      ctx.globalAlpha = p.a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawOverlay() {
+    if (!state.paused && !state.win && !state.failed) return;
+    ctx.save();
+    ctx.fillStyle = 'rgba(19,42,55,.45)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff8dd';
+    roundRect(42, 195, 276, 205, 22);
+    ctx.fill();
+    ctx.strokeStyle = '#8d6337';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    const title = state.failed ? (state.failReason || '失败') : (state.win ? '通关完成' : '暂停中');
+    ctx.fillStyle = '#4b3121';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 26px sans-serif';
+    ctx.fillText(title, 180, 241);
+    ctx.font = '800 14px sans-serif';
+    ctx.fillText(`得分：${state.score}`, 180, 279);
+    ctx.fillText(`已消除：${state.cleared}/${state.total}    洞口：${getHoleStack().length}/${MAX_HOLE_ANIMALS}`, 180, 306);
+
+    ctx.fillStyle = '#47a650';
+    roundRect(94, 335, 172, 40, 20);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 15px sans-serif';
+    ctx.fillText('点击左上角重开', 180, 356);
+    ctx.restore();
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000 || 0.016);
+    last = now;
+    update(dt);
+
+    ctx.save();
+    if (state.shake > 0) ctx.translate(rand(-state.shake, state.shake), rand(-state.shake, state.shake));
+    drawBackground();
+    drawAnimals();
+    drawParticles();
+    drawTopUI();
+    drawSideBadges();
+    drawBottomDock();
+    drawStatusText();
+    ctx.restore();
+    drawOverlay();
+
+    requestAnimationFrame(frame);
+  }
+
+  buildLevel();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

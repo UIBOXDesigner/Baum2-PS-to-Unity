@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤠 硅谷大镖客：创业帮派</title>
+    <!-- 引入 Tailwind CSS 进行界面渲染 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 用于在浏览器中实时编译 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* 全局自定义滚动条与动画样式 */
+        body { margin: 0; overflow: hidden; background-color: #0c0a09; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #292524; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #44403c; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes bounceSlow { 
+            0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 
+            50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } 
+        }
+        .animate-bounce-slow { animation: bounceSlow 3s infinite; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// --- 游戏数据与随机生成器 ---
+const NAMES_FIRST = ["快枪手", "盲眼", "疤面", "疯狗", "PPT大师", "画大饼", "卷王", "摸鱼王", "左轮", "套马索"];
+const NAMES_LAST = ["亚瑟", "达奇", "迈卡", "约翰", "莎迪", "何西阿", "比尔", "查尔斯", "大卫", "马斯克"];
+const PROJECT_VERBS = ["讨伐", "暗杀", "护送", "抢劫", "追回", "颠覆", "垄断", "收购"];
+const PROJECT_NOUNS = ["奥德帮", "黑水镇马车", "平克顿侦探", "硅谷黄金", "竞争对手酒馆", "财阀火车", "走失的狗", "印第安老哥"];
+
+const ASSETS_DATA = {
+  'saloon': { id: 'saloon', name: '瓦伦丁酒馆', cost: 2000, dailyCash: 100, dailyVal: 0, icon: '🍺', desc: '每天带来稳定的 $100 现金流。' },
+  'stagecoach': { id: 'stagecoach', name: '黑水镇驿站', cost: 5000, dailyCash: 300, dailyVal: 0, icon: '🐎', desc: '控制交通命脉，每天 $300 进账。' },
+  'newspaper': { id: 'newspaper', name: '圣丹尼斯报社', cost: 10000, dailyCash: 500, dailyVal: 5, icon: '📰', desc: '掌握舆论霸权，每天 $500 且估值 +5。' }
+};
+
+const EQUIPMENTS = {
+  'mech_gun': { id: 'mech_gun', name: '机械键盘枪', cost: 1500, desc: '战力额外 +15', icon: '⌨️' },
+  'plaid_shirt': { id: 'plaid_shirt', name: '防弹格子衫', cost: 800, desc: '抵御一次致命伤', icon: '👔' },
+  'ergo_saddle': { id: 'ergo_saddle', name: '人体工学马鞍', cost: 1200, desc: '日常不掉忠诚度', icon: '💺' }
+};
+
+const HORSES = [
+  { id: 'h1', name: '稳健的萝卜', chance: 0.60, multiplier: 1.5, desc: '老弱病残也能跑第一？因为它是稳妥的理财产品。', color: 'text-green-400' },
+  { id: 'h2', name: '黑水镇狂风', chance: 0.25, multiplier: 3, desc: '脾气暴躁，只要不发疯就能赢。', color: 'text-blue-400' },
+  { id: 'h3', name: '午夜梦魇', chance: 0.10, multiplier: 8, desc: '纯黑的毛色，跑起来像一道闪电。', color: 'text-purple-400' },
+  { id: 'h4', name: '达奇的幻影', chance: 0.02, multiplier: 50, desc: '没有人看好它，但它确实有...一个计划。', color: 'text-yellow-400' }
+];
+
+const EXPEDITIONS = [
+  { id: 'exp1', name: '东海岸融资路演', timeMs: 15 * 60 * 1000, timeDesc: '15 分钟', reqSkill: 40, rewards: { cash: 1500, val: 10 }, desc: '派人去东海岸拉投资。耗时短，收益可观。', icon: '🚄' },
+  { id: 'exp2', name: '墨西哥走私专线', timeMs: 60 * 60 * 1000, timeDesc: '1 小时', reqSkill: 70, rewards: { cash: 5000, diamonds: 10 }, desc: '极其危险的边境走私。奖励大量现金与钻石。', icon: '🌵' },
+  { id: 'exp3', name: '欧洲分部开拓', timeMs: 4 * 60 * 60 * 1000, timeDesc: '4 小时', reqSkill: 90, rewards: { cash: 15000, diamonds: 30, randomGear: true }, desc: '漂洋过海建立分部。保底送一件极品神装！', icon: '🚢' },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first_blood', name: '第一桶金', desc: '公司资金累计达到 $1,000', icon: '💰' },
+  { id: 'fame', name: '声名鹊起', desc: '帮派估值达到 100', icon: '⭐' },
+  { id: 'crowd', name: '人多势众', desc: '营地同时拥有 6 名存活员工', icon: '⛺' },
+  { id: 'capitalist', name: '资本家之魂', desc: '累计向社会输送人才(裁员) 3 次', icon: '🥾' },
+  { id: 'miracle', name: '医学奇迹', desc: '使用巫毒娃娃复活阵亡的员工', icon: '✝️' },
+  { id: 'ur_found', name: '慧眼识珠', desc: '鉴定出一名 UR 传说级员工', icon: '🌟' },
+  { id: 'ipo', name: '钟声敲响', desc: '达成 IPO 上市条件 (通关)', icon: '🔔' },
+  { id: 'bankrupt', name: '破产清算', desc: '公司资金跌破 $0 宣告破产', icon: '📉' },
+  { id: 'runaway', name: '众叛亲离', desc: '有一名员工因为忠诚度耗尽而提桶跑路', icon: '🏃' },
+  { id: 'options', name: '画饼充饥', desc: '累计向员工发放 5 次期权', icon: '🥠' },
+  { id: 'relocate', name: '乔迁之喜', desc: '第一次进行营地搬迁', icon: '🚚' },
+  { id: 'silicon_valley', name: '硅谷之巅', desc: '将公司搬迁至顶级风投大厦', icon: '🏢' },
+  { id: 'gear_up', name: '神装加身', desc: '首次为员工穿戴专属装备', icon: '🎒' },
+  { id: 'leverage', name: '杠杆大师', desc: '首次向康沃尔财团借入高利贷', icon: '🏦' },
+  { id: 'tycoon', name: '西部大亨', desc: '收购所有的被动收益产业', icon: '🎩' },
+  { id: 'afk_master', name: '躺平收菜', desc: '完成一次长期远征任务', icon: '⏱️' },
+  { id: 'god_of_gamblers', name: '赌神在世', desc: '在赛马中成功押中 50 倍的究极冷门神马', icon: '🎰' },
+];
+
+const CAMP_LEVELS = [
+  { level: 0, name: "马掌望台 (破烂帐篷)", cost: 0, maxEmployees: 6, buffRate: 0, desc: "风吹日晒，条件艰苦。" },
+  { level: 1, name: "罗兹镇 (木屋办公室)", cost: 1000, maxEmployees: 8, buffRate: 0.05, desc: "有了遮风挡雨的地方，全员胜率 +5%。" },
+  { level: 2, name: "圣丹尼斯 (红砖商会)", cost: 3000, maxEmployees: 10, buffRate: 0.10, desc: "大城市的繁华，全员胜率 +10%。" },
+  { level: 3, name: "硅谷风投 (摩天大厦)", cost: 8000, maxEmployees: 12, buffRate: 0.15, desc: "西部的巅峰，全员胜率 +15%。" },
+];
+
+const RANDOM_EVENTS = [
+  { id: 'pinkerton', title: '平克顿反垄断调查', icon: '🚨', type: 'bad', desc: '平克顿开出罚单！缴纳罚金 $300。', apply: (states) => { states.cashChange -= 300; } },
+  { id: 'gold_rush', title: '硅谷淘金热', icon: '⛏️', type: 'good', desc: '后山发现小型金矿！获得资金 $500。', apply: (states) => { states.cashChange += 500; } },
+  { id: 'hackathon', title: '西部黑客松', icon: '💻', type: 'good', desc: '摸鱼员工战力永久 +2！', apply: (states, RARITY_MAP) => { states.finalEmployees = states.finalEmployees.map(e => e.status === 'idle' ? { ...e, skill: Math.min(RARITY_MAP[e.rarityKey].maxSkill, e.skill + 2) } : e); } },
+  { id: 'angel_investor', title: '天使轮融资', icon: '👼', type: 'good', desc: '神秘富豪看好你们！估值 +50。', apply: (states) => { states.valChange += 50; } },
+  { id: 'flu', title: '营地流感', icon: '🦠', type: 'bad', desc: '糟糕的卫生环境导致营地爆发流感，随机一名健康员工被迫病休 3 天！', apply: (states) => { states.finalEmployees = states.finalEmployees.map(e => e.id === (states.finalEmployees.filter(emp=>emp.status==='idle')[0]?.id) ? { ...e, status: 'resting', restDays: 3 } : e); } }
+];
+
+const TRAITS = {
+  'workaholic': { name: '卷王', desc: '每日忠诚度 +2，任务失败高危死亡率', color: 'text-red-400 bg-red-950/30 border-red-800' },
+  'veteran': { name: '老油条', desc: '日常绝不掉忠诚度，但任务胜率 -10%', color: 'text-stone-400 bg-stone-800 border-stone-600' },
+  'sales_champ': { name: '销冠', desc: '任务成功时，额外拉来 20% 的资金奖励', color: 'text-amber-400 bg-amber-950/30 border-amber-800' },
+  'fragile': { name: '玻璃心', desc: '一旦任务受挫，瞬间暴跌 20 点忠诚度', color: 'text-pink-400 bg-pink-950/30 border-pink-800' },
+  'nepotism': { name: '关系户', desc: '要求 1.5 倍高额日薪，且裁员需赔付 3 倍 N+1', color: 'text-purple-400 bg-purple-950/30 border-purple-800' }
+};
+
+const ROLES = {
+  'hr': { id: 'hr', name: 'HR 总监', icon: '🤝', unlockLevel: 1, desc: '在任期间，所有招募费用永久打 8 折。' },
+  'doctor': { id: 'doctor', name: '营地医生', icon: '⚕️', unlockLevel: 2, desc: '在任期间，病休员工的恢复速度翻倍 (每日休养 -2天)。' },
+  'security': { id: 'security', name: '安保队长', icon: '🛡️', unlockLevel: 3, desc: '在任期间，有 50% 概率直接拦截所有恶性随机事件！' }
+};
+
+const VERSION_HISTORY = [
+  {
+    version: "v6.1.0",
+    date: "2026-05-01",
+    title: "纯净离线版 (Offline Edition)",
+    features: [
+      "移除 AI 依赖：全面移除了所有需调用外部 API 的功能，保障本地流畅运行。",
+      "系统重构：重写了『营地八卦』的本地生成逻辑，原汁原味保留胜率 BUFF。"
+    ]
+  },
+  {
+    version: "v6.0.0",
+    date: "2026-04-30",
+    title: "开箱即用 (Standalone Html Edition)",
+    features: [
+      "整合重构：将游戏完全打包为单 Html 文件，双击即可无缝体验。",
+      "所有修复大满贯：包含全局数据自愈、赛马动画、个性词条等所有高级特性。"
+    ]
+  }
+];
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const RARITY_MAP = {
+  'N': { stars: 1, maxSkill: 40, label: 'N', name: '普通', color: 'text-stone-400', border: 'border-stone-700 bg-stone-800' },
+  'R': { stars: 2, maxSkill: 60, label: 'R', name: '优秀', color: 'text-green-400', border: 'border-green-700/50 bg-green-950/20' },
+  'SR': { stars: 3, maxSkill: 80, label: 'SR', name: '稀有', color: 'text-blue-400', border: 'border-blue-500/60 bg-blue-950/20' },
+  'SSR': { stars: 4, maxSkill: 100, label: 'SSR', name: '史诗', color: 'text-purple-400', border: 'border-purple-500 bg-purple-950/20' },
+  'UR': { stars: 5, maxSkill: 120, label: 'UR', name: '传说', color: 'text-yellow-400', border: 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.15)] bg-yellow-950/20' }
+};
+
+const RUMORS = {
+  'N': ["看起来毫无干劲...", "只会混日子的家伙。", "手抖得连枪都拿不稳。", "昨晚在酒馆输光了底裤。", "便宜是有原因的，不是吗？", "你看他那呆滞的眼神。"],
+  'R': ["看起来是个熟手。", "据说曾是个不错的快枪手。", "眼神里有些许杀气。", "还算靠谱的家伙。", "干过几票小买卖，要价还算公道。"],
+  'SR': ["这人身上有几条人命，不可小觑。", "据说曾在黑水镇单枪匹马逃脱。", "他的枪管上刻满了正字。", "平克顿悬赏榜上的熟面孔。", "是个狠角色，得小心提防。"],
+  'SSR': ["整个新奥斯汀都在流传他的恶名。", "据说他一个人干翻了奥德帮的一个营地。", "连达奇都听说过他的名号。", "浑身散发着极度危险的气息。", "雇佣他简直是在玩火，但我喜欢。"],
+  'UR': ["活着的传奇，死神的代名词。", "他就是西部法则本身。", "据说他能预判子弹的轨迹...", "你确定我们这家小庙容得下这尊大佛？", "神话中走出的杀戮机器。"]
+};
+
+const rollRarity = () => {
+  const roll = Math.random() * 100;
+  if (roll < 50) return 'N';
+  if (roll < 80) return 'R';
+  if (roll < 95) return 'SR';
+  if (roll < 99) return 'SSR';
+  return 'UR';
+};
+
+const sanitizeEmployee = (e) => {
+  const traitKeys = Object.keys(TRAITS);
+  const validRarity = RARITY_MAP[e.rarityKey] ? e.rarityKey : 'N';
+  return {
+    ...e,
+    name: e.name || `神秘打工人_${e.id ? e.id.substring(0, 4) : 'x'}`,
+    skill: Number(e.skill) || getRandomInt(40, 80),
+    cost: Number(e.cost) || 200,
+    salary: Number(e.salary) || Math.max(5, Math.floor((Number(e.cost) || 200) / 10)),
+    specialty: e.specialty || '无',
+    loyalty: Number(e.loyalty) || 100,
+    rarityKey: validRarity,
+    trait: e.trait || traitKeys[getRandomInt(0, traitKeys.length - 1)],
+    marketRumor: e.marketRumor || "这家伙是个谜，没人知道他的底细。"
+  };
+};
+
+const sanitizeProject = (p) => {
+  return {
+    ...p,
+    name: p.name || `高危盲盒委托_${p.id ? p.id.substring(0, 4) : 'x'}`,
+    difficulty: Number(p.difficulty) || 80,
+    reward: Number(p.reward) || 1500,
+    desc: p.desc || "由于电报信号受损，详情缺失，但雇主给得很多。"
+  };
+};
+
+const generateEmployee = (valuation) => {
+  const rarityKey = rollRarity();
+  const maxCap = RARITY_MAP[rarityKey].maxSkill;
+  let baseSkill = getRandomInt(10 + Math.floor(valuation / 10), 30 + Math.floor(valuation / 5));
+  baseSkill = Math.min(baseSkill, maxCap);
+  
+  const traitKeys = Object.keys(TRAITS);
+  const trait = traitKeys[getRandomInt(0, traitKeys.length - 1)];
+  
+  let cost = baseSkill * getRandomInt(2, 4);
+  let salary = Math.max(1, Math.floor(cost / 10));
+  if (trait === 'nepotism') salary = Math.floor(salary * 1.5); 
+
+  return {
+    id: generateId(),
+    name: `${NAMES_FIRST[getRandomInt(0, NAMES_FIRST.length - 1)]} ${NAMES_LAST[getRandomInt(0, NAMES_LAST.length - 1)]}`,
+    skill: Math.max(1, baseSkill),
+    rarityKey: rarityKey,
+    specialty: PROJECT_VERBS[getRandomInt(0, PROJECT_VERBS.length - 1)],
+    cost: cost,
+    salary: salary,
+    status: 'idle', 
+    restDays: 0,
+    trainingDays: 0,
+    projectId: null,
+    expeditionId: null,
+    expeditionEndTime: null,
+    isAppraised: false,
+    loyalty: getRandomInt(80, 100),
+    equipment: null,
+    marketRumor: RUMORS[rarityKey][getRandomInt(0, RUMORS[rarityKey].length - 1)],
+    trait: trait, 
+  };
+};
+
+const generateProject = (valuation) => {
+  const difficulty = getRandomInt(5 + Math.floor(valuation / 10), 40 + Math.floor(valuation / 5));
+  return {
+    id: generateId(),
+    name: `${PROJECT_VERBS[getRandomInt(0, PROJECT_VERBS.length - 1)]} ${PROJECT_NOUNS[getRandomInt(0, PROJECT_NOUNS.length - 1)]}`,
+    difficulty: Math.min(100, difficulty),
+    reward: difficulty * getRandomInt(5, 10),
+    assignedTo: null,
+  };
+};
+
+const formatTime = (ms) => {
+  if (ms <= 0) return "00:00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+// --- 主组件 ---
+const WildWestStartup = () => {
+  const [day, setDay] = useState(1);
+  const [cash, setCash] = useState(500);
+  const [diamonds, setDiamonds] = useState(50);
+  const [valuation, setValuation] = useState(10);
+  const [campLevel, setCampLevel] = useState(0);
+  
+  const [loan, setLoan] = useState({ active: false, amount: 1000, repay: 1500, dueDay: null });
+  const [assets, setAssets] = useState({ saloon: false, stagecoach: false, newspaper: false });
+  const [roles, setRoles] = useState({ hr: null, doctor: null, security: null }); 
+
+  const [appraisalTokens, setAppraisalTokens] = useState(3);
+  const [medicines, setMedicines] = useState(1);
+  const [revivals, setRevivals] = useState(0);
+  const [manuals, setManuals] = useState(0);
+  const [inventory, setInventory] = useState({ mech_gun: 0, plaid_shirt: 0, ergo_saddle: 0 });
+  const [logs, setLogs] = useState(["[第1天] 范德林德风投成立！开始你的征途吧！"]);
+  
+  const [currentTab, setCurrentTab] = useState('recruit');
+  const [businessMode, setBusinessMode] = useState('bounty');
+  const [activeBuildingTab, setActiveBuildingTab] = useState('admin'); 
+  const [showManual, setShowManual] = useState(false);
+  const [showUpdateLog, setShowUpdateLog] = useState(true);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  const [achievementToast, setAchievementToast] = useState(null);
+  const [alertToast, setAlertToast] = useState(null); 
+  
+  const [randomEvent, setRandomEvent] = useState(null);
+  const [isBankrupt, setIsBankrupt] = useState(false);
+  
+  const [offlineReport, setOfflineReport] = useState(null);
+  const [dailyReport, setDailyReport] = useState(null); 
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const [equippingEmpId, setEquippingEmpId] = useState(null);
+  const [assigningProject, setAssigningProject] = useState(null);
+  const [assigningRole, setAssigningRole] = useState(null); 
+
+  const [employees, setEmployees] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [marketEmployees, setMarketEmployees] = useState([]);
+  
+  const [stats, setStats] = useState({ fired: 0, revived: 0, urFound: false, runaway: 0, optionsGiven: 0, gearEquipped: false, loanTaken: false, assetsOwned: 0, expCompleted: 0, hitJackpot: false });
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  
+  const [selectedHorse, setSelectedHorse] = useState('h1');
+  const [betAmount, setBetAmount] = useState(10);
+  const [lastBetResult, setLastBetResult] = useState(null);
+  const [isRacing, setIsRacing] = useState(false);
+  const [raceProgress, setRaceProgress] = useState({ h1: 0, h2: 0, h3: 0, h4: 0 });
+  const raceIntervalRef = useRef(null);
+
+  const [gossipBuff, setGossipBuff] = useState(0);
+  const [gossipCost, setGossipCost] = useState(1);
+
+  const [upgrades, setUpgrades] = useState({
+    revolver: { level: 0, name: "进口左轮 (提升任务胜率)", cost: 300, max: 5 },
+    coffee: { level: 0, name: "现磨咖啡 (减少受伤恢复时间)", cost: 200, max: 3 },
+    marketing: { level: 0, name: "电报营销 (每次结算增加额外估值)", cost: 500, max: 5 },
+  });
+
+  const addLog = (msg) => setLogs(prev => [`[第${day}天] ${msg}`, ...prev].slice(0, 50));
+
+  const showError = (msg) => {
+    setAlertToast(msg);
+    addLog(`❌ ${msg}`);
+    setTimeout(() => setAlertToast(null), 3000);
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (raceIntervalRef.current) clearInterval(raceIntervalRef.current); };
+  }, []);
+
+  useEffect(() => {
+    if (tutorialStep === 2 && employees.length > 0) {
+       setTutorialStep(3); 
+       setCurrentTab('business');
+    }
+    if (tutorialStep === 3 && projects.some(p => p.assignedTo)) setTutorialStep(4);
+    if (tutorialStep === 4 && day > 1) setTutorialStep(5);
+  }, [employees, projects, day, tutorialStep]);
+
+  useEffect(() => {
+    const checkAchievements = () => {
+      const newUnlocks = [];
+      if (!unlockedAchievements.includes('first_blood') && cash >= 1000) newUnlocks.push('first_blood');
+      if (!unlockedAchievements.includes('fame') && valuation >= 100) newUnlocks.push('fame');
+      if (!unlockedAchievements.includes('crowd') && employees.filter(e => e.status !== 'dead').length >= 6) newUnlocks.push('crowd');
+      if (!unlockedAchievements.includes('capitalist') && stats.fired >= 3) newUnlocks.push('capitalist');
+      if (!unlockedAchievements.includes('miracle') && stats.revived >= 1) newUnlocks.push('miracle');
+      if (!unlockedAchievements.includes('ur_found') && stats.urFound) newUnlocks.push('ur_found');
+      if (!unlockedAchievements.includes('ipo') && cash >= 10000 && valuation >= 500) newUnlocks.push('ipo');
+      if (!unlockedAchievements.includes('bankrupt') && cash < 0) newUnlocks.push('bankrupt');
+      if (!unlockedAchievements.includes('runaway') && stats.runaway >= 1) newUnlocks.push('runaway');
+      if (!unlockedAchievements.includes('options') && stats.optionsGiven >= 5) newUnlocks.push('options');
+      if (!unlockedAchievements.includes('relocate') && campLevel >= 1) newUnlocks.push('relocate');
+      if (!unlockedAchievements.includes('silicon_valley') && campLevel >= 3) newUnlocks.push('silicon_valley');
+      if (!unlockedAchievements.includes('gear_up') && stats.gearEquipped) newUnlocks.push('gear_up');
+      if (!unlockedAchievements.includes('leverage') && stats.loanTaken) newUnlocks.push('leverage');
+      if (!unlockedAchievements.includes('tycoon') && stats.assetsOwned >= 3) newUnlocks.push('tycoon');
+      if (!unlockedAchievements.includes('afk_master') && stats.expCompleted >= 1) newUnlocks.push('afk_master');
+      if (!unlockedAchievements.includes('god_of_gamblers') && stats.hitJackpot) newUnlocks.push('god_of_gamblers');
+
+      if (newUnlocks.length > 0) {
+        setUnlockedAchievements(prev => [...prev, ...newUnlocks]);
+        setAchievementToast(ACHIEVEMENTS.find(a => a.id === newUnlocks[0]));
+        addLog(`🏆 【成就解锁】恭喜达成成就：${ACHIEVEMENTS.find(a => a.id === newUnlocks[0]).name}！`);
+        setTimeout(() => setAchievementToast(null), 4000);
+      }
+    };
+    checkAchievements();
+  }, [cash, valuation, employees, stats, unlockedAchievements, campLevel]);
+
+  useEffect(() => {
+    if (cash < 0 && !isBankrupt) { setIsBankrupt(true); addLog("📉 【噩耗】公司资金链彻底断裂，宣告破产！"); }
+  }, [cash, isBankrupt]);
+
+  const saveGame = () => {
+    const data = { 
+      day, cash, diamonds, valuation, campLevel, appraisalTokens, medicines, revivals, manuals, logs, 
+      employees, projects, marketEmployees, stats, unlockedAchievements, upgrades, 
+      gossipBuff, gossipCost, inventory, loan, assets, roles,
+      tutorialStep, lastSavedAt: Date.now()
+    };
+    localStorage.setItem("WildWestStartup_SaveData", JSON.stringify(data));
+  };
+
+  const loadGame = () => {
+    const saved = localStorage.getItem("WildWestStartup_SaveData");
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        setDay(data.day); setCash(data.cash); setDiamonds(data.diamonds || 50); setValuation(data.valuation); setCampLevel(data.campLevel || 0); setAppraisalTokens(data.appraisalTokens); setMedicines(data.medicines); setRevivals(data.revivals); setManuals(data.manuals || 0); setInventory(data.inventory || { mech_gun: 0, plaid_shirt: 0, ergo_saddle: 0 }); setLogs(data.logs); 
+        setStats({ ...data.stats, hitJackpot: data.stats?.hitJackpot || false }); 
+        setUnlockedAchievements(data.unlockedAchievements || []); setUpgrades(data.upgrades); setGossipBuff(data.gossipBuff || 0); setGossipCost(data.gossipCost || 1); 
+        setLoan(data.loan || { active: false, amount: 1000, repay: 1500, dueDay: null }); 
+        setAssets(data.assets || { saloon: false, stagecoach: false, newspaper: false });
+        setRoles(data.roles || { hr: null, doctor: null, security: null });
+        setTutorialStep(data.tutorialStep ?? -1);
+
+        if (data.employees) setEmployees(data.employees.map(sanitizeEmployee));
+        if (data.marketEmployees) setMarketEmployees(data.marketEmployees.map(sanitizeEmployee));
+        if (data.projects) setProjects(data.projects.map(sanitizeProject));
+
+        if (data.lastSavedAt && data.assets) {
+           const now = Date.now();
+           let offlineHours = (now - data.lastSavedAt) / (1000 * 60 * 60);
+           if (offlineHours > 24) offlineHours = 24; 
+           if (offlineHours >= 1/6) {
+             let offCash = 0; let offVal = 0;
+             Object.keys(data.assets).forEach(key => {
+               if (data.assets[key]) {
+                 offCash += ASSETS_DATA[key].dailyCash * (offlineHours / 24);
+                 offVal += ASSETS_DATA[key].dailyVal * (offlineHours / 24);
+               }
+             });
+             if (offCash > 0 || offVal > 0) {
+               setCash(c => c + offCash); setValuation(v => v + offVal);
+               setOfflineReport({ hours: offlineHours.toFixed(1), cash: Math.floor(offCash), val: Math.floor(offVal) });
+               addLog(`🌙 【离线收益】在您离开的 ${offlineHours.toFixed(1)} 小时里，产业赚取了 $${Math.floor(offCash)}。`);
+             }
+           }
+        }
+        return true;
+      } catch (e) { console.error(e); }
+    }
+    return false;
+  };
+
+  const clearSave = () => {
+    if (confirm("确定要删除所有进度吗？此操作不可逆！")) {
+      localStorage.removeItem("WildWestStartup_SaveData");
+      restartGame();
+    }
+  };
+
+  useEffect(() => {
+    const hasSave = loadGame();
+    if (!hasSave) {
+       refreshMarket();
+       setTutorialStep(1);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (day > 1 && !isBankrupt) saveGame();
+  }, [day, cash, diamonds, employees, roles, isBankrupt, tutorialStep]);
+
+  const restartGame = () => {
+    setDay(1); setCash(500); setDiamonds(50); setValuation(10); setCampLevel(0); setAppraisalTokens(3); setMedicines(1); setRevivals(0); setManuals(0); setInventory({ mech_gun: 0, plaid_shirt: 0, ergo_saddle: 0 }); setGossipBuff(0); setGossipCost(1); setLogs(["[第1天] 范德林德风投成立！"]); setEmployees([]); 
+    setStats({ fired: 0, revived: 0, urFound: false, runaway: 0, optionsGiven: 0, gearEquipped: false, loanTaken: false, assetsOwned: 0, expCompleted: 0, hitJackpot: false });
+    setUpgrades({ revolver: { level: 0, name: "进口左轮", cost: 300, max: 5 }, coffee: { level: 0, name: "现磨咖啡", cost: 200, max: 3 }, marketing: { level: 0, name: "电报营销", cost: 500, max: 5 } });
+    setLoan({ active: false, amount: 1000, repay: 1500, dueDay: null });
+    setAssets({ saloon: false, stagecoach: false, newspaper: false });
+    setRoles({ hr: null, doctor: null, security: null });
+    setIsBankrupt(false);
+    localStorage.removeItem("WildWestStartup_SaveData");
+    setMarketEmployees(Array.from({ length: 3 }).map(() => generateEmployee(10)));
+    setProjects(Array.from({ length: 4 }).map(() => generateProject(10)));
+    setTutorialStep(1);
+    setCurrentTab('recruit');
+  };
+
+  const handleAssignRole = (roleId, empId) => {
+    if (roles[roleId]) {
+      setEmployees(prev => prev.map(e => e.id === roles[roleId] ? { ...e, status: 'idle' } : e));
+    }
+    if (empId) {
+      setRoles(prev => ({ ...prev, [roleId]: empId }));
+      setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'internal', projectId: null, expeditionId: null } : e));
+      addLog(`👔 委任 "${employees.find(e=>e.id===empId).name}" 升职为 ${ROLES[roleId].name}。`);
+    } else {
+      setRoles(prev => ({ ...prev, [roleId]: null }));
+      addLog(`👔 撤销了 ${ROLES[roleId].name} 的职务。`);
+    }
+    setAssigningRole(null);
+  };
+
+  const handleAssignExpedition = (empId, expId) => {
+    const emp = employees.find(e => e.id === empId);
+    const exp = EXPEDITIONS.find(e => e.id === expId);
+    if (!emp || !exp || emp.status !== 'idle') return;
+    
+    const effectiveSkill = emp.skill + (emp.equipment === 'mech_gun' ? 15 : 0);
+    if (effectiveSkill < exp.reqSkill) return showError(`❌ "${emp.name}" 的战力不足以执行此远征 (需要 ${exp.reqSkill})！`);
+
+    setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'expedition', expeditionId: exp.id, expeditionEndTime: Date.now() + exp.timeMs } : e));
+    setAssigningProject(null);
+    addLog(`🛫 【黑工外派】你将 "${emp.name}" 派往了 [${exp.name}]。这趟活儿耗时较长，请耐心等待！`);
+  };
+
+  const claimExpedition = (empId) => {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp || emp.status !== 'expedition' || currentTime < emp.expeditionEndTime) return;
+
+    const exp = EXPEDITIONS.find(e => e.id === emp.expeditionId);
+    let logStr = `🎉 【远征满载归来】"${emp.name}" 顺利完成了 [${exp.name}]！`;
+    
+    if (exp.rewards.cash) { setCash(c => c + exp.rewards.cash); logStr += ` 获得资金 $${exp.rewards.cash}。`; }
+    if (exp.rewards.diamonds) { setDiamonds(d => d + exp.rewards.diamonds); logStr += ` 获得钻石 💎${exp.rewards.diamonds}。`; }
+    if (exp.rewards.val) { setValuation(v => v + exp.rewards.val); logStr += ` 估值 +${exp.rewards.val}。`; }
+    if (exp.rewards.randomGear) {
+       const gears = Object.keys(EQUIPMENTS);
+       const drop = gears[getRandomInt(0, gears.length - 1)];
+       setInventory(prev => ({ ...prev, [drop]: (prev[drop] || 0) + 1 }));
+       logStr += ` 🎁 掉落极品神装: ${EQUIPMENTS[drop].name}！`;
+    }
+
+    setStats(s => ({ ...s, expCompleted: (s.expCompleted || 0) + 1 }));
+    setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'idle', expeditionId: null, expeditionEndTime: null } : e));
+    addLog(logStr);
+  };
+
+  const takeLoan = () => {
+    if (loan.active) return showError("🏦 你还有贷款未结清！");
+    setCash(c => c + loan.amount); setLoan(prev => ({ ...prev, active: true, dueDay: day + 7 })); setStats(s => ({ ...s, loanTaken: true }));
+    addLog(`🏦 【杠杆借贷】借入了 $${loan.amount}，请在第${day+7}天前偿还 $${loan.repay}。`);
+  };
+
+  const repayLoan = () => {
+    if (!loan.active) return;
+    if (cash < loan.repay) return showError(`🏦 资金不足 $${loan.repay}！`);
+    setCash(c => c - loan.repay); setLoan(prev => ({ ...prev, active: false, dueDay: null }));
+    addLog(`🏦 支付了 $${loan.repay}，提前结清了高利贷！`);
+  };
+
+  const buyAsset = (assetId) => {
+    const asset = ASSETS_DATA[assetId];
+    if (assets[assetId]) return showError(`🎩 已经拥有 ${asset.name}！`);
+    if (cash < asset.cost) return showError(`🎩 资金不足以收购 ${asset.name}！`);
+    setCash(c => c - asset.cost); setAssets(prev => ({ ...prev, [assetId]: true })); setStats(s => ({ ...s, assetsOwned: s.assetsOwned + 1 }));
+    addLog(`🎩 花费 $${asset.cost} 成功收购了 ${asset.name}！每天稳定获得被动收益。`);
+  };
+
+  const handleBet = () => {
+    if (cash < betAmount) return showError("资金不足，没钱就别来赌场沾边！");
+    if (betAmount < 10) return showError("最低下注限制为 $10！");
+    if (isRacing) return;
+
+    setIsRacing(true);
+    setLastBetResult(null);
+    setCash(c => c - betAmount); 
+
+    const horse = HORSES.find(h => h.id === selectedHorse);
+    const roll = Math.random();
+    const isWin = roll <= horse.chance;
+
+    let winningHorseId = selectedHorse;
+    if (!isWin) {
+       const otherHorses = HORSES.filter(h => h.id !== selectedHorse);
+       winningHorseId = otherHorses[Math.floor(Math.random() * otherHorses.length)].id;
+    }
+
+    let currentProgress = { h1: 0, h2: 0, h3: 0, h4: 0 };
+    setRaceProgress(currentProgress);
+
+    if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+
+    raceIntervalRef.current = setInterval(() => {
+       let raceFinished = false;
+       currentProgress = { ...currentProgress };
+
+       Object.keys(currentProgress).forEach(id => {
+          const boost = id === winningHorseId ? (Math.random() * 2 + 1.2) : (Math.random() * 1.8 + 0.3);
+          currentProgress[id] += boost;
+          
+          if (currentProgress[id] >= 90 && id !== winningHorseId && currentProgress[winningHorseId] < 100) {
+             currentProgress[id] = 90 + Math.random() * 2; 
+          }
+          
+          if (currentProgress[id] >= 100) {
+             currentProgress[id] = 100;
+             if (id === winningHorseId) raceFinished = true;
+          }
+       });
+
+       setRaceProgress(currentProgress);
+
+       if (raceFinished) {
+          clearInterval(raceIntervalRef.current);
+          setTimeout(() => {
+             setIsRacing(false);
+             if (isWin) {
+                const winnings = Math.floor(betAmount * horse.multiplier);
+                setCash(c => c + winnings); 
+                setLastBetResult({ type: 'win', msg: `🎉 暴富！"${horse.name}" 夺得头筹，你赢得了 $${winnings}！` });
+                addLog(`🎲 【赛马大捷】押中 "${horse.name}"，净赚 $${winnings - betAmount}！`);
+                if (horse.multiplier >= 50) setStats(s => ({ ...s, hitJackpot: true }));
+             } else {
+                const actualWinner = HORSES.find(h => h.id === winningHorseId).name;
+                setLastBetResult({ type: 'lose', msg: `💀 破产！"${actualWinner}" 跑了第一，你押的 "${horse.name}" 输光了 $${betAmount}。` });
+                addLog(`🎲 【血本无归】押注 "${horse.name}" 失败，亏损 $${betAmount}。`);
+             }
+          }, 1500); 
+       }
+    }, 50);
+  };
+
+  const generateCampGossip = () => {
+    if (diamonds < gossipCost) return showError(`💎 钻石不足 ${gossipCost}！`);
+    if (employees.length === 0) return showError("营地无人！");
+    setDiamonds(d => d - gossipCost); 
+    setGossipCost(c => c * 2); 
+    setGossipBuff(b => b + 0.05);
+    
+    // 本地随机八卦库，替代 AI 生成
+    const localRumors = [
+      "听说达奇又在策划一个伟大的计划，希望这次不需要我们去抢火车。",
+      "营地里的咖啡越来越淡了，大家都在怀疑是我偷工减料了，真是冤枉！",
+      "新来的那个家伙睡觉打呼噜像打雷，吵得我一晚上没睡好。",
+      "有人看到平克顿的探员在附近镇上转悠，咱们最近干活最好低调点。",
+      "昨晚在瓦伦丁酒馆的牌局，某人输得连马鞍都当掉了，我不说是谁。",
+      "马厩里的干草该换换了，那味道简直比变质的死水还难闻。",
+      "最近黑市的装备涨价了，听说是东海岸来的商人在囤积居奇。"
+    ];
+    const result = localRumors[getRandomInt(0, localRumors.length - 1)];
+    addLog(`🍳 皮尔逊： "${result}"`);
+  };
+
+  const refreshMarket = () => {
+    setMarketEmployees(Array.from({ length: 3 }).map(() => generateEmployee(valuation)));
+    setProjects(Array.from({ length: 4 }).map(() => generateProject(valuation)));
+  };
+
+  const hireEmployee = (emp) => {
+    const safeCampLevel = Number(campLevel) || 0;
+    const maxCap = CAMP_LEVELS[safeCampLevel]?.maxEmployees || 6;
+    if (employees.length >= maxCap) return showError(`❌ 容量已满 (${maxCap}人)！`);
+    const actualCost = roles.hr ? Math.floor(emp.cost * 0.8) : emp.cost;
+    if (cash >= actualCost) {
+      setCash(c => c - actualCost); setEmployees(prev => [...prev, { ...emp, status: 'idle' }]); setMarketEmployees(prev => prev.filter(e => e.id !== emp.id)); addLog(`招募了 "${emp.name}" (-$${actualCost})。`);
+    } else showError(`资金不足 $${actualCost}。`);
+  };
+
+  const handleAssignProject = (empId, projId) => {
+    const emp = employees.find(e => e.id === empId); const proj = projects.find(p => p.id === projId);
+    if (!emp || !proj || emp.status !== 'idle') return;
+    setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'working', projectId: proj.id } : e));
+    setProjects(prev => prev.map(p => p.id === projId ? { ...p, assignedTo: emp.id } : p));
+    setAssigningProject(null); addLog(`指派 "${emp.name}" 去执行 "${proj.name}"。`);
+  };
+
+  const appraiseEmployee = (empId) => {
+    if (appraisalTokens < 1) return showError("🔍 放大镜不足！");
+    setAppraisalTokens(t => t - 1); setEmployees(prev => prev.map(emp => emp.id === empId ? { ...emp, isAppraised: true } : emp));
+    addLog(`🔍 消耗了 1 个放大镜鉴定员工。`);
+  };
+
+  const trainEmployee = (empId) => {
+    if (cash < 150) return showError("资金不足以进修 ($150)！");
+    setCash(c => c - 150); setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'training', trainingDays: 2 } : e));
+    addLog(`📚 将 "${employees.find(e=>e.id===empId)?.name}" 送去进修 2 天 (-$150)！`);
+  };
+
+  const finishTraining = (empId) => {
+    if (manuals < 1) return showError("📖 速成手册不足！");
+    const emp = employees.find(e => e.id === empId);
+    if (!emp || emp.status !== 'training') return;
+    setManuals(m => m - 1);
+    const newSkill = Math.min(RARITY_MAP[emp.rarityKey].maxSkill, emp.skill + getRandomInt(3, 8));
+    setEmployees(prev => prev.map(e => e.id === empId ? { ...e, status: 'idle', trainingDays: 0, skill: newSkill } : e));
+    addLog(`📖 消耗了 1 本战术速成手册！"${emp.name}" 瞬间完成进修，战力变为 ${newSkill}！`);
+  };
+
+  const healEmployee = (empId) => {
+    if (medicines < 1) return showError("💊 蛇油丸不足！");
+    setMedicines(m => m - 1); setEmployees(prev => prev.map(emp => emp.id === empId ? { ...emp, status: 'idle', restDays: 0 } : emp));
+  };
+
+  const reviveEmployee = (empId) => {
+    if (revivals < 1) return showError("✝️ 巫毒娃娃不足！");
+    setRevivals(r => r - 1); setEmployees(prev => prev.map(emp => emp.id === empId ? { ...emp, status: 'idle', projectId: null } : emp)); setStats(s => ({ ...s, revived: s.revived + 1 }));
+  };
+
+  const grantOptions = (empId) => {
+    if (valuation < 5) return showError("⭐ 估值不足 5 点！");
+    setValuation(v => v - 5); setEmployees(prev => prev.map(e => e.id === empId ? { ...e, loyalty: Math.min(100, (e.loyalty || 0) + 40) } : e)); setStats(s => ({ ...s, optionsGiven: s.optionsGiven + 1 }));
+  };
+
+  const handleEquip = (empId, eqId) => {
+    if (inventory[eqId] <= 0) return showError("装备库存不足！");
+    setInventory(prev => ({ ...prev, [eqId]: prev[eqId] - 1 })); setEmployees(prev => prev.map(emp => emp.id === empId ? { ...emp, equipment: eqId } : emp)); setEquippingEmpId(null); setStats(s => ({ ...s, gearEquipped: true }));
+  };
+
+  const handleUnequip = (empId) => {
+    const emp = employees.find(e => e.id === empId); if (!emp || !emp.equipment) return;
+    setInventory(prev => ({ ...prev, [emp.equipment]: (prev[emp.equipment] || 0) + 1 })); setEmployees(prev => prev.map(e => e.id === empId ? { ...e, equipment: null } : e));
+  };
+
+  const fireEmployee = (empId) => {
+    const emp = employees.find(e => e.id === empId); if (!emp || emp.status === 'expedition' || emp.status === 'training') return;
+    if (emp.status === 'internal') {
+        const roleKey = Object.keys(roles).find(k => roles[k] === emp.id);
+        if (roleKey) setRoles(prev => ({ ...prev, [roleKey]: null }));
+    }
+    let severancePay = emp.status === 'dead' ? 50 : (emp.salary || Math.floor(emp.cost / 10)) * 5;
+    if (emp.trait === 'nepotism' && emp.status !== 'dead') severancePay *= 3; 
+    if (cash < severancePay) return showError(`资金不足以支付 ($${severancePay})！`);
+    setCash(c => c - severancePay);
+    
+    if (emp.projectId) setProjects(prev => prev.map(p => p.id === emp.projectId ? { ...p, assignedTo: null } : p));
+    if (emp.equipment) setInventory(prev => ({ ...prev, [emp.equipment]: (prev[emp.equipment] || 0) + 1 }));
+    setEmployees(prev => prev.filter(e => e.id !== empId));
+    
+    if (emp.status !== 'dead') { setStats(s => ({ ...s, fired: s.fired + 1 })); addLog(`🥾 裁掉了 "${emp.name}" (-$${severancePay})。`); }
+    else { addLog(`🪦 支付了丧葬费 (-$${severancePay})。`); }
+  };
+
+  const buyUpgrade = (key) => {
+    const upg = upgrades[key];
+    if (upg.level < upg.max) {
+      if (cash >= upg.cost) {
+        setCash(c => c - upg.cost); setUpgrades(prev => ({ ...prev, [key]: { ...upg, level: upg.level + 1, cost: Math.floor(upg.cost * 1.5) } }));
+        addLog(`🔧 升级了科技：${upg.name.split(' ')[0]} Lv.${upg.level + 1} (-$${upg.cost})。`);
+      } else {
+        showError(`资金不足以升级 ${upg.name.split(' ')[0]}！`);
+      }
+    }
+  };
+
+  const upgradeCamp = () => {
+    const currentLevel = Number(campLevel) || 0;
+    if (currentLevel >= CAMP_LEVELS.length - 1) return; 
+    const nextLevel = CAMP_LEVELS[currentLevel + 1];
+    if (cash >= nextLevel.cost) { 
+      setCash(c => c - nextLevel.cost); 
+      setCampLevel(currentLevel + 1); 
+      addLog(`🚚 花费 $${nextLevel.cost} 成功搬迁至【${nextLevel.name}】！`);
+    }
+    else showError(`资金不足以搬迁至 ${nextLevel.name}！`);
+  };
+
+  const getWinChance = (emp, proj) => {
+    if (!emp || !proj) return 0;
+    let empSkill = emp.skill + (emp.equipment === 'mech_gun' ? 15 : 0);
+    const effectiveSkill = empSkill + (upgrades.revolver.level * 5);
+    let winChance = effectiveSkill / (effectiveSkill + proj.difficulty);
+    if (emp.specialty && proj.name.includes(emp.specialty)) winChance += 0.20;
+    if (emp.trait === 'veteran') winChance -= 0.10; 
+    const safeCampLevel = Number(campLevel) || 0;
+    winChance += gossipBuff + (CAMP_LEVELS[safeCampLevel]?.buffRate || 0);
+    return Math.max(0.1, Math.min(0.95, winChance));
+  };
+
+  const nextDay = () => {
+    let dailyLog = []; let cashChange = 0; let valChange = 0; let reclaimedGears = [];
+    let currentCash = cash; 
+    let rptProj = 0; let rptAsset = 0; let rptPayroll = 0; let rptLoan = 0; let rptEvent = 0; let rptEventName = '';
+
+    Object.keys(assets).forEach(assetKey => {
+      if (assets[assetKey]) {
+        cashChange += ASSETS_DATA[assetKey].dailyCash; valChange += ASSETS_DATA[assetKey].dailyVal;
+        rptAsset += ASSETS_DATA[assetKey].dailyCash;
+        dailyLog.push(`🎩 [不动产] ${ASSETS_DATA[assetKey].name} 收益: +$${ASSETS_DATA[assetKey].dailyCash}。`);
+      }
+    });
+    currentCash += cashChange;
+
+    const processedEmployees = employees.map(emp => {
+      if (emp.status === 'expedition' || emp.status === 'internal') return emp;
+      
+      if (emp.status === 'resting') {
+        const recoverySpeed = roles.doctor ? 2 : 1; 
+        const remaining = emp.restDays - recoverySpeed;
+        if (remaining <= 0) { dailyLog.push(`"${emp.name}" 伤愈归队！`); return { ...emp, status: 'idle', restDays: 0 }; }
+        return { ...emp, restDays: remaining };
+      }
+      if (emp.status === 'training') {
+        const remaining = (emp.trainingDays || 0) - 1;
+        if (remaining <= 0) {
+          const newSkill = Math.min(RARITY_MAP[emp.rarityKey].maxSkill, emp.skill + getRandomInt(3, 8));
+          dailyLog.push(`🎓 "${emp.name}" 进修结束，战力变为 ${newSkill}！`); return { ...emp, status: 'idle', trainingDays: 0, skill: newSkill };
+        }
+        return { ...emp, trainingDays: remaining };
+      }
+      if (emp.status === 'working') {
+        const proj = projects.find(p => p.id === emp.projectId);
+        if (!proj) return { ...emp, status: 'idle', projectId: null };
+        const winChance = getWinChance(emp, proj);
+        
+        if (Math.random() <= winChance) {
+          let reward = proj.reward;
+          if (emp.trait === 'sales_champ') reward = Math.floor(reward * 1.2); 
+          cashChange += reward; currentCash += reward; valChange += Math.floor(proj.difficulty / 2) + (upgrades.marketing.level * 2);
+          rptProj += reward; 
+          dailyLog.push(`🟢 "${emp.name}" 完成了 "${proj.name}"，赚取 $${reward}！`);
+          return { ...emp, status: 'idle', projectId: null, skill: Math.min(100, emp.skill + 1) };
+        } else {
+          valChange -= Math.floor(proj.difficulty / 3);
+          let deathChance = 0.15;
+          if (emp.trait === 'workaholic') deathChance = 0.25; 
+          
+          let failStatus = { ...emp };
+          if (Math.random() < deathChance) {
+            if (emp.equipment === 'plaid_shirt') {
+              dailyLog.push(`🛡️ "${emp.name}" 的防弹衣碎裂。转为重伤。`); 
+              failStatus = { ...failStatus, status: 'resting', restDays: 3, projectId: null, equipment: null };
+            } else {
+              if (emp.equipment) reclaimedGears.push(emp.equipment);
+              dailyLog.push(`💀 "${emp.name}" 在任务中被击毙！`); 
+              failStatus = { ...failStatus, status: 'dead', projectId: null, equipment: null };
+            }
+          } else {
+            const restTime = Math.max(1, 4 - upgrades.coffee.level);
+            dailyLog.push(`🔴 "${emp.name}" 受重伤，休养 ${restTime} 天！`); 
+            failStatus = { ...failStatus, status: 'resting', restDays: restTime, projectId: null };
+          }
+          if (emp.trait === 'fragile' && failStatus.status !== 'dead') {
+             failStatus.loyalty = Math.max(0, (failStatus.loyalty || 100) - 20);
+             dailyLog.push(`💔 【玻璃心】"${emp.name}" 任务受挫，忠诚度暴跌 20点！`);
+          }
+          return failStatus;
+        }
+      }
+      return emp;
+    });
+
+    let runawaysThisDay = 0; let finalEmployeesWithLoyalty = []; let dailyPayroll = 0;
+    
+    processedEmployees.forEach(emp => {
+      if (emp.status === 'dead') { finalEmployeesWithLoyalty.push(emp); return; }
+      dailyPayroll += (emp.salary || Math.floor(emp.cost / 10)); 
+      
+      let newLoyalty = emp.loyalty ?? 100;
+      if (emp.status !== 'expedition' && emp.status !== 'internal') {
+         let baseDrop = emp.equipment === 'ergo_saddle' ? 0 : getRandomInt(1, 4);
+         if (emp.trait === 'veteran') baseDrop = 0; 
+         if (emp.trait === 'workaholic') baseDrop = -2; 
+         newLoyalty -= baseDrop;
+         if (emp.status === 'resting') newLoyalty -= 10;
+         if (currentCash < 200) newLoyalty -= 8;
+      }
+      newLoyalty = Math.min(100, newLoyalty);
+
+      if (newLoyalty <= 0) {
+        runawaysThisDay++; dailyLog.push(`🏃 "${emp.name}" 提桶跑路了！`);
+        if (emp.equipment) reclaimedGears.push(emp.equipment); 
+        if (emp.status === 'internal') {
+           const roleKey = Object.keys(roles).find(k => roles[k] === emp.id);
+           if (roleKey) setRoles(prev => ({ ...prev, [roleKey]: null }));
+        }
+      } else finalEmployeesWithLoyalty.push({ ...emp, loyalty: newLoyalty });
+    });
+
+    if (runawaysThisDay > 0) setStats(s => ({ ...s, runaway: s.runaway + runawaysThisDay }));
+    cashChange -= dailyPayroll; currentCash -= dailyPayroll;
+    rptPayroll = dailyPayroll;
+    if (dailyPayroll > 0) dailyLog.push(`💸 支付了全员日薪 $${dailyPayroll}。`);
+
+    if (loan.active && (day + 1) === loan.dueDay) {
+      if (currentCash >= loan.repay) {
+        cashChange -= loan.repay; currentCash -= loan.repay;
+        rptLoan -= loan.repay;
+        dailyLog.push(`🏦 财团扣除了 $${loan.repay} 贷款。`); setLoan(prev => ({ ...prev, active: false, dueDay: null }));
+      } else {
+        rptLoan -= currentCash;
+        cashChange -= currentCash; 
+        dailyLog.push(`🩸 【暴力催收】平克顿查封了所有资金！`);
+        let bestEmp = null; let bestSkill = -1;
+        finalEmployeesWithLoyalty.forEach(e => { if (e.status !== 'dead' && e.skill > bestSkill) { bestSkill = e.skill; bestEmp = e; } });
+        if (bestEmp) {
+          if (bestEmp.status === 'internal') {
+             const roleKey = Object.keys(roles).find(k => roles[k] === bestEmp.id);
+             if (roleKey) setRoles(prev => ({ ...prev, [roleKey]: null }));
+          }
+          finalEmployeesWithLoyalty = finalEmployeesWithLoyalty.map(e => e.id === bestEmp.id ? { ...e, status: 'dead', projectId: null, equipment: null, expeditionId: null } : e);
+          if (bestEmp.equipment) reclaimedGears.push(bestEmp.equipment);
+          dailyLog.push(`💀 平克顿枪杀了最得力的干将 "${bestEmp.name}" 抵债！`);
+        }
+        setLoan(prev => ({ ...prev, active: false, dueDay: null }));
+      }
+    }
+
+    if (reclaimedGears.length > 0) setInventory(prev => { const next = { ...prev }; reclaimedGears.forEach(g => next[g] = (next[g] || 0) + 1); return next; });
+
+    let finalEmployees = [...finalEmployeesWithLoyalty]; let triggeredEvent = null;
+    if (Math.random() < 0.20) {
+      triggeredEvent = RANDOM_EVENTS[getRandomInt(0, RANDOM_EVENTS.length - 1)];
+      if (roles.security && triggeredEvent.type === 'bad' && Math.random() < 0.5) {
+         dailyLog.push(`🛡️ 【安保拦截】安保队长成功将 [${triggeredEvent.title}] 扼杀在摇篮中！`);
+         rptEventName = `安保拦截: ${triggeredEvent.title}`;
+         rptEvent = 0;
+      } else {
+         const prevCashChange = cashChange;
+         const eventStates = { cashChange, valChange, finalEmployees };
+         triggeredEvent.apply(eventStates, RARITY_MAP);
+         cashChange = eventStates.cashChange; valChange = eventStates.valChange; finalEmployees = eventStates.finalEmployees;
+         rptEvent = cashChange - prevCashChange;
+         rptEventName = triggeredEvent.title;
+         dailyLog.push(`🎲 ${triggeredEvent.title}: ${triggeredEvent.desc}`);
+      }
+    }
+
+    setDailyReport({ day: day, proj: rptProj, asset: rptAsset, payroll: rptPayroll, loan: rptLoan, eventName: rptEventName, eventImpact: rptEvent, net: cashChange });
+
+    setEmployees(finalEmployees); setCash(c => c + cashChange); setValuation(v => Math.max(0, v + valChange));
+    setMarketEmployees(Array.from({ length: 3 }).map(() => generateEmployee(valuation + valChange)));
+    setProjects(Array.from({ length: 5 }).map(() => generateProject(valuation + valChange)));
+    setDay(d => d + 1);
+    if (gossipBuff > 0) { setGossipBuff(0); setGossipCost(1); }
+    if (dailyLog.length === 0) dailyLog.push("平安无事的一天。");
+    setLogs(prev => [...dailyLog.map(msg => `[第${day+1}天] ${msg}`), ...prev].slice(0, 50));
+    if (triggeredEvent && !rptEventName.includes('安保拦截')) setRandomEvent(triggeredEvent);
+    if ((cash + cashChange) >= 10000 && (valuation + valChange) >= 500) alert("🎉 恭喜上市通关！");
+  };
+
+  const renderEmployeeCard = (emp) => {
+    const isAppraised = emp.isAppraised; const rInfo = isAppraised ? (RARITY_MAP[emp.rarityKey] || RARITY_MAP['N']) : null;
+    const eq = emp.equipment ? EQUIPMENTS[emp.equipment] : null; const isDead = emp.status === 'dead';
+    const traitInfo = TRAITS[emp.trait];
+    
+    let expRemainingMs = 0; let isExpDone = false;
+    if (emp.status === 'expedition' && emp.expeditionEndTime) {
+       expRemainingMs = emp.expeditionEndTime - currentTime;
+       if (expRemainingMs <= 0) { expRemainingMs = 0; isExpDone = true; }
+    }
+
+    return (
+      <div key={emp.id} className={`flex flex-col p-4 rounded-xl border transition-all ${
+        isDead ? 'bg-stone-900 border-stone-800 opacity-70 grayscale' :
+        emp.status === 'internal' ? 'bg-indigo-950/20 border-indigo-800/50 shadow-inner' :
+        emp.status === 'expedition' ? 'bg-cyan-950/20 border-cyan-800/50 shadow-[0_0_15px_rgba(8,145,178,0.1)]' :
+        emp.status === 'working' ? 'bg-amber-950/30 border-amber-700/50' :
+        emp.status === 'resting' ? 'bg-red-950/20 border-red-800/50' :
+        emp.status === 'training' ? 'bg-purple-950/20 border-purple-700/50' :
+        isAppraised ? rInfo.border : 'bg-stone-800 border-stone-700'
+      }`}>
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={`font-bold text-lg ${isAppraised ? rInfo.color : 'text-stone-300'}`}>{emp.name}</span>
+              {isAppraised ? (
+                 <span className="bg-stone-900 px-1.5 py-0.5 rounded text-[10px] border border-stone-700 flex items-center gap-1">
+                   <span className={rInfo.color}>{rInfo.label}</span><span className="text-yellow-500">{'★'.repeat(rInfo.stars)}</span>
+                 </span>
+              ) : <span className="bg-stone-800 px-1.5 py-0.5 rounded text-[10px] border border-stone-600 text-stone-400">? 未鉴定</span>}
+            </div>
+            <div className="text-xs text-stone-400 mt-1 flex items-center gap-3">
+              <span>🎯 {emp.specialty || '无'}</span><span className="text-red-400/80">💸 ${emp.salary}</span>
+            </div>
+          </div>
+          <div className="text-right">
+             {emp.status === 'idle' && <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold border border-green-500/30">摸鱼中</span>}
+             {emp.status === 'internal' && <span className="bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold border border-indigo-500/30">内勤高管</span>}
+             {emp.status === 'working' && <span className="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-xs font-bold border border-amber-500/30">外包中</span>}
+             {emp.status === 'resting' && <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold border border-red-500/30">病休 ({emp.restDays}天)</span>}
+             {emp.status === 'training' && <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded text-xs font-bold border border-purple-500/30">进修 ({emp.trainingDays}天)</span>}
+             {emp.status === 'expedition' && <span className="bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded text-xs font-bold border border-cyan-500/30 animate-pulse">远征中</span>}
+             {isDead && <span className="bg-stone-800 text-stone-500 px-2 py-1 rounded text-xs font-bold border border-stone-700">已阵亡</span>}
+          </div>
+        </div>
+
+        {traitInfo && (
+           <div className={`mb-3 flex items-center gap-2 p-1.5 rounded-md border text-xs bg-stone-950/40 ${traitInfo.color}`} title={traitInfo.desc}>
+              <span className="font-bold border-r border-stone-700 pr-2">🎭 {traitInfo.name}</span>
+              <span className="text-stone-400 opacity-90 truncate">{traitInfo.desc}</span>
+           </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 mb-3 bg-stone-900/50 p-2 rounded-lg border border-stone-800/50">
+           <div>
+              <div className="text-[10px] text-stone-500 uppercase mb-1">战斗力</div>
+              <div className="flex items-end gap-1">
+                 <span className="font-mono text-lg leading-none">{emp.skill}</span>
+                 {eq?.id === 'mech_gun' && <span className="text-indigo-400 text-xs font-bold mb-0.5">(+15)</span>}
+                 {isAppraised && <span className="text-[10px] text-stone-500 mb-0.5">/ {rInfo.maxSkill}</span>}
+              </div>
+           </div>
+           <div>
+              <div className="text-[10px] text-stone-500 uppercase mb-1 flex justify-between">
+                <span>忠诚度</span><span className={emp.loyalty > 50 ? 'text-pink-400' : 'text-red-500 animate-pulse'}>{emp.loyalty ?? 100}%</span>
+              </div>
+              <div className="w-full bg-stone-800 rounded-full h-1.5 mt-1 overflow-hidden">
+                <div className={`h-full ${emp.loyalty > 50 ? 'bg-pink-500' : 'bg-red-500'}`} style={{ width: `${emp.loyalty ?? 100}%` }}></div>
+              </div>
+           </div>
+        </div>
+
+        {eq && (
+          <div className="mb-3 flex items-center justify-between bg-indigo-950/30 border border-indigo-500/30 px-2 py-1.5 rounded-lg text-xs">
+            <span className="text-indigo-300 flex items-center gap-1">{eq.icon} {eq.name}</span>
+            {emp.status === 'idle' && <button onClick={() => handleUnequip(emp.id)} className="text-indigo-400 hover:text-indigo-200">卸下</button>}
+          </div>
+        )}
+        
+        {emp.status === 'expedition' && (
+           <div className="mb-3 bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/50 text-center">
+              <div className="text-xs text-cyan-300 mb-1">{EXPEDITIONS.find(e => e.id === emp.expeditionId)?.name}</div>
+              {isExpDone ? (
+                 <button onClick={() => claimExpedition(emp.id)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-stone-900 font-bold py-1.5 rounded shadow-[0_0_10px_rgba(8,145,178,0.5)] animate-bounce mt-1">🎁 领取丰厚奖励！</button>
+              ) : <div className="font-mono text-cyan-400 text-xl tracking-widest font-bold drop-shadow-md">{formatTime(expRemainingMs)}</div>}
+           </div>
+        )}
+
+        {emp.status === 'internal' && (
+           <div className="mb-3 text-xs text-indigo-300 bg-indigo-950/40 p-2 rounded border border-indigo-800/50 text-center font-bold">
+             正在担任: {ROLES[Object.keys(roles).find(k => roles[k] === emp.id)]?.name}
+           </div>
+        )}
+
+        <div className="mt-auto pt-2 border-t border-stone-800 flex flex-wrap gap-2">
+          {equippingEmpId === emp.id ? (
+            <div className="w-full bg-stone-900 p-2 rounded-lg border border-indigo-500/50 z-10">
+              <div className="text-xs text-indigo-300 mb-2 flex justify-between"><span>选择装备:</span><button onClick={() => setEquippingEmpId(null)} className="text-stone-400">&times;</button></div>
+              <div className="flex flex-col gap-1">
+                {Object.entries(inventory).filter(([k,v])=>v>0).map(([k,v])=>(
+                  <button key={k} onClick={() => handleEquip(emp.id, k)} className="bg-indigo-900 hover:bg-indigo-700 text-xs px-2 py-1.5 rounded flex justify-between"><span className="text-indigo-100">{EQUIPMENTS[k].icon} {EQUIPMENTS[k].name}</span><span className="bg-indigo-950 px-1 rounded text-indigo-200">x{v}</span></button>
+                ))}
+                {Object.values(inventory).every(v=>v===0) && <div className="text-xs text-stone-500 text-center py-2">无装备</div>}
+              </div>
+            </div>
+          ) : (
+            <>
+              {!isAppraised && emp.status === 'idle' && <button onClick={() => appraiseEmployee(emp.id)} className="flex-1 bg-stone-800 hover:bg-cyan-900 text-cyan-300 border border-stone-700 text-xs py-1.5 rounded">🔍 鉴定</button>}
+              {emp.status === 'resting' && <button onClick={() => healEmployee(emp.id)} className="flex-1 bg-green-900/30 hover:bg-green-800/80 text-green-300 border border-green-800/50 text-xs py-1.5 rounded">💊 喂蛇油丸</button>}
+              {emp.status === 'training' && <button onClick={() => finishTraining(emp.id)} className="flex-1 bg-blue-900/30 hover:bg-blue-800/80 text-blue-300 border border-blue-800/50 text-xs py-1.5 rounded">📖 加速进修</button>}
+              {isDead && <button onClick={() => reviveEmployee(emp.id)} className="flex-1 bg-fuchsia-900/30 text-fuchsia-300 border border-fuchsia-800/50 text-xs py-1.5 rounded">✝️ 巫毒复活</button>}
+              
+              {emp.status === 'idle' && (
+                 <div className="flex w-full gap-2">
+                    {isAppraised && <button onClick={() => trainEmployee(emp.id)} className="flex-1 bg-purple-900/30 text-purple-300 border border-purple-800/50 text-xs py-1.5 rounded">📚 培训</button>}
+                    <button onClick={() => grantOptions(emp.id)} className="flex-1 bg-pink-900/30 text-pink-300 border border-pink-800/50 text-xs py-1.5 rounded">🥠 期权</button>
+                    {!emp.equipment && <button onClick={() => setEquippingEmpId(emp.id)} className="flex-1 bg-indigo-900/30 text-indigo-300 border border-indigo-800/50 text-xs py-1.5 rounded">🎒 装备</button>}
+                 </div>
+              )}
+              {emp.status !== 'expedition' && emp.status !== 'internal' && emp.status !== 'training' && (
+                <button onClick={() => fireEmployee(emp.id)} className="w-full bg-red-900/20 hover:bg-red-800 text-red-400 border border-red-900/50 text-xs py-1.5 rounded mt-1 transition">
+                  {isDead ? '🪦 掩埋 (-$50)' : `🥾 广进计划 (-$${(emp.salary || Math.floor(emp.cost / 10)) * (emp.trait==='nepotism'?15:5)})`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderInventoryItem = (icon, name, count, desc, type = 'consumable') => {
+    const isOwned = count > 0 || (type === 'asset' && count === true);
+    return (
+      <div className={`p-5 rounded-2xl border flex flex-col gap-3 transition-all ${isOwned ? 'bg-stone-800 border-stone-700 shadow-md' : 'bg-stone-900 border-stone-800 opacity-50 grayscale'}`}>
+         <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3">
+               <span className="text-3xl">{icon}</span>
+               <span className={`font-bold text-lg ${isOwned ? 'text-stone-200' : 'text-stone-500'}`}>{name}</span>
+            </div>
+            {type !== 'asset' && (
+              <span className={`px-2.5 py-1 rounded text-xs font-mono font-bold border ${isOwned ? 'bg-stone-900 text-amber-400 border-stone-700' : 'bg-stone-950 text-stone-600 border-stone-800'}`}>x {count}</span>
+            )}
+            {type === 'asset' && isOwned && (
+              <span className="bg-green-900/30 text-green-400 px-2 py-1 rounded text-xs font-bold border border-green-800/50">已收购</span>
+            )}
+         </div>
+         <p className="text-sm text-stone-400 leading-relaxed">{desc}</p>
+      </div>
+    );
+  };
+
+  const dailyBurn = employees.filter(e => e.status !== 'dead').reduce((sum, emp) => sum + (emp.salary || Math.floor(emp.cost / 10)), 0);
+
+  return (
+    <div className="min-h-screen bg-stone-950 text-stone-200 font-sans flex flex-col h-screen overflow-hidden relative">
+      
+      {achievementToast && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-yellow-600 border-2 border-yellow-300 text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(252,211,77,0.8)] z-[100] animate-bounce flex items-center gap-3">
+          <span className="text-3xl">{achievementToast.icon}</span><div><div className="text-xs text-yellow-200">🏆 成就解锁</div><div className="font-bold text-lg">{achievementToast.name}</div></div>
+        </div>
+      )}
+
+      {alertToast && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-red-950/90 border border-red-600 text-red-200 px-6 py-3 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[110] animate-fade-in flex items-center gap-3 backdrop-blur-md">
+          <span className="text-2xl">⚠️</span><div className="font-bold tracking-wide">{alertToast}</div>
+        </div>
+      )}
+
+      <header className="bg-stone-900 border-b border-stone-800 px-6 py-3 shrink-0 z-40 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md relative">
+        {loan.active && <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-red-900 text-red-200 text-xs font-bold px-4 py-0.5 rounded-b-lg border-x border-b border-red-700 animate-pulse shadow-md z-50">🏦 负债: ${loan.repay} | 剩余 {loan.dueDay - day} 天</div>}
+        <div className="flex items-center gap-4 w-full md:w-auto">
+           <div><h1 className="text-xl font-bold text-amber-500 tracking-wider">🤠 范德林德风投</h1><div className="text-xs text-amber-500/70 mt-0.5">总部: {CAMP_LEVELS[Number(campLevel) || 0]?.name || '未知'}</div></div>
+           <div className="ml-auto md:ml-4 flex gap-1.5">
+             <button onClick={()=>setShowSettings(true)} className="p-1.5 bg-stone-800 text-stone-400 rounded-md border border-stone-700">⚙️</button>
+             <button onClick={()=>setShowAchievements(true)} className="p-1.5 bg-stone-800 text-yellow-500 rounded-md border border-stone-700">🏆</button>
+             <button onClick={()=>setShowUpdateLog(true)} className="p-1.5 bg-stone-800 text-blue-400 rounded-md border border-stone-700">📢</button>
+             <button onClick={()=>setShowManual(true)} className="p-1.5 bg-stone-800 text-amber-400 rounded-md border border-stone-700">📖</button>
+           </div>
+        </div>
+        <div className="flex flex-wrap gap-2 justify-center w-full md:w-auto">
+           <div className={`flex flex-col items-center px-3 py-1 rounded-lg border min-w-[80px] ${cash < 200 ? 'bg-red-950 border-red-900 animate-pulse' : 'bg-stone-950 border-green-900/50'}`}>
+             <span className="text-[10px] text-stone-500 flex items-center gap-1">资金 <span className="text-red-400 font-mono tracking-tighter" title="每日员工薪资固定消耗">(-${dailyBurn}/天)</span></span>
+             <span className={`font-mono font-bold ${cash < 200 ? 'text-red-400' : 'text-green-400'}`}>${cash.toFixed(0)}</span>
+           </div>
+           <div className="flex flex-col items-center bg-stone-950 px-3 py-1 rounded-lg border border-blue-900/50 min-w-[80px]"><span className="text-[10px] text-stone-500">钻石</span><span className="font-mono text-blue-400 font-bold">💎 {diamonds}</span></div>
+           <div className="flex flex-col items-center bg-stone-950 px-3 py-1 rounded-lg border border-yellow-900/50 min-w-[80px]"><span className="text-[10px] text-stone-500">估值</span><span className="font-mono text-yellow-500 font-bold">⭐ {valuation}</span></div>
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+           <div className="text-right"><div className="text-[10px] text-stone-500">当前周期</div><div className="font-mono text-stone-200 font-bold">第 {day} 天</div></div>
+           <button onClick={nextDay} disabled={isBankrupt} className="bg-red-700 hover:bg-red-600 text-white px-6 py-2.5 rounded-lg font-bold shadow-[0_4px_14px_0_rgba(185,28,28,0.39)] disabled:opacity-50 whitespace-nowrap">结束今天 ⏭</button>
+        </div>
+      </header>
+
+      <div className="flex flex-col flex-1 overflow-hidden bg-stone-950">
+        <nav className="flex justify-center md:justify-start gap-1 p-2 bg-stone-900/50 border-b border-stone-800 overflow-x-auto">
+          {[
+            { id: 'recruit', icon: '🍺', label: '人才市场', sub: '招募/市场' },
+            { id: 'camp', icon: '🔫', label: '帮派营地', sub: `${employees.length}/${CAMP_LEVELS[Number(campLevel) || 0]?.maxEmployees || 6}` },
+            { id: 'business', icon: '📜', label: '业务大厅', sub: '外包/远征' },
+            { id: 'facilities', icon: '🏕️', label: '营地基建', sub: '科技/资产/商店' },
+            { id: 'casino', icon: '🎲', label: '地下赌场', sub: '赛马/博弈' },
+            { id: 'inventory', icon: '📦', label: '公司库房', sub: '物资/装备' },
+            { id: 'logs', icon: '📠', label: '历史电报', sub: '系统日志' }
+          ].map(t => (
+            <button key={t.id} onClick={() => setCurrentTab(t.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${currentTab === t.id ? 'bg-stone-800 text-amber-400 border border-stone-700 shadow-sm' : 'text-stone-400 hover:bg-stone-800/50'}`}>
+              <span className="text-xl">{t.icon}</span><div className="text-left hidden sm:block"><div className="text-sm font-bold leading-none">{t.label}</div><div className="text-[10px] opacity-70 mt-0.5">{t.sub}</div></div>
+            </button>
+          ))}
+        </nav>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar relative">
+          <div className="max-w-7xl mx-auto h-full">
+
+            {currentTab === 'recruit' && (
+              <div className="flex flex-col h-full bg-stone-900 rounded-xl border border-stone-800 shadow-xl overflow-hidden">
+                 <div className="p-6 border-b border-stone-800 flex justify-between items-center bg-stone-900/80">
+                    <div>
+                      <h2 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><span>🍺</span> 瓦伦丁酒馆</h2>
+                      <p className="text-stone-400 text-sm mt-1">在这里招募形形色色的西部打工人。</p>
+                    </div>
+                 </div>
+                 <div className="flex-1 overflow-y-auto p-6 bg-stone-950/50 custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {marketEmployees.map(emp => {
+                        const hrDiscount = roles.hr ? 0.8 : 1;
+                        const actualCost = Math.floor(emp.cost * hrDiscount);
+                        return (
+                        <div key={emp.id} className="p-5 bg-stone-800 rounded-xl border border-stone-700 flex flex-col hover:border-amber-700/50 transition shadow-lg relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 bg-stone-900/80 text-stone-500 text-[10px] px-2 py-1 rounded-bl-lg font-mono">ID: {emp.id}</div>
+                           <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <div className="font-bold text-stone-200 text-xl flex items-center gap-2">{emp.name}</div>
+                                <div className="bg-stone-700 text-stone-400 px-2 py-0.5 rounded text-xs border border-stone-600 w-fit mt-2">? 未知潜力与性格</div>
+                              </div>
+                           </div>
+                           
+                           <div className="grid grid-cols-2 gap-2 mb-4">
+                              <div className="bg-stone-900/50 p-2 rounded-lg border border-stone-800">
+                                <div className="text-[10px] text-stone-500 uppercase">初始战力</div><div className="font-mono text-stone-200 font-bold text-lg">{emp.skill}</div>
+                              </div>
+                              <div className="bg-stone-900/50 p-2 rounded-lg border border-stone-800">
+                                <div className="text-[10px] text-stone-500 uppercase">专业特长</div><div className="text-cyan-400 font-bold">{emp.specialty || '无'}</div>
+                              </div>
+                           </div>
+
+                           <div className="text-right mb-4 border-b border-stone-700 pb-2">
+                             <div className="text-[10px] text-stone-500 uppercase">要求日薪</div>
+                             <div className="text-red-400 font-mono font-bold text-xl">${emp.salary || Math.floor(emp.cost/10)}</div>
+                           </div>
+
+                           {!emp.backstory && emp.marketRumor && (
+                             <div className="text-xs text-stone-400 italic bg-stone-900/50 p-3 rounded-lg mb-4 leading-relaxed border-l-2 border-stone-600">
+                               💬 酒保悄悄说："{emp.marketRumor}"
+                             </div>
+                           )}
+
+                           {emp.backstory && <div className="text-xs text-purple-300 italic bg-purple-950/20 p-3 rounded-lg mb-4 leading-relaxed border border-purple-900/30">"{emp.backstory}"</div>}
+                           
+                           <button onClick={() => hireEmployee(emp)} className="mt-auto w-full bg-stone-700 hover:bg-amber-600 hover:text-stone-900 text-stone-200 border border-stone-600 py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all">
+                             发放 Offer <span className="bg-stone-900/50 px-2 py-0.5 rounded-md text-xs">-$ {actualCost}</span>
+                           </button>
+                        </div>
+                      )})}
+                    </div>
+                 </div>
+              </div>
+            )}
+
+            {currentTab === 'business' && (
+              <div className="flex flex-col bg-stone-900 rounded-xl border border-stone-800 shadow-xl overflow-hidden h-full">
+                 <div className="flex flex-col md:flex-row bg-stone-950 border-b border-stone-800">
+                    <div className="flex flex-1">
+                      <button onClick={() => setBusinessMode('bounty')} className={`flex-1 py-4 text-center font-bold transition text-lg flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${businessMode === 'bounty' ? 'bg-stone-900 text-amber-500 border-b-2 border-amber-500' : 'text-stone-500 hover:text-stone-300'}`}>
+                        <span>📜 短期外包</span> <span className="text-xs font-normal text-stone-500 leading-none">(游戏天数)</span>
+                      </button>
+                      <button onClick={() => setBusinessMode('expedition')} className={`flex-1 py-4 text-center font-bold transition text-lg flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${businessMode === 'expedition' ? 'bg-cyan-950/20 text-cyan-400 border-b-2 border-cyan-400' : 'text-stone-500 hover:text-stone-300'}`}>
+                        <span>🛫 挂机远征</span> <span className="bg-cyan-900/50 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded leading-none">真实时间</span>
+                      </button>
+                    </div>
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto p-6 bg-stone-950/50 custom-scrollbar">
+                   {businessMode === 'bounty' && (
+                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                       {projects.filter(p => !p.assignedTo).map(proj => (
+                          <div key={proj.id} className={`p-5 rounded-xl border transition-all flex flex-col shadow-lg bg-stone-800 border-stone-700 hover:border-amber-700/50`}>
+                             <div className="flex justify-between items-start mb-4">
+                               <div className={`font-bold text-xl leading-tight pr-2 text-stone-200`}>{proj.name}</div>
+                               <div className="bg-green-900/30 text-green-400 px-3 py-1.5 rounded-lg border border-green-800/50 font-mono font-bold text-lg shrink-0">+${proj.reward}</div>
+                             </div>
+                             <div className="flex gap-4 text-sm text-stone-400 mb-4 bg-stone-900/50 p-2 rounded-lg">
+                               <div>难度: <span className="text-white font-bold">{proj.difficulty}</span></div>
+                               <div>周期: <span className="text-white font-bold">1 天</span></div>
+                             </div>
+                             {proj.desc && <div className="text-xs text-blue-300/80 mb-4 italic border-l-2 border-blue-800 pl-3 leading-relaxed">"{proj.desc}"</div>}
+                             <button onClick={() => setAssigningProject(proj)} className="mt-auto w-full bg-stone-700 hover:bg-amber-600 hover:text-stone-900 text-stone-200 border border-stone-600 py-3 rounded-xl font-bold transition flex justify-center items-center gap-2">
+                               派遣员工 🎯
+                             </button>
+                          </div>
+                       ))}
+                       {projects.filter(p => !p.assignedTo).length === 0 && <div className="col-span-full text-center py-20 text-stone-500 border-2 border-dashed border-stone-800 rounded-xl text-lg">今日无可用项目，请等待明天刷新。</div>}
+                     </div>
+                   )}
+
+                   {businessMode === 'expedition' && (
+                     <div className="space-y-6 max-w-4xl mx-auto">
+                       <div className="bg-cyan-950/30 p-4 md:p-5 rounded-xl border border-cyan-900/50 text-sm text-cyan-200 flex items-start gap-4">
+                         <span className="text-3xl leading-none mt-0.5">⏱️</span>
+                         <div>
+                           <div className="font-bold mb-1.5 text-base">远征说明：</div>
+                           <p className="leading-relaxed text-stone-300">把高战力员工外派出去干黑活。远征不消耗游戏天数，而是走<strong className="text-white">现实真实时间</strong>。倒计时结束后即可领取极其丰厚的报酬！</p>
+                         </div>
+                       </div>
+                       {EXPEDITIONS.map(exp => (
+                          <div key={exp.id} className="p-5 md:p-6 rounded-2xl bg-stone-800 border border-stone-700 flex flex-col gap-5 shadow-lg hover:border-cyan-800 transition">
+                             <div className="flex flex-col xl:flex-row gap-5 items-start xl:items-center">
+                               <div className="flex-1 flex items-start sm:items-center gap-4 w-full">
+                                 <div className="text-4xl md:text-5xl bg-stone-900 p-3 md:p-4 rounded-2xl border border-stone-800 shadow-inner shrink-0 leading-none">{exp.icon}</div>
+                                 <div className="flex-1">
+                                   <div className="font-bold text-cyan-400 text-xl md:text-2xl mb-1">{exp.name}</div>
+                                   <div className="text-sm text-stone-400 leading-relaxed">{exp.desc}</div>
+                                 </div>
+                               </div>
+                               <div className="flex flex-col sm:flex-row gap-4 items-center w-full xl:w-auto shrink-0">
+                                 <div className="grid grid-cols-2 gap-3 bg-stone-900 p-3 rounded-xl border border-stone-800 w-full sm:w-auto">
+                                    <div className="text-center"><div className="text-[10px] text-stone-500 uppercase tracking-wider">真实耗时</div><div className="font-mono text-cyan-400 font-bold text-lg">{exp.timeDesc}</div></div>
+                                    <div className="text-center"><div className="text-[10px] text-stone-500 uppercase tracking-wider">战力门槛</div><div className="font-mono text-stone-300 font-bold text-lg">&gt;= {exp.reqSkill}</div></div>
+                                 </div>
+                                 <button onClick={() => setAssigningProject({...exp, isExpedition: true})} className="w-full sm:w-auto bg-cyan-900/30 hover:bg-cyan-600 hover:text-stone-900 text-cyan-400 border border-cyan-800/50 px-6 py-3.5 rounded-xl font-bold transition shadow-md whitespace-nowrap">
+                                   选择外派 🛫
+                                 </button>
+                               </div>
+                             </div>
+                             <div className="pt-4 border-t border-stone-700/50 flex flex-wrap items-center gap-2">
+                                <span className="text-xs text-stone-400 font-bold mr-1">预计收益:</span>
+                                <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50">资金 +${exp.rewards.cash}</span>
+                                {exp.rewards.diamonds && <span className="text-xs bg-blue-900/30 text-blue-300 px-2 py-1 rounded border border-blue-800/50">💎 +{exp.rewards.diamonds}</span>}
+                                {exp.rewards.randomGear && <span className="text-xs bg-indigo-900/30 text-indigo-300 px-2 py-1 rounded border border-indigo-800/50">🎒 保底神装 x1</span>}
+                             </div>
+                          </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+              </div>
+            )}
+
+            {currentTab === 'camp' && (
+              <div className="flex flex-col h-full">
+                
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-amber-500 mb-4 border-b border-stone-800 pb-2">👔 内务委任 (C-Suite)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {Object.keys(ROLES).map(roleId => {
+                       const role = ROLES[roleId];
+                       const isUnlocked = campLevel >= role.unlockLevel;
+                       const empId = roles[roleId];
+                       const emp = employees.find(e => e.id === empId);
+
+                       return (
+                         <div key={roleId} className={`p-4 rounded-xl border flex flex-col justify-between ${isUnlocked ? (emp ? 'bg-indigo-950/20 border-indigo-800/50 shadow-sm' : 'bg-stone-900 border-stone-700 hover:border-amber-600 cursor-pointer transition') : 'bg-stone-950 border-stone-800 opacity-50'}`} onClick={() => isUnlocked && setAssigningRole(roleId)}>
+                            <div>
+                                <div className="flex items-center gap-3 mb-3">
+                                   <span className="text-3xl">{role.icon}</span>
+                                   <div>
+                                     <div className={`font-bold ${isUnlocked ? 'text-indigo-400' : 'text-stone-500'}`}>{role.name}</div>
+                                     <div className="text-[10px] text-stone-500 uppercase">{isUnlocked ? (emp ? '点击更换/撤职' : '点击委派闲置员工') : `需要总部: ${CAMP_LEVELS[role.unlockLevel].name}`}</div>
+                                   </div>
+                                </div>
+                                <div className="text-xs text-stone-400 mb-4 leading-relaxed">{role.desc}</div>
+                            </div>
+                            {isUnlocked && emp && (
+                               <div className="bg-stone-900 px-3 py-2 rounded-lg border border-stone-700 flex justify-between items-center mt-auto">
+                                 <span className="text-stone-200 font-bold">{emp.name}</span>
+                                 <span className="text-xs bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded font-bold">在职</span>
+                               </div>
+                            )}
+                         </div>
+                       )
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mb-6 bg-stone-900 p-4 rounded-xl border border-stone-800 shadow-sm">
+                   <div><h2 className="text-xl font-bold text-amber-500">帮派花名册</h2><p className="text-xs text-stone-400 mt-1">当前容量: {employees.length}/{CAMP_LEVELS[Number(campLevel) || 0]?.maxEmployees || 6}</p></div>
+                   <div className="flex flex-col items-end">
+                     <button onClick={generateCampGossip} disabled={employees.length === 0 || diamonds < gossipCost} className="bg-green-900/30 text-green-400 border border-green-800 px-4 py-2 rounded-lg flex items-center gap-2 font-bold disabled:opacity-50 hover:bg-green-800/50 transition">
+                       <span>✨ 营地八卦</span> <span className="bg-green-950 px-1.5 py-0.5 rounded text-xs">-{gossipCost} 💎</span>
+                     </button>
+                     {gossipBuff > 0 && <span className="text-xs text-yellow-400 mt-1.5 font-bold animate-pulse">🔥 全员胜率 +{(gossipBuff * 100).toFixed(0)}%</span>}
+                   </div>
+                </div>
+                {employees.length === 0 ? <div className="flex-1 flex flex-col items-center justify-center text-stone-500 border-2 border-dashed border-stone-800 rounded-xl min-h-[300px]"><span className="text-6xl mb-4">🏕️</span><p>营地无人，去【人才市场】招点小弟吧！</p></div> : 
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">{employees.map(emp => renderEmployeeCard(emp))}</div>
+                }
+              </div>
+            )}
+
+            {currentTab === 'facilities' && (
+              <div className="max-w-5xl mx-auto space-y-6">
+                 <div className="bg-gradient-to-r from-amber-950/40 to-stone-900 p-6 md:p-8 rounded-2xl border border-amber-900/50 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-6">
+                    <div>
+                      <div className="text-xs text-amber-500 uppercase font-bold mb-2 tracking-wider">公司总部</div>
+                      <h2 className="text-3xl font-bold text-stone-200">📍 {CAMP_LEVELS[Number(campLevel) || 0]?.name || '未知'}</h2>
+                      <p className="text-stone-400 mt-2">容量: <span className="text-stone-200 font-bold">{CAMP_LEVELS[Number(campLevel) || 0]?.maxEmployees || 6} 人</span> | <span className="text-green-400 font-bold">胜率 +{((CAMP_LEVELS[Number(campLevel) || 0]?.buffRate || 0) * 100).toFixed(0)}%</span></p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                      {Number(campLevel) < CAMP_LEVELS.length - 1 ? (
+                        <>
+                          <div className="text-xs text-stone-400 hidden sm:block">下一级: {CAMP_LEVELS[Number(campLevel) + 1]?.name}</div>
+                          <button onClick={upgradeCamp} className={`w-full sm:w-auto px-8 py-4 rounded-xl font-bold shadow-lg transition text-lg ${cash >= (CAMP_LEVELS[Number(campLevel) + 1]?.cost || 999999) ? 'bg-amber-600 hover:bg-amber-500 text-stone-900' : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed'}`}>
+                            搬迁升级 (-${CAMP_LEVELS[Number(campLevel) + 1]?.cost})
+                          </button>
+                        </>
+                      ) : <div className="w-full sm:w-auto px-8 py-4 bg-stone-800/50 rounded-xl border border-stone-700 text-amber-500 font-bold text-lg text-center">🏢 已登顶硅谷之巅</div>}
+                    </div>
+                 </div>
+
+                 <div className="flex gap-2 border-b border-stone-800 pb-2 overflow-x-auto">
+                    <button onClick={() => setActiveBuildingTab('admin')} className={`px-6 py-3 rounded-xl font-bold transition whitespace-nowrap ${activeBuildingTab === 'admin' ? 'bg-stone-800 text-amber-400 shadow-sm border border-stone-700' : 'text-stone-500 hover:bg-stone-800/50'}`}>🏛️ 行政科技</button>
+                    <button onClick={() => setActiveBuildingTab('assets')} className={`px-6 py-3 rounded-xl font-bold transition whitespace-nowrap ${activeBuildingTab === 'assets' ? 'bg-stone-800 text-green-400 shadow-sm border border-stone-700' : 'text-stone-500 hover:bg-stone-800/50'}`}>💼 金融与产业</button>
+                    <button onClick={() => setActiveBuildingTab('shop')} className={`px-6 py-3 rounded-xl font-bold transition whitespace-nowrap ${activeBuildingTab === 'shop' ? 'bg-stone-800 text-cyan-400 shadow-sm border border-stone-700' : 'text-stone-500 hover:bg-stone-800/50'}`}>🛒 黑市商店</button>
+                 </div>
+
+                 {activeBuildingTab === 'admin' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       {Object.entries(upgrades).map(([key, upg]) => (
+                          <div key={key} className="bg-stone-900 p-6 rounded-2xl border border-stone-800 flex flex-col justify-between shadow-lg">
+                            <div>
+                              <div className="flex justify-between items-start mb-3">
+                                <span className="font-bold text-xl text-stone-200">{upg.name.split(' ')[0]}</span>
+                                <span className="bg-amber-900/30 text-amber-500 px-2.5 py-1 rounded text-sm font-mono border border-amber-800/50">Lv.{upg.level}/{upg.max}</span>
+                              </div>
+                              <p className="text-stone-400 mb-6">{upg.name.split('(')[1].replace(')', '')}</p>
+                            </div>
+                            {upg.level < upg.max ? <button onClick={() => buyUpgrade(key)} className={`w-full py-3 rounded-xl font-bold transition ${cash >= upg.cost ? 'bg-stone-700 hover:bg-stone-600 text-stone-200' : 'bg-stone-800 text-stone-600 cursor-not-allowed'}`}>投资升级 (-${upg.cost})</button> : <div className="w-full py-3 text-center text-stone-500 bg-stone-800/50 rounded-xl font-bold">已满级</div>}
+                          </div>
+                       ))}
+                    </div>
+                 )}
+
+                 {activeBuildingTab === 'assets' && (
+                    <div className="space-y-8 pb-10">
+                       <div className="bg-stone-900 rounded-2xl border border-red-900/50 shadow-xl overflow-hidden">
+                          <div className="bg-red-950/40 p-5 border-b border-red-900/50 flex justify-between items-center"><h3 className="font-bold text-red-400 text-lg">🏦 康沃尔财团信贷</h3><span className="text-xs text-red-300/70 border border-red-800 px-2 py-0.5 rounded uppercase tracking-widest">高危操作</span></div>
+                          <div className="p-6">
+                            <p className="text-stone-400 mb-6">借 $1000 救急。7 天后必须偿还 $1500。逾期将被平克顿暴力催收（没收全款并击毙最强员工）。</p>
+                            {loan.active ? (
+                              <div className="flex flex-col sm:flex-row justify-between items-center bg-red-950/20 p-4 rounded-xl border border-red-900/30 gap-4">
+                                <div className="text-center sm:text-left"><div className="text-red-400 font-bold text-xl mb-1">待还款: ${loan.repay}</div><div className="text-sm text-stone-400">到期时间: 第 {loan.dueDay} 天</div></div>
+                                <button onClick={repayLoan} className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold transition ${cash >= loan.repay ? 'bg-green-800 hover:bg-green-700 text-white shadow-md' : 'bg-stone-800 text-stone-600 cursor-not-allowed'}`}>提前结清 (-${loan.repay})</button>
+                              </div>
+                            ) : <button onClick={takeLoan} className="w-full bg-red-900/30 hover:bg-red-800/50 text-red-400 border border-red-800/50 py-4 rounded-xl font-bold transition text-lg">签署协议借入 $1000</button>}
+                          </div>
+                       </div>
+
+                       <div>
+                         <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4 pl-2">被动收益资产 (挂机生效)</h3>
+                         <div className="grid grid-cols-1 gap-4">
+                           {Object.entries(ASSETS_DATA).map(([key, asset]) => {
+                             const isOwned = assets[key];
+                             return (
+                              <div key={key} className={`bg-stone-900 p-5 rounded-2xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 shadow-sm transition ${isOwned ? 'border-green-900/50 bg-green-950/10' : 'border-stone-800 hover:border-stone-700'}`}>
+                                 <div className="w-full">
+                                    <div className={`font-bold text-xl flex items-center gap-2 mb-1 ${isOwned ? 'text-green-400' : 'text-stone-300'}`}>{asset.icon} {asset.name}</div>
+                                    <div className="text-stone-400">{asset.desc}</div>
+                                    <div className="text-sm font-mono mt-2 text-green-500/80 bg-green-950/20 w-fit px-2 py-1 rounded border border-green-900/30">收益: +${asset.dailyCash}/天 {asset.dailyVal > 0 ? `| +${asset.dailyVal}⭐/天` : ''}</div>
+                                 </div>
+                                 {isOwned ? <div className="px-6 py-3 bg-green-900/20 text-green-500 font-bold rounded-xl border border-green-800/30 shrink-0 w-full sm:w-auto text-center">已收购</div> : <button onClick={() => buyAsset(key)} className={`px-8 py-3 rounded-xl font-bold shrink-0 w-full sm:w-auto transition ${cash >= asset.cost ? 'bg-stone-700 hover:bg-stone-600 text-white shadow-md' : 'bg-stone-800 text-stone-600 cursor-not-allowed'}`}>收购 (-${asset.cost})</button>}
+                              </div>
+                             );
+                           })}
+                         </div>
+                       </div>
+                    </div>
+                 )}
+
+                 {activeBuildingTab === 'shop' && (
+                    <div className="space-y-8 pb-10">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="bg-stone-900 p-5 rounded-2xl border border-blue-900/30 flex justify-between items-center shadow-sm">
+                              <div><div className="font-bold text-blue-400 text-lg">💎 钻石袋 (+5)</div><div className="text-sm text-stone-500 mt-1">强效货币</div></div>
+                              <button onClick={() => { if (cash >= 500) { setCash(c => c - 500); setDiamonds(t => t + 5); } else showError("资金不足 $500！"); }} className={`px-5 py-2.5 rounded-xl font-bold transition ${cash >= 500 ? 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300' : 'bg-stone-800 text-stone-600'}`}>买 (-$500)</button>
+                           </div>
+                           <div className="bg-stone-900 p-5 rounded-2xl border border-cyan-900/30 flex justify-between items-center shadow-sm">
+                              <div><div className="font-bold text-cyan-400 text-lg">🔍 放大镜 (+1)</div><div className="text-sm text-stone-500 mt-1">鉴定潜能</div></div>
+                              <button onClick={() => { if (cash >= 30) { setCash(c => c - 30); setAppraisalTokens(t => t + 1); } else showError("资金不足 $30！"); }} className={`px-5 py-2.5 rounded-xl font-bold transition ${cash >= 30 ? 'bg-cyan-900/40 hover:bg-cyan-800/60 text-cyan-300' : 'bg-stone-800 text-stone-600'}`}>买 (-$30)</button>
+                           </div>
+                           <div className="bg-stone-900 p-5 rounded-2xl border border-green-900/30 flex justify-between items-center shadow-sm">
+                              <div><div className="font-bold text-green-400 text-lg">💊 蛇油丸 (+1)</div><div className="text-sm text-stone-500 mt-1">治愈伤员</div></div>
+                              <button onClick={() => { if (cash >= 80) { setCash(c => c - 80); setMedicines(t => t + 1); } else showError("资金不足 $80！"); }} className={`px-5 py-2.5 rounded-xl font-bold transition ${cash >= 80 ? 'bg-green-900/40 hover:bg-green-800/60 text-green-300' : 'bg-stone-800 text-stone-600'}`}>买 (-$80)</button>
+                           </div>
+                           <div className="bg-stone-900 p-5 rounded-2xl border border-blue-900/30 flex justify-between items-center shadow-sm">
+                              <div><div className="font-bold text-blue-400 text-lg">📖 速成手册 (+1)</div><div className="text-sm text-stone-500 mt-1">加速进修</div></div>
+                              <button onClick={() => { if (cash >= 100) { setCash(c => c - 100); setManuals(t => t + 1); } else showError("资金不足 $100！"); }} className={`px-5 py-2.5 rounded-xl font-bold transition ${cash >= 100 ? 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300' : 'bg-stone-800 text-stone-600'}`}>买 (-$100)</button>
+                           </div>
+                           <div className="bg-stone-900 p-5 rounded-2xl border border-fuchsia-900/30 flex justify-between items-center shadow-sm">
+                              <div><div className="font-bold text-fuchsia-400 text-lg">✝️ 巫毒娃娃 (+1)</div><div className="text-sm text-stone-500 mt-1">强行复活</div></div>
+                              <button onClick={() => { if (cash >= 300) { setCash(c => c - 300); setRevivals(t => t + 1); } else showError("资金不足 $300！"); }} className={`px-5 py-2.5 rounded-xl font-bold transition ${cash >= 300 ? 'bg-fuchsia-900/40 hover:bg-fuchsia-800/60 text-fuchsia-300' : 'bg-stone-800 text-stone-600'}`}>买 (-$300)</button>
+                           </div>
+                       </div>
+                       
+                       <div>
+                         <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4 pl-2">专属神装</h3>
+                         <div className="grid grid-cols-1 gap-4">
+                           {Object.entries(EQUIPMENTS).map(([key, eq]) => (
+                              <div key={key} className="bg-stone-900 p-5 rounded-2xl border border-indigo-900/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+                                 <div>
+                                    <div className="font-bold text-indigo-400 text-xl flex items-center gap-2 mb-1">{eq.icon} {eq.name}</div>
+                                    <div className="text-stone-400">{eq.desc}</div>
+                                 </div>
+                                 <button onClick={() => { if (cash >= eq.cost) { setCash(c => c - eq.cost); setInventory(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 })); } else showError(`资金不足 $${eq.cost}！`); }} className={`w-full sm:w-auto px-8 py-3 rounded-xl font-bold transition shadow-md ${cash >= eq.cost ? 'bg-indigo-900 hover:bg-indigo-800 text-indigo-200' : 'bg-stone-800 text-stone-600 cursor-not-allowed'}`}>买入 (-${eq.cost})</button>
+                              </div>
+                           ))}
+                         </div>
+                       </div>
+                    </div>
+                 )}
+              </div>
+            )}
+
+            {currentTab === 'casino' && (
+              <div className="flex flex-col h-full bg-stone-900 rounded-xl border border-stone-800 shadow-xl overflow-hidden">
+                 <div className="p-6 border-b border-stone-800 bg-stone-900/80 shrink-0">
+                    <h2 className="text-2xl font-bold text-yellow-500 flex items-center gap-2"><span>🎲</span> 瓦伦丁地下赛马场</h2>
+                    <p className="text-stone-400 text-sm mt-1">来这里碰碰运气吧，一夜暴富或是一无所有。梭哈是一种智慧。</p>
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-stone-950/50 custom-scrollbar flex flex-col relative">
+                    {isRacing ? (
+                       <div className="flex-1 flex flex-col justify-center items-center h-full w-full py-10 animate-fade-in">
+                          <div className="text-yellow-400 font-bold text-2xl md:text-3xl mb-8 animate-pulse tracking-widest drop-shadow-lg">🚩 比赛进行中 🚩</div>
+                          <div className="w-full max-w-4xl relative border-y-8 border-stone-700 bg-[#3e2723] rounded-lg p-2 overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
+                             <div className="absolute top-0 bottom-0 right-[12%] w-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIi8+PHJlY3QgeD0iNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIgZmlsbD0iIzAwMCIvPjxyZWN0IHk9IjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiLz48L3N2Zz4=')] z-0 shadow-lg"></div>
+                             <div className="absolute top-0 bottom-0 right-[12%] transform translate-x-6 text-sm font-black text-red-500/80 uppercase tracking-widest flex items-center">FINISH</div>
+                             
+                             {HORSES.map((h, i) => (
+                                <div key={h.id} className={`relative h-16 flex items-center border-b-2 border-stone-800/40 ${i === HORSES.length - 1 ? 'border-0' : ''}`}>
+                                   <div className="absolute left-2 w-20 md:w-28 text-[10px] md:text-xs font-bold text-stone-300/80 truncate z-10 bg-black/50 px-2 py-1 rounded">
+                                      {i + 1}道: {h.name}
+                                   </div>
+                                   <div className="absolute transition-all duration-75 ease-linear z-20 text-3xl md:text-4xl drop-shadow-md" style={{ left: `calc(10% + ${(raceProgress[h.id] || 0) * 0.75}%)` }}>
+                                     {selectedHorse === h.id ? (
+                                       <div className="relative">
+                                          <span className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded font-bold animate-bounce z-30">You</span>
+                                          <div className="transform -scale-x-100 inline-block">🐎</div>
+                                       </div>
+                                     ) : (
+                                       <div className="transform -scale-x-100 inline-block">🐎</div>
+                                     )}
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                    ) : (
+                       <div className="flex flex-col xl:flex-row gap-8 h-full animate-fade-in">
+                          <div className="flex-1">
+                            <h3 className="text-stone-400 font-bold mb-4 flex items-center gap-2"><span>🏇</span> 选择参赛马匹</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               {HORSES.map(horse => (
+                                  <div key={horse.id} onClick={() => { setSelectedHorse(horse.id); setLastBetResult(null); }} className={`p-5 rounded-2xl border-2 cursor-pointer transition-all relative shadow-md flex flex-col justify-between ${selectedHorse === horse.id ? 'border-yellow-500 bg-yellow-950/20 shadow-[0_0_20px_rgba(234,179,8,0.15)] transform scale-[1.02] z-10' : 'border-stone-700 bg-stone-800 hover:border-stone-500'}`}>
+                                     {selectedHorse === horse.id && <div className="absolute top-3 right-3 bg-yellow-500 text-stone-900 text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-md">已选择</div>}
+                                     <div>
+                                       <div className={`font-bold text-xl mb-2 ${horse.color}`}>🐎 {horse.name}</div>
+                                       <p className="text-xs text-stone-400 mb-4 leading-relaxed">{horse.desc}</p>
+                                     </div>
+                                     <div className="flex justify-between items-end border-t border-stone-700/50 pt-3 mt-auto">
+                                        <div className="text-xs text-stone-500 font-mono flex flex-col">
+                                           <span>基础胜率</span>
+                                           <span className="text-base font-bold text-stone-300">{(horse.chance * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <div className="bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-700 text-center">
+                                           <div className="text-[10px] text-stone-500 uppercase tracking-widest">赔率</div>
+                                           <div className="font-mono text-yellow-400 font-bold text-lg">{horse.multiplier}x</div>
+                                        </div>
+                                     </div>
+                                  </div>
+                               ))}
+                            </div>
+                          </div>
+
+                          <div className="w-full xl:w-[400px] shrink-0 flex flex-col gap-4">
+                             <div className="bg-stone-800 p-6 md:p-8 rounded-3xl border border-stone-700 flex flex-col items-center w-full shadow-lg xl:sticky top-0">
+                                <div className="text-stone-300 mb-4 font-bold text-lg uppercase tracking-wider">下注金额</div>
+                                <div className="flex items-center justify-center gap-3 mb-6 w-full bg-stone-900 rounded-2xl border-2 border-stone-600 focus-within:border-yellow-500 transition-colors p-2 shadow-inner">
+                                   <span className="text-3xl text-stone-500 font-bold pl-4">$</span>
+                                   <input type="number" value={betAmount} onChange={(e) => setBetAmount(Math.max(10, Number(e.target.value)))} className="bg-transparent text-yellow-400 text-4xl font-mono font-bold py-2 px-2 w-full text-center outline-none" min="10" />
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 mb-8 w-full">
+                                   <button onClick={() => setBetAmount(10)} className="bg-stone-700 hover:bg-stone-600 text-stone-200 py-2 rounded-xl font-bold text-sm transition">Min</button>
+                                   <button onClick={() => setBetAmount(b => b + 10)} className="bg-stone-700 hover:bg-stone-600 text-stone-200 py-2 rounded-xl font-bold text-sm transition">+10</button>
+                                   <button onClick={() => setBetAmount(b => b + 100)} className="bg-stone-700 hover:bg-stone-600 text-stone-200 py-2 rounded-xl font-bold text-sm transition">+100</button>
+                                   <button onClick={() => setBetAmount(cash)} className="bg-red-900/40 hover:bg-red-800/80 text-red-300 border border-red-800/50 py-2 rounded-xl font-bold text-sm transition">All In</button>
+                                </div>
+                                <button onClick={handleBet} disabled={cash < 10} className="w-full bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-stone-900 py-4 rounded-2xl font-black text-xl transition shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest border border-yellow-400/50 transform active:scale-[0.98]">
+                                   确认下注
+                                </button>
+                             </div>
+                             
+                             {lastBetResult && (
+                               <div className={`p-5 rounded-2xl border flex flex-col items-center text-center w-full font-bold animate-fade-in shadow-lg ${lastBetResult.type === 'win' ? 'bg-green-950/60 border-green-500 text-green-400' : 'bg-red-950/60 border-red-500 text-red-400'}`}>
+                                  <div className="text-4xl mb-2">{lastBetResult.type === 'win' ? '🤑' : '💸'}</div>
+                                  <div>{lastBetResult.msg}</div>
+                               </div>
+                             )}
+                          </div>
+                       </div>
+                    )}
+                 </div>
+              </div>
+            )}
+
+            {currentTab === 'inventory' && (
+              <div className="flex flex-col h-full bg-stone-900 rounded-xl border border-stone-800 shadow-xl overflow-hidden">
+                 <div className="p-6 border-b border-stone-800 bg-stone-900/80">
+                    <h2 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><span>📦</span> 公司库房</h2>
+                    <p className="text-stone-400 text-sm mt-1">查看您当前拥有的所有物资、神装和产业。运筹帷幄，方能决胜千里。</p>
+                 </div>
+                 <div className="flex-1 overflow-y-auto p-6 bg-stone-950/50 custom-scrollbar space-y-8">
+                    <div>
+                       <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4 pl-2 flex items-center gap-2"><span>🛠️</span> 生存耗材</h3>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {renderInventoryItem('🔍', '鉴定放大镜', appraisalTokens, '用于揭示未鉴定员工的潜力和上限。', 'consumable')}
+                          {renderInventoryItem('💊', '祖传蛇油丸', medicines, '瞬间治愈病休中的员工，满血复活。', 'consumable')}
+                          {renderInventoryItem('📖', '战术速成手册', manuals, '让进修中的员工瞬间领悟，立刻结束脱产培训。', 'consumable')}
+                          {renderInventoryItem('✝️', '巫毒复活娃娃', revivals, '强行将阵亡的员工从地狱拉回工位。', 'consumable')}
+                          {renderInventoryItem('💎', '钻石', diamonds, '极其稀有的高级货币，用于请皮尔逊散播八卦。', 'consumable')}
+                       </div>
+                    </div>
+                    <div>
+                       <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4 pl-2 flex items-center gap-2"><span>🎒</span> 专属神装</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          {Object.entries(EQUIPMENTS).map(([key, eq]) => 
+                             renderInventoryItem(eq.icon, eq.name, inventory[key] || 0, eq.desc, 'gear')
+                          )}
+                       </div>
+                    </div>
+                    <div>
+                       <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4 pl-2 flex items-center gap-2"><span>🎩</span> 不动产投资</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-10">
+                          {Object.entries(ASSETS_DATA).map(([key, asset]) => 
+                             renderInventoryItem(asset.icon, asset.name, assets[key], asset.desc, 'asset')
+                          )}
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            )}
+
+            {currentTab === 'logs' && (
+              <div className="h-full bg-black rounded-2xl border border-stone-800 p-6 md:p-8 flex flex-col shadow-inner">
+                 <div className="mb-6 pb-4 border-b border-stone-800"><h2 className="text-2xl font-bold text-stone-500 font-mono tracking-widest uppercase">System_Logs</h2></div>
+                 <div className="overflow-y-auto flex-1 pr-4 custom-scrollbar text-sm space-y-3 font-mono">
+                  {logs.map((log, i) => {
+                     let color = 'text-stone-400'; let bColor = 'border-stone-700'; let bg = 'bg-stone-900/30';
+                     if (log.includes('捷报') || log.includes('归来') || log.includes('委任')) { color = 'text-green-400'; bColor = 'border-green-500'; bg = 'bg-green-950/10'; }
+                     if (log.includes('噩耗') || log.includes('跑路') || log.includes('暴力催收')) { color = 'text-red-400 font-bold'; bColor = 'border-red-600'; bg = 'bg-red-950/10'; }
+                     if (log.includes('受挫') || log.includes('贷款') || log.includes('❌') || log.includes('撤销')) { color = 'text-red-300'; bColor = 'border-red-400/50'; bg = 'bg-red-950/10'; }
+                     if (log.includes('升级') || log.includes('收购') || log.includes('离线收益')) { color = 'text-amber-300'; bColor = 'border-amber-500'; bg = 'bg-amber-950/10'; }
+                     if (log.includes('外派') || log.includes('赛马')) { color = 'text-cyan-300'; bColor = 'border-cyan-500'; bg = 'bg-cyan-950/10'; }
+                     return <div key={i} className={`border-l-4 pl-4 py-2 ${bg} rounded-r-lg ${color} ${bColor}`}>{log}</div>
+                  })}
+                 </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {assigningRole && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl max-h-[85vh] overflow-hidden">
+             <div className="p-6 border-b border-stone-800 bg-stone-950 flex justify-between items-start">
+                <div>
+                  <div className="text-xs text-stone-500 uppercase tracking-wider mb-2">委任高管</div>
+                  <h3 className="text-2xl font-bold text-indigo-400">{ROLES[assigningRole].icon} {ROLES[assigningRole].name}</h3>
+                  <p className="text-sm text-stone-400 mt-2">{ROLES[assigningRole].desc}</p>
+                </div>
+                <button onClick={() => setAssigningRole(null)} className="text-stone-500 hover:text-white p-2 text-3xl leading-none">&times;</button>
+             </div>
+             <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-stone-900 space-y-3">
+                {roles[assigningRole] && (
+                   <button onClick={() => handleAssignRole(assigningRole, null)} className="w-full bg-red-950/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 py-3 rounded-xl font-bold mb-4 transition shadow-sm">
+                     撤销当前 {employees.find(e=>e.id===roles[assigningRole])?.name} 的职务
+                   </button>
+                )}
+                <div className="text-sm text-stone-500 mb-2">请选择一名处于【摸鱼中】的员工进行委任：</div>
+                {employees.filter(e => e.status === 'idle').map(emp => (
+                   <div key={emp.id} onClick={() => handleAssignRole(assigningRole, emp.id)} className={`group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 bg-stone-800 rounded-xl border border-stone-700 hover:border-indigo-500 cursor-pointer shadow-md transition-all`}>
+                      <div>
+                         <div className="font-bold text-stone-200 text-xl flex items-center gap-2 mb-1">{emp.name}</div>
+                         <div className="text-sm text-stone-400">当前战力: <span className="font-mono text-stone-200">{emp.skill}</span> | 特长: <span className="text-cyan-400">{emp.specialty||'无'}</span></div>
+                      </div>
+                      <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t border-stone-700 pt-3 sm:border-t-0 sm:pt-0">
+                         <div className="px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm bg-stone-700 text-stone-300 group-hover:bg-indigo-600 group-hover:text-stone-100">
+                           委以重任
+                         </div>
+                      </div>
+                   </div>
+                ))}
+                {employees.filter(e => e.status === 'idle').length === 0 && <div className="text-center py-12 text-stone-500 border-2 border-dashed border-stone-700 rounded-xl text-lg">当前没有处于【摸鱼中】的空闲员工。</div>}
+             </div>
+          </div>
+        </div>
+      )}
+
+      {tutorialStep > 0 && tutorialStep <= 5 && (
+        <div className="fixed bottom-8 right-8 z-[100] max-w-sm bg-stone-900 border border-amber-600 p-6 rounded-2xl shadow-[0_0_40px_rgba(245,158,11,0.3)] animate-bounce-slow">
+          <div className="flex items-start gap-5">
+            <div className="text-6xl drop-shadow-md">🤠</div>
+            <div className="flex-1">
+               <div className="flex justify-between items-center mb-3">
+                 <h3 className="text-amber-400 font-bold text-lg">达奇的创业指导</h3>
+                 <span className="text-[10px] font-mono bg-stone-800 text-stone-400 px-2 py-0.5 rounded-full border border-stone-600">{tutorialStep}/5</span>
+               </div>
+               {tutorialStep === 1 && <p className="text-sm text-stone-300 leading-relaxed">欢迎来到硅谷！我是达奇。我们现在一穷二白，但我们需要更多的 MONEY！准备好学习怎么当资本家了吗？</p>}
+               {tutorialStep === 2 && <p className="text-sm text-stone-300 leading-relaxed">第一步：在<strong className="text-amber-500">【人才市场】</strong>，花钱给这些求职者发 Offer，<strong className="text-green-400">招募</strong>一个小弟。</p>}
+               {tutorialStep === 3 && <p className="text-sm text-stone-300 leading-relaxed">第二步：光吃饭不干活可不行！在<strong className="text-amber-500">【业务大厅】</strong>点击一个项目的<strong className="text-green-400">派遣员工</strong>，把小弟派出去！</p>}
+               {tutorialStep === 4 && <p className="text-sm text-stone-300 leading-relaxed">第三步：万事俱备。点击顶部红色的<strong className="text-red-400">【结束今天】</strong>按钮，进入明天看结算结果！</p>}
+               {tutorialStep === 5 && <p className="text-sm text-stone-300 leading-relaxed">完美！你已经掌握了精髓。去<strong className="text-cyan-400">【营地基建】</strong>买道具、搞投资吧。记住，千万别让资金变成负数！</p>}
+               <div className="mt-5 text-right flex justify-between items-center">
+                 {tutorialStep > 1 && tutorialStep < 5 ? (
+                    <button onClick={() => setTutorialStep(-1)} className="text-stone-500 hover:text-stone-300 text-xs underline transition">跳过教程</button>
+                 ) : <div></div>}
+                 {tutorialStep === 1 && <button onClick={() => { setTutorialStep(2); setCurrentTab('recruit'); }} className="bg-amber-600 hover:bg-amber-500 text-stone-900 px-5 py-2 rounded-xl font-bold text-sm shadow-lg transition transform hover:scale-105">开始打工</button>}
+                 {tutorialStep === 5 && <button onClick={() => setTutorialStep(-1)} className="bg-amber-600 hover:bg-amber-500 text-stone-900 px-5 py-2 rounded-xl font-bold text-sm shadow-lg transition transform hover:scale-105">我已出师</button>}
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {offlineReport && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 animate-fade-in backdrop-blur-md">
+          <div className="bg-stone-900 border-2 border-green-800 rounded-2xl max-w-md w-full p-8 text-center shadow-[0_0_50px_rgba(22,163,74,0.2)]">
+             <div className="text-6xl mb-4">🌙</div>
+             <h2 className="text-3xl font-bold text-green-400 mb-2">欢迎回来，CEO！</h2>
+             <p className="text-stone-400 mb-6 text-sm">在您离线的 <span className="text-white font-bold">{offlineReport.hours}</span> 小时里，您的产业依然在自动运转，并为您赚取了丰厚的被动收益：</p>
+             <div className="bg-stone-950 p-6 rounded-xl border border-stone-800 mb-8 space-y-4">
+                {offlineReport.cash > 0 && <div className="flex justify-between items-center"><span className="text-stone-500 text-lg">现金流入</span><span className="font-mono text-green-400 font-bold text-xl">+$ {offlineReport.cash}</span></div>}
+                {offlineReport.val > 0 && <div className="flex justify-between items-center"><span className="text-stone-500 text-lg">估值增长</span><span className="font-mono text-yellow-400 font-bold text-xl">+⭐ {offlineReport.val}</span></div>}
+             </div>
+             <button onClick={() => setOfflineReport(null)} className="w-full bg-green-800 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg">领取收益并开始工作</button>
+          </div>
+        </div>
+      )}
+
+      {assigningProject && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-3xl w-full flex flex-col shadow-2xl max-h-[85vh] overflow-hidden">
+             <div className="p-6 border-b border-stone-800 bg-stone-950 flex justify-between items-start">
+                <div>
+                  <div className="text-xs text-stone-500 uppercase tracking-wider mb-2">正在分配人员</div>
+                  <h3 className="text-2xl font-bold text-stone-200">{assigningProject.isExpedition ? '🛫 ' : ''}{assigningProject.name}</h3>
+                  {assigningProject.isExpedition ? (
+                    <div className="text-sm text-cyan-400 mt-2 flex gap-4 bg-cyan-950/20 w-fit px-3 py-1.5 rounded-lg border border-cyan-900/30">
+                      <span>要求战力: <span className="font-bold">{assigningProject.reqSkill}</span></span>
+                      <span>耗时: <span className="font-bold">{assigningProject.timeDesc}</span></span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-stone-400 mt-2 flex gap-4 bg-stone-800 w-fit px-3 py-1.5 rounded-lg border border-stone-700">
+                       <span>难度: <span className="text-white font-bold">{assigningProject.difficulty}</span></span>
+                       <span className="text-green-400">报酬: <span className="font-bold">${assigningProject.reward}</span></span>
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setAssigningProject(null)} className="text-stone-500 hover:text-white p-2 text-3xl leading-none">&times;</button>
+             </div>
+             <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-stone-900 space-y-3">
+                {employees.filter(e => e.status === 'idle').map(emp => {
+                   let canDispatch = true; let chanceDisplay = null;
+                   if (assigningProject.isExpedition) {
+                      const effSkill = emp.skill + (emp.equipment === 'mech_gun' ? 15 : 0);
+                      if (effSkill < assigningProject.reqSkill) canDispatch = false;
+                   } else {
+                      const chance = getWinChance(emp, assigningProject);
+                      chanceDisplay = <div className={`font-mono font-bold text-xl ${chance > 0.7 ? 'text-green-400' : chance > 0.4 ? 'text-yellow-400' : 'text-red-500'}`}>{(chance * 100).toFixed(0)}%</div>;
+                   }
+                   return (
+                     <div key={emp.id} onClick={() => { if(canDispatch) assigningProject.isExpedition ? handleAssignExpedition(emp.id, assigningProject.id) : handleAssignProject(emp.id, assigningProject.id); }} className={`group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 bg-stone-800 rounded-xl border ${canDispatch ? 'border-stone-700 hover:border-amber-500 cursor-pointer shadow-md' : 'border-stone-800 opacity-50 cursor-not-allowed'} transition-all`}>
+                        <div>
+                           <div className="font-bold text-stone-200 text-xl flex items-center gap-2 mb-1">{emp.name} {emp.specialty && !assigningProject.isExpedition && assigningProject.name.includes(emp.specialty) && <span className="text-xs bg-cyan-900/50 text-cyan-400 px-2 py-0.5 rounded border border-cyan-800">特长对口</span>}</div>
+                           <div className="text-sm text-stone-400">当前战力: <span className="font-mono text-stone-200">{emp.skill}</span> {emp.equipment==='mech_gun'&&<span className="text-indigo-400 font-bold">(+15 装备加成)</span>}</div>
+                        </div>
+                        <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t border-stone-700 pt-3 sm:border-t-0 sm:pt-0">
+                           {assigningProject.isExpedition ? (
+                              !canDispatch && <div className="text-red-500 text-sm font-bold bg-red-950/30 px-3 py-1 rounded">战力不达标</div>
+                           ) : <div className="text-right flex items-center gap-3"><div className="text-xs text-stone-500 uppercase tracking-wider">预计胜率</div>{chanceDisplay}</div>}
+                           {canDispatch && <div className={`px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${assigningProject.isExpedition ? 'bg-cyan-900/30 text-cyan-300 border border-cyan-800/50 group-hover:bg-cyan-600 group-hover:text-stone-900' : 'bg-stone-700 text-stone-300 group-hover:bg-amber-600 group-hover:text-stone-900'}`}>{assigningProject.isExpedition ? '外派远征' : '指派执行'}</div>}
+                        </div>
+                     </div>
+                   );
+                })}
+                {employees.filter(e => e.status === 'idle').length === 0 && <div className="text-center py-12 text-stone-500 border-2 border-dashed border-stone-700 rounded-xl text-lg">当前没有处于【摸鱼中】的空闲员工。</div>}
+             </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-stone-800"><h2 className="text-xl font-bold text-stone-200">⚙️ 系统设置</h2><button onClick={() => setShowSettings(false)} className="text-stone-500 hover:text-white text-2xl">&times;</button></div>
+            <div className="space-y-3">
+              <button onClick={() => { saveGame(); setShowSettings(false); }} className="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-3 rounded-xl border border-stone-700 transition font-bold">💾 手动存档</button>
+              <button onClick={() => { if(loadGame()) setShowSettings(false); }} className="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-3 rounded-xl border border-stone-700 transition font-bold">📂 读取存档</button>
+              <button onClick={() => { clearSave(); setShowSettings(false); }} className="w-full bg-red-950/30 hover:bg-red-900/50 text-red-400 py-3 rounded-xl border border-red-900/50 transition mt-6 font-bold">🗑️ 删档重开</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isBankrupt && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[90] p-4 animate-fade-in backdrop-blur-md">
+          <div className="bg-stone-900 border border-red-900 rounded-2xl max-w-md w-full p-8 flex flex-col items-center shadow-[0_0_50px_rgba(185,28,28,0.2)] text-center"><div className="text-6xl mb-4">📉</div><h2 className="text-3xl font-bold text-red-500 mb-2">破产清算</h2><p className="text-stone-400 mb-8">资金链断裂 (${cash.toFixed(0)})。员工跑路，公司被查封。</p><button onClick={restartGame} className="bg-red-800 hover:bg-red-700 text-white font-bold py-3 px-10 rounded-xl shadow-lg w-full">🔄 重新创业</button></div>
+        </div>
+      )}
+
+      {randomEvent && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4 animate-fade-in backdrop-blur-sm">
+          <div className={`border rounded-2xl max-w-sm w-full p-8 flex flex-col items-center shadow-2xl text-center bg-stone-900 ${randomEvent.type === 'good' ? 'border-green-800/50 shadow-[0_0_30px_rgba(22,163,74,0.2)]' : 'border-red-800/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]'}`}><div className="text-6xl mb-4 animate-bounce">{randomEvent.icon}</div><h2 className={`text-2xl font-bold mb-4 ${randomEvent.type === 'good' ? 'text-green-400' : 'text-red-400'}`}>{randomEvent.title}</h2><p className="text-stone-300 mb-8">{randomEvent.desc}</p><button onClick={() => setRandomEvent(null)} className="bg-stone-800 hover:bg-stone-700 text-white font-bold py-3 px-10 rounded-xl border border-stone-700 w-full transition">确认</button></div>
+        </div>
+      )}
+
+      {showUpdateLog && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col"><div className="flex justify-between items-center p-6 border-b border-stone-800"><h2 className="text-xl font-bold text-stone-200">📢 版本更新</h2><button onClick={() => setShowUpdateLog(false)} className="text-stone-500 hover:text-white text-2xl">&times;</button></div><div className="p-6 overflow-y-auto custom-scrollbar text-stone-300 space-y-6">{VERSION_HISTORY.map((ver, idx) => (<div key={ver.version} className={`relative ${idx === 0 ? 'bg-stone-800 p-5 rounded-xl border border-stone-700 shadow-md' : 'border-l-2 border-stone-700 pl-5 py-2'}`}>{idx === 0 && <div className="absolute top-0 right-0 bg-blue-600/20 text-blue-400 text-[10px] px-3 py-1 rounded-bl-lg rounded-tr-xl font-bold uppercase tracking-wider">最新版本</div>}<h3 className={`text-xl font-bold mb-3 flex items-center gap-3 ${idx === 0 ? 'text-stone-200' : 'text-stone-400'}`}>{ver.version} <span className="text-sm text-stone-500 font-normal">{ver.title}</span></h3><ul className="list-disc pl-5 space-y-1.5 text-sm text-stone-400">{ver.features.map((f, i) => <li key={i} className="leading-relaxed">{f}</li>)}</ul></div>))}</div></div>
+        </div>
+      )}
+
+      {showAchievements && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col"><div className="flex justify-between items-center p-6 border-b border-stone-800"><h2 className="text-xl font-bold text-yellow-500">🏆 帮派成就室 ({unlockedAchievements.length} / {ACHIEVEMENTS.length})</h2><button onClick={() => setShowAchievements(false)} className="text-stone-500 hover:text-white text-2xl">&times;</button></div><div className="p-6 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{ACHIEVEMENTS.map(ach => { const isUnlocked = unlockedAchievements.includes(ach.id); return (<div key={ach.id} className={`flex flex-col gap-3 p-5 rounded-xl border transition-all ${isUnlocked ? 'bg-yellow-950/10 border-yellow-700/50 shadow-sm' : 'bg-stone-900 border-stone-800 opacity-50 grayscale'}`}><div className="text-4xl">{ach.icon}</div><div><div className={`font-bold text-lg mb-1 ${isUnlocked ? 'text-yellow-400' : 'text-stone-400'}`}>{ach.name}</div><div className="text-xs text-stone-500 leading-relaxed">{ach.desc}</div></div></div>); })}</div></div>
+        </div>
+      )}
+
+      {showManual && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-stone-900 border border-stone-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-stone-800"><h2 className="text-xl font-bold text-amber-500">📖 员工手册</h2><button onClick={() => setShowManual(false)} className="text-stone-500 hover:text-white text-2xl leading-none">&times;</button></div>
+            <div className="p-6 overflow-y-auto custom-scrollbar text-sm text-stone-300 space-y-6">
+              <p className="italic text-stone-400 bg-stone-800 p-4 rounded-xl">本手册指导你如何在这个残酷的狂野西部生存并实现最终的 IPO（上市：资金$10000+估值500）。</p>
+              <div><h3 className="font-bold text-amber-400 mb-2 border-b border-stone-800 pb-1">1. 新手起步</h3><ul className="list-disc pl-5 space-y-1 text-stone-400"><li>在【人才市场】招募小弟，在【业务大厅】左侧接取短期项目。</li><li>在【帮派营地】使用放大镜鉴定员工品质，决定其成长上限。</li></ul></div>
+              <div><h3 className="font-bold text-amber-400 mb-2 border-b border-stone-800 pb-1">2. 挂机与真实时间收益</h3><ul className="list-disc pl-5 space-y-1 text-stone-400"><li><span className="text-green-400">离线产业分红</span>：只要在基建购买了资产，关闭网页后系统也会按小时为您积攒挂机收益（最高累积24小时）。</li><li><span className="text-cyan-400">长期黑工远征</span>：在【业务大厅】可切换至远征面板。把员工外派后，无视游戏天数，只需挂机等待真实时间即可收获巨额奖励。</li></ul></div>
+              <div><h3 className="font-bold text-amber-400 mb-2 border-b border-stone-800 pb-1">3. 风险与破产</h3><ul className="list-disc pl-5 space-y-1 text-stone-400"><li>每天结算会扣除全员<span className="text-red-400">日薪</span>。资金为负即破产。</li><li>资金不足可去借<span className="text-red-500">高利贷</span>。逾期未还会被枪杀得力员工抵债。</li></ul></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dailyReport && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[85] p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-[#e8dcc4] text-stone-900 border-8 border-double border-stone-700 rounded-lg max-w-sm w-full p-6 shadow-[0_0_40px_rgba(0,0,0,0.8)] font-mono relative">
+            <div className="text-center border-b-2 border-stone-800 pb-4 mb-5">
+               <h2 className="text-2xl font-bold uppercase tracking-widest text-stone-900">Western Union</h2>
+               <div className="text-xs text-stone-600 mt-1 font-bold">▪ TELEGRAM REPORT ▪</div>
+               <div className="text-sm font-bold bg-stone-800 text-[#e8dcc4] inline-block px-3 py-1 mt-2 rounded">第 {dailyReport.day} 天结算明细</div>
+            </div>
+            
+            <div className="space-y-3 text-sm font-bold">
+               <div className="flex justify-between border-b border-stone-400 border-dashed pb-1">
+                 <span className="text-stone-700">外包项目收入:</span>
+                 <span className="text-green-700">+{dailyReport.proj}</span>
+               </div>
+               <div className="flex justify-between border-b border-stone-400 border-dashed pb-1">
+                 <span className="text-stone-700">产业被动分红:</span>
+                 <span className="text-green-700">+{dailyReport.asset}</span>
+               </div>
+               <div className="flex justify-between border-b border-stone-400 border-dashed pb-1">
+                 <span className="text-stone-700">员工薪资支出:</span>
+                 <span className="text-red-700">-{dailyReport.payroll}</span>
+               </div>
+               {dailyReport.loan !== 0 && (
+                 <div className="flex justify-between border-b border-stone-400 border-dashed pb-1">
+                   <span className="text-stone-700">信贷扣款:</span>
+                   <span className="text-red-700">{dailyReport.loan}</span>
+                 </div>
+               )}
+               {dailyReport.eventName && (
+                 <div className="flex justify-between border-b border-stone-400 border-dashed pb-1">
+                   <span className="text-stone-700 overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px]">{dailyReport.eventName}:</span>
+                   <span className={dailyReport.eventImpact >= 0 ? "text-green-700" : "text-red-700"}>
+                     {dailyReport.eventImpact > 0 ? '+' : ''}{dailyReport.eventImpact}
+                   </span>
+                 </div>
+               )}
+            </div>
+            
+            <div className="mt-5 pt-4 border-t-4 border-stone-800 flex justify-between items-center font-bold text-lg">
+               <span>当日净利润:</span>
+               <span className={dailyReport.net >= 0 ? "text-green-800" : "text-red-800"}>
+                 {dailyReport.net >= 0 ? '+' : ''}{dailyReport.net}
+               </span>
+            </div>
+
+            <button onClick={() => setDailyReport(null)} className="mt-6 w-full bg-stone-800 hover:bg-stone-700 text-[#e8dcc4] py-3 border-2 border-stone-900 transition uppercase tracking-widest font-bold shadow-md hover:shadow-none active:translate-y-1">
+              ▪ 阅毕 (Acknowledge) ▪
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<WildWestStartup />);
+    </script>
+</body>
+</html>
